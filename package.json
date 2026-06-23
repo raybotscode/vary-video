@@ -1,0 +1,39 @@
+{
+  "name": "vary-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remotion batch video variant generation engine for Vary.video.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "api": "tsx api/src/index.ts",
+    "batch": "tsx scripts/batch-render.ts --composition InsuranceAd --output ./public/renders",
+    "typecheck": "tsc --noEmit",
+    "render": "remotion render src/index.ts InsuranceAd public/renders/variant.mp4"
+  },
+  "workspaces": [
+    "api"
+  ],
+  "dependencies": {
+    "@remotion/bundler": "^4.0.482",
+    "@remotion/cli": "^4.0.482",
+    "@remotion/google-fonts": "^4.0.482",
+    "@remotion/layout-utils": "^4.0.482",
+    "@remotion/renderer": "^4.0.482",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "remotion": "^4.0.482",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

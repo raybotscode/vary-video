@@ -1,0 +1,10 @@
+node_modules/
+.remotion/
+dist/
+build/
+public/renders/*.mp4
+public/renders/*.mov
+public/renders/*.webm
+public/renders/*.png
+.DS_Store
+*.log

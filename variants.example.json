@@ -1,0 +1,33 @@
+{
+  "compositionId": "InsuranceAd",
+  "template": {
+    "headlineTemplate": "Are you a {{age}} year old {{gender}} in {{location}}?",
+    "subheadlineTemplate": "Get covered today with {{company}}",
+    "ctaText": "Get a Quote Today",
+    "brandColor": "#1A365D",
+    "secondaryColor": "#3182CE",
+    "logoUrl": "",
+    "backgroundType": "gradient",
+    "backgroundColor": "#1A365D"
+  },
+  "variants": [
+    {
+      "age": "52",
+      "gender": "man",
+      "location": "Dublin",
+      "company": "XYZ Insurance"
+    },
+    {
+      "age": "53",
+      "gender": "woman",
+      "location": "London",
+      "company": "XYZ Insurance"
+    },
+    {
+      "age": "55",
+      "gender": "man",
+      "location": "New York",
+      "company": "ABC Cover"
+    }
+  ]
+}
