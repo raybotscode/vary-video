@@ -1,11 +1,13 @@
 import {useEffect, useMemo, useState} from 'react';
 import {
   apiClient,
+  type OutputFormat,
   type RenderStatus,
   type RenderTemplatePayload,
   type TemplateDefinition,
 } from '../api/client';
 import BrandSettings from '../components/BrandSettings';
+import FormatSelector from '../components/FormatSelector';
 import RenderProgress from '../components/RenderProgress';
 import TemplateForm from '../components/TemplateForm';
 import VariantEditor from '../components/VariantEditor';
@@ -33,6 +35,7 @@ export default function Dashboard() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [estimatedTimeSeconds, setEstimatedTimeSeconds] = useState<number | null>(null);
   const [renderStatus, setRenderStatus] = useState<RenderStatus | null>(null);
+  const [formats, setFormats] = useState<OutputFormat[]>(['16:9']);
 
   useEffect(() => {
     let isMounted = true;
@@ -134,6 +137,7 @@ export default function Dashboard() {
         compositionId: selectedCompositionId,
         template,
         variants,
+        formats,
       });
 
       setJobId(response.jobId);
@@ -204,6 +208,17 @@ export default function Dashboard() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Step 5</p>
+            <h2>Output Formats</h2>
+          </div>
+        </div>
+        <p className="format-hint">Choose which aspect ratios to render. Each format multiplies the render time.</p>
+        <FormatSelector formats={formats} onChange={setFormats} />
+      </section>
+
+      <section className="step-card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Step 6</p>
             <h2>Generate</h2>
           </div>
         </div>
@@ -218,8 +233,16 @@ export default function Dashboard() {
             <strong>{variants.length}</strong>
           </div>
           <div>
+            <span>Formats</span>
+            <strong>{formats.join(', ')}</strong>
+          </div>
+          <div>
+            <span>Total outputs</span>
+            <strong>{variants.length * formats.length}</strong>
+          </div>
+          <div>
             <span>Estimated render time</span>
-            <strong>{Math.ceil(estimatedRenderTime / 60)} min</strong>
+            <strong>{Math.ceil((estimatedRenderTime * formats.length) / 60)} min</strong>
           </div>
         </div>
 

@@ -24,6 +24,8 @@ export type Composition = {
 
 export type TemplateDefinition = Composition;
 
+export type OutputFormat = '16:9' | '9:16' | '1:1';
+
 export type RenderTemplatePayload = Record<string, unknown>;
 
 export type BatchRenderResponse = {
@@ -82,10 +84,12 @@ export const apiClient = {
     compositionId,
     template,
     variants,
+    formats,
   }: {
     compositionId: string;
     template: RenderTemplatePayload;
     variants: VariantData[];
+    formats: OutputFormat[];
   }): Promise<BatchRenderResponse> {
     const response = await fetch('/api/render/batch', {
       method: 'POST',
@@ -94,6 +98,7 @@ export const apiClient = {
         compositionId,
         template,
         variants,
+        formats,
       }),
     });
 
