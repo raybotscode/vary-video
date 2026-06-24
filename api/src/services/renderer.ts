@@ -24,6 +24,8 @@ type RenderVariantInput = {
   compositionId: string;
   inputProps: Record<string, unknown>;
   outputPath: string;
+  width?: number;
+  height?: number;
   onProgress?: (progress: number) => void;
 };
 
@@ -58,6 +60,8 @@ export const renderVariant = async ({
   compositionId,
   inputProps,
   outputPath,
+  width,
+  height,
   onProgress,
 }: RenderVariantInput): Promise<void> => {
   const serveUrl = await getBundleUrl();
@@ -72,7 +76,11 @@ export const renderVariant = async ({
 
   await renderMedia({
     serveUrl,
-    composition,
+    composition: {
+      ...composition,
+      ...(width ? {width} : {}),
+      ...(height ? {height} : {}),
+    },
     codec: 'h264',
     crf: 18,
     inputProps,
@@ -87,12 +95,18 @@ export const renderBatch = async ({
   request,
   outputDir,
   jobId,
+  customOutputPath,
+  width,
+  height,
   parallel,
   onVariantProgress,
 }: {
   request: BatchRenderRequest;
   outputDir: string;
   jobId: string;
+  customOutputPath?: string;
+  width?: number;
+  height?: number;
   parallel: boolean;
   onVariantProgress?: (variantIndex: number, progress: number) => void;
 }): Promise<VariantRenderResult[]> => {
@@ -102,7 +116,9 @@ export const renderBatch = async ({
     variant: RenderVariant,
     index: number,
   ): Promise<VariantRenderResult> => {
-    const outputPath = path.join(outputDir, `${jobId}-variant-${index}.mp4`);
+    const outputPath = customOutputPath
+      ? path.join(outputDir, customOutputPath)
+      : path.join(outputDir, `${jobId}-variant-${index}.mp4`);
     const inputProps = makeInputProps(
       request.compositionId,
       request.template,
@@ -113,6 +129,8 @@ export const renderBatch = async ({
       compositionId: request.compositionId,
       inputProps,
       outputPath,
+      width,
+      height,
       onProgress: (progress) => onVariantProgress?.(index, progress),
     });
 

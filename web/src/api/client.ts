@@ -1,39 +1,34 @@
 import type {VariantData} from '../utils/placeholder';
 
-export type TemplateCopyField = {
-  id: string;
-  label: string;
-  default: string;
-};
-
 export type Composition = {
   id: string;
-  name?: string;
-  description?: string;
-  useCase?: string;
   durationInFrames: number;
   fps: number;
   width: number;
   height: number;
   defaults?: Record<string, unknown>;
-  defaultProps?: Record<string, unknown>;
-  placeholders?: string[];
-  copyFields?: TemplateCopyField[];
-  category?: 'ad' | 'social' | 'property' | 'product';
-  blockSequence?: string[];
 };
 
-export type TemplateDefinition = Composition;
+export type TemplatePayload = {
+  headlineTemplate: string;
+  subheadlineTemplate: string;
+  ctaText: string;
+  brandColor: string;
+  secondaryColor: string;
+  logoUrl: string;
+  backgroundType: 'solid' | 'gradient' | 'image';
+  backgroundColor: string;
+  backgroundImageUrl?: string;
+};
 
-export type OutputFormat = '16:9' | '9:16' | '1:1';
+export type VideoFormat = '16:9' | '1:1' | '9:16' | '4:5';
 
-export type RenderTemplatePayload = Record<string, unknown>;
-
-export type BlockSequence = {
-  blockId: string;
-  content: Record<string, string>;
-  durationFrames?: number;
-}[];
+export const FORMAT_LABELS: Record<VideoFormat, string> = {
+  '16:9': 'Landscape (1920×1080)',
+  '1:1': 'Square (1080×1080)',
+  '9:16': 'Vertical / Story (1080×1920)',
+  '4:5': 'Instagram (1080×1350)',
+};
 
 export type BatchRenderResponse = {
   jobId: string;
@@ -48,15 +43,17 @@ export type RenderStatus = {
   completedVariants: number;
   totalVariants: number;
   downloads: string[];
+  /** Label per download index — matches `downloads` order */
+  downloadLabels?: string[];
   error?: string;
+  formats?: string[];
 };
 
-const isDeployed = typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
-const API_BASE = isDeployed
-  ? 'https://powers-biz-retrieve-brother.trycloudflare.com'
-  : '';
+// API base URL — defaults to /api (proxied in dev). Set VITE_API_URL at build time
+// or override via window.__VARY_API_URL at runtime for tunnel testing.
+const apiBase = (typeof window !== 'undefined' && (window as any).__VARY_API_URL) || import.meta.env.VITE_API_URL || '/api';
 
-const api = (path: string) => `${API_BASE}${path}`;
+const apiUrl = (path: string) => `${apiBase}${path}`;
 
 const readJson = async <T>(response: Response): Promise<T> => {
   const body = (await response.json().catch(() => ({}))) as T & {error?: string};
@@ -70,50 +67,39 @@ const readJson = async <T>(response: Response): Promise<T> => {
 
 export const apiClient = {
   async getCompositions(): Promise<Composition[]> {
-    try {
-      const getResponse = await fetch(api('/api/compositions'));
+    const getResponse = await fetch(apiUrl('/compositions'));
 
-      if (getResponse.ok) {
-        const data = await readJson<{compositions: Composition[]}>(getResponse);
-        return data.compositions ?? [];
-      }
-
-      if (getResponse.status !== 404 && getResponse.status !== 405) {
-        try {
-          await readJson(getResponse);
-        } catch {
-          return [];
-        }
-      }
-
-      const postResponse = await fetch(api('/api/compositions'), {method: 'POST'});
-      const data = await readJson<{compositions: Composition[]}>(postResponse);
-      return data.compositions ?? [];
-    } catch {
-      return [];
+    if (getResponse.ok) {
+      const data = await readJson<{compositions: Composition[]}>(getResponse);
+      return data.compositions;
     }
+
+    if (getResponse.status !== 404 && getResponse.status !== 405) {
+      await readJson(getResponse);
+    }
+
+    const postResponse = await fetch(apiUrl('/compositions'), {method: 'POST'});
+    const data = await readJson<{compositions: Composition[]}>(postResponse);
+    return data.compositions;
   },
 
   async startBatchRender({
     compositionId,
     template,
-    blockSequence,
     variants,
-    formats,
+    formats = ['16:9'],
   }: {
     compositionId: string;
-    template: RenderTemplatePayload;
-    blockSequence?: BlockSequence;
+    template: TemplatePayload;
     variants: VariantData[];
-    formats: OutputFormat[];
+    formats?: VideoFormat[];
   }): Promise<BatchRenderResponse> {
-    const response = await fetch(api('/api/render/batch'), {
+    const response = await fetch(apiUrl('/render/batch'), {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         compositionId,
         template,
-        blockSequence,
         variants,
         formats,
       }),
@@ -123,7 +109,11 @@ export const apiClient = {
   },
 
   async getRenderStatus(jobId: string): Promise<RenderStatus> {
-    const response = await fetch(api(`/api/render/status/${jobId}`));
+    const response = await fetch(apiUrl(`/render/status/${jobId}`));
     return readJson<RenderStatus>(response);
+  },
+
+  getZipDownloadUrl(jobId: string): string {
+    return apiUrl(`/render/download-zip/${jobId}`);
   },
 };

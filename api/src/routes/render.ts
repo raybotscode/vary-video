@@ -1,8 +1,8 @@
 import {Router} from 'express';
 import path from 'node:path';
-import {z, type ZodType} from 'zod';
-const {ZipArchive} = await import('archiver');
-import {getSchemaForTemplate} from '../../../src/templates/registry';
+import fs from 'node:fs';
+import {z} from 'zod';
+import {ZipArchive} from 'archiver';
 import {
   BatchRenderRequest,
   publicRenderDir,
@@ -19,13 +19,36 @@ type RenderJob = {
   completedVariants: number;
   totalVariants: number;
   downloads: string[];
+  /** Label per download index — matches `downloads` order */
+  downloadLabels: string[];
   error?: string;
+  formats?: string[];
 };
 
+const FORMAT_PRESETS: Record<string, {width: number; height: number; suffix: string; label: string}> = {
+  '16:9':  {width: 1920, height: 1080, suffix: '', label: 'Landscape'},
+  '1:1':   {width: 1080, height: 1080, suffix: '-square', label: 'Square'},
+  '9:16':  {width: 1080, height: 1920, suffix: '-vertical', label: 'Vertical / Story'},
+  '4:5':   {width: 1080, height: 1350, suffix: '-instagram', label: 'Instagram'},
+};
+
+const renderTemplateSchema = z.object({
+  headlineTemplate: z.string(),
+  subheadlineTemplate: z.string(),
+  ctaText: z.string(),
+  brandColor: z.string(),
+  secondaryColor: z.string(),
+  logoUrl: z.string().default(''),
+  backgroundType: z.enum(['solid', 'gradient', 'image']),
+  backgroundColor: z.string(),
+  backgroundImageUrl: z.string().optional(),
+});
+
 const batchRequestSchema = z.object({
-  compositionId: z.string().min(1),
-  template: z.record(z.string(), z.unknown()),
+  compositionId: z.literal('InsuranceAd'),
+  template: renderTemplateSchema,
   variants: z.array(z.record(z.string(), z.string())).min(1),
+  formats: z.array(z.enum(['16:9', '1:1', '9:16', '4:5'])).optional().default(['16:9']),
 });
 
 const jobs = new Map<string, RenderJob>();
@@ -38,79 +61,83 @@ const createJobId = (): string => {
 export const renderRouter = Router();
 
 renderRouter.post('/batch', (req, res) => {
-  const baseParsed = batchRequestSchema.safeParse(req.body);
-  if (!baseParsed.success) {
+  const parsed = batchRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({
       error: 'Invalid render batch request',
-      details: z.flattenError(baseParsed.error),
+      details: z.flattenError(parsed.error),
     });
     return;
   }
 
-  let schema: ZodType<any>;
-  try {
-    schema = getSchemaForTemplate(baseParsed.data.compositionId);
-  } catch (error) {
-    res.status(400).json({
-      error: error instanceof Error ? error.message : 'Unknown template',
-    });
-    return;
-  }
-
-  const templateParsed = schema.safeParse({
-    ...baseParsed.data.template,
-    data: {},
-  });
-
-  if (!templateParsed.success) {
-    res.status(400).json({
-      error: 'Invalid render template',
-      details: z.flattenError(templateParsed.error),
-    });
-    return;
-  }
-
-  const request: BatchRenderRequest = baseParsed.data;
+  const {formats, ...request} = parsed.data;
   const jobId = createJobId();
+  const totalWork = request.variants.length * formats.length;
   const job: RenderJob = {
     id: jobId,
     status: 'queued',
     progress: 0,
     completedVariants: 0,
-    totalVariants: request.variants.length,
+    totalVariants: totalWork,
     downloads: [],
+    downloadLabels: [],
+    formats,
   };
   jobs.set(jobId, job);
 
   void (async () => {
     try {
       job.status = 'rendering';
-      const variantProgress = new Map<number, number>();
-      const results = await renderBatch({
-        request,
-        outputDir: publicRenderDir,
-        jobId,
-        parallel: false,
-        onVariantProgress: (variantIndex, progress) => {
-          variantProgress.set(variantIndex, progress);
-          const totalProgress = Array.from(variantProgress.values()).reduce(
-            (sum, value) => sum + value,
-            0,
-          );
-          job.completedVariants = Array.from(variantProgress.values()).filter(
-            (value) => value >= 1,
-          ).length;
-          job.progress = Math.round(
-            (totalProgress / request.variants.length) * 100,
-          );
-        },
-      });
+      const completedWork = new Map<string, number>();
 
+      const results: VariantRenderResult[] = [];
+      let sequentialIndex = 0;
+
+      for (let variantIndex = 0; variantIndex < request.variants.length; variantIndex += 1) {
+        for (let formatIndex = 0; formatIndex < formats.length; formatIndex += 1) {
+          const fmt = FORMAT_PRESETS[formats[formatIndex]];
+          const variant = request.variants[variantIndex];
+          const workKey = `${variantIndex}-${formatIndex}`;
+
+          const result = await renderBatch({
+            request: {...request, variants: [variant]},
+            outputDir: publicRenderDir,
+            jobId,
+            customOutputPath: `${jobId}-variant-${variantIndex}${fmt.suffix}.mp4`,
+            width: fmt.width,
+            height: fmt.height,
+            parallel: false,
+            onVariantProgress: (_index, progress) => {
+              completedWork.set(workKey, progress);
+              const totalProgress = Array.from(completedWork.values()).reduce((s, v) => s + v, 0);
+              const done = Array.from(completedWork.values()).filter((v) => v >= 1).length;
+              job.completedVariants = done;
+              job.progress = Math.round((totalProgress / totalWork) * 100);
+            },
+          });
+
+          if (result.length > 0) {
+            results.push({
+              ...result[0],
+              index: sequentialIndex,
+              downloadUrl: `/api/render/download/${jobId}/${sequentialIndex}`,
+            });
+          }
+          sequentialIndex += 1;
+        }
+      }
+
+      const fmtList = formats;
       jobOutputs.set(jobId, results);
-      job.completedVariants = request.variants.length;
+      job.completedVariants = totalWork;
       job.progress = 100;
       job.status = 'completed';
       job.downloads = results.map((result) => result.downloadUrl);
+      job.downloadLabels = results.map((result) => {
+        const fi = result.index % fmtList.length;
+        const vi = Math.floor(result.index / fmtList.length);
+        return `Variant ${vi + 1} — ${fmtList[fi]}`;
+      });
     } catch (error) {
       job.status = 'failed';
       job.error = error instanceof Error ? error.message : 'Unknown render error';
@@ -119,7 +146,7 @@ renderRouter.post('/batch', (req, res) => {
 
   res.status(202).json({
     jobId,
-    estimatedTimeSeconds: request.variants.length * 45,
+    estimatedTimeSeconds: totalWork * 45,
     statusUrl: `/api/render/status/${jobId}`,
   });
 });
@@ -132,41 +159,6 @@ renderRouter.get('/status/:jobId', (req, res) => {
   }
 
   res.json(job);
-});
-
-renderRouter.get('/download/zip/:jobId', (req, res) => {
-  const jobId = req.params.jobId;
-  const outputs = jobOutputs.get(jobId);
-  if (!outputs || outputs.length === 0) {
-    res.status(404).json({error: 'No rendered outputs found for this job'});
-    return;
-  }
-
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename="vary-video-${jobId}.zip"`,
-  );
-
-  const archive = new ZipArchive({zlib: {level: 9}});
-
-  archive.on('error', (error) => {
-    if (!res.headersSent) {
-      res.status(500).json({error: `ZIP error: ${error.message}`});
-      return;
-    }
-
-    res.destroy(error);
-  });
-
-  archive.pipe(res);
-
-  for (const output of outputs) {
-    const filename = `variant-${output.index + 1}.mp4`;
-    archive.file(path.resolve(output.outputPath), {name: filename});
-  }
-
-  void archive.finalize();
 });
 
 renderRouter.get('/download/:jobId/:variantIndex', (req, res) => {
@@ -185,4 +177,43 @@ renderRouter.get('/download/:jobId/:variantIndex', (req, res) => {
   }
 
   res.download(path.resolve(output.outputPath));
+});
+
+renderRouter.get('/download-zip/:jobId', (req, res) => {
+  try {
+    const outputs = jobOutputs.get(req.params.jobId);
+    if (!outputs || outputs.length === 0) {
+      res.status(404).json({error: 'Render job not found or no outputs'});
+      return;
+    }
+
+    const job = jobs.get(req.params.jobId);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="vary-video-${req.params.jobId}.zip"`);
+
+    const archive = new ZipArchive();
+    archive.pipe(res);
+
+    archive.on('error', (err: Error) => {
+      console.error('Archiver error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({error: `ZIP creation failed: ${err.message}`});
+      }
+    });
+
+    for (const output of outputs) {
+      const filePath = path.resolve(output.outputPath);
+      if (fs.existsSync(filePath)) {
+        const filename = path.basename(filePath);
+        archive.file(filePath, {name: filename});
+      }
+    }
+
+    archive.finalize();
+  } catch (err) {
+    console.error('ZIP endpoint error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({error: err instanceof Error ? err.message : 'ZIP download failed'});
+    }
+  }
 });

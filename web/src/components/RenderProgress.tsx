@@ -1,12 +1,11 @@
 import type {RenderStatus} from '../api/client';
+import {apiClient} from '../api/client';
 
-const isDeployed =
-  typeof window !== 'undefined' &&
-  !window.location.hostname.includes('localhost') &&
-  !window.location.hostname.includes('127.0.0.1');
-const API_BASE = isDeployed
-  ? 'https://powers-biz-retrieve-brother.trycloudflare.com'
-  : '';
+// Same logic as api/client.ts to resolve the API base URL
+const apiBase =
+  (typeof window !== 'undefined' && (window as any).__VARY_API_URL) ||
+  import.meta.env.VITE_API_URL ||
+  '/api';
 
 type RenderProgressProps = {
   status: RenderStatus | null;
@@ -38,6 +37,17 @@ export default function RenderProgress({
     ? Math.max(0, Math.round(estimatedTimeSeconds * (1 - progress / 100)))
     : null;
 
+  const formats = status?.formats ?? ['16:9'];
+  const labelFor = (i: number): string => {
+    if (status?.downloadLabels && status.downloadLabels[i]) {
+      return status.downloadLabels[i];
+    }
+    const fi = i % formats.length;
+    const vi = Math.floor(i / formats.length);
+    const fmt = formats[fi];
+    return `Variant ${vi + 1} — ${fmt}`;
+  };
+
   return (
     <section className="render-progress" aria-live="polite">
       <div className="section-heading compact-heading">
@@ -63,36 +73,53 @@ export default function RenderProgress({
       </div>
 
       <div className="variant-progress-list">
-        {Array.from({length: total}).map((_, index) => {
-          const isComplete = status?.downloads[index] || status?.status === 'completed';
-          const variantProgress =
-            status?.status === 'completed' || (status && index < completed)
-              ? 100
-              : index === completed
-                ? progress % Math.max(1, Math.round(100 / total))
-                : 0;
-
-          return (
-            <div key={index} className="variant-progress-row">
-              <span>Variant {index + 1}</span>
-              <div className="mini-progress">
-                <span style={{width: `${isComplete ? 100 : variantProgress}%`}} />
+        {status?.downloads && status.downloads.length > 0
+          ? status.downloads.map((url, i) => (
+              <div key={i} className="variant-progress-row">
+                <span className="download-label">{labelFor(i)}</span>
+                <span className="download-badge completed">Ready</span>
+                <a href={url} download className="download-link">Download MP4</a>
               </div>
-              {isComplete ? (
-                <a href={`${API_BASE}/api/render/download/${jobId}/${index}`}>Download MP4</a>
-              ) : (
-                <span>{Math.round(isComplete ? 100 : variantProgress)}%</span>
-              )}
-            </div>
-          );
-        })}
+            ))
+          : Array.from({length: variantCount}).map((_, vi) => (
+              <div key={vi} className="variant-progress-row">
+                <span>Variant {vi + 1}</span>
+                <div className="mini-progress">
+                  <span
+                    style={{
+                      width: `${
+                        status?.status === 'completed'
+                          ? 100
+                          : vi < completed
+                            ? 100
+                            : vi === completed
+                              ? progress % Math.max(1, Math.round(100 / variantCount))
+                              : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+                <span>
+                  {status?.status === 'completed'
+                    ? '100%'
+                    : vi < completed
+                      ? '100%'
+                      : `${Math.round(
+                          vi === completed
+                            ? progress % Math.max(1, Math.round(100 / variantCount))
+                            : 0,
+                        )}%`}
+                </span>
+              </div>
+            ))}
       </div>
 
       {status?.status === 'completed' && (
         <div className="completion-actions">
           <a
-            href={`${API_BASE}/api/render/download/zip/${jobId}`}
             className="primary-button zip-button"
+            href={apiClient.getZipDownloadUrl(jobId)}
+            download
           >
             Download All as ZIP
           </a>
