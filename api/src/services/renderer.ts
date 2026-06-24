@@ -3,13 +3,13 @@ import {renderMedia, selectComposition} from '@remotion/renderer';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {insuranceAdSchema, type InsuranceAdProps} from '../../../src/compositions';
+import {getSchemaForTemplate} from '../../../src/templates/registry';
 
-export type RenderTemplate = Omit<InsuranceAdProps, 'data'>;
+export type RenderTemplate = Record<string, unknown>;
 export type RenderVariant = Record<string, string>;
 
 export type BatchRenderRequest = {
-  compositionId: 'InsuranceAd';
+  compositionId: string;
   template: RenderTemplate;
   variants: RenderVariant[];
 };
@@ -22,7 +22,7 @@ export type VariantRenderResult = {
 
 type RenderVariantInput = {
   compositionId: string;
-  inputProps: InsuranceAdProps;
+  inputProps: Record<string, unknown>;
   outputPath: string;
   onProgress?: (progress: number) => void;
 };
@@ -44,10 +44,11 @@ const getBundleUrl = async (): Promise<string> => {
 };
 
 export const makeInputProps = (
+  compositionId: string,
   template: RenderTemplate,
   variant: RenderVariant,
-): InsuranceAdProps => {
-  return insuranceAdSchema.parse({
+): Record<string, unknown> => {
+  return getSchemaForTemplate(compositionId).parse({
     ...template,
     data: variant,
   });
@@ -102,7 +103,11 @@ export const renderBatch = async ({
     index: number,
   ): Promise<VariantRenderResult> => {
     const outputPath = path.join(outputDir, `${jobId}-variant-${index}.mp4`);
-    const inputProps = makeInputProps(request.template, variant);
+    const inputProps = makeInputProps(
+      request.compositionId,
+      request.template,
+      variant,
+    );
 
     await renderVariant({
       compositionId: request.compositionId,

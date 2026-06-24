@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import path from 'node:path';
-import {z} from 'zod';
+import {z, type ZodType} from 'zod';
+import {getSchemaForTemplate} from '../../../src/templates/registry';
 import {
   BatchRenderRequest,
   publicRenderDir,
@@ -20,21 +21,9 @@ type RenderJob = {
   error?: string;
 };
 
-const renderTemplateSchema = z.object({
-  headlineTemplate: z.string(),
-  subheadlineTemplate: z.string(),
-  ctaText: z.string(),
-  brandColor: z.string(),
-  secondaryColor: z.string(),
-  logoUrl: z.string().default(''),
-  backgroundType: z.enum(['solid', 'gradient', 'image']),
-  backgroundColor: z.string(),
-  backgroundImageUrl: z.string().optional(),
-});
-
 const batchRequestSchema = z.object({
-  compositionId: z.literal('InsuranceAd'),
-  template: renderTemplateSchema,
+  compositionId: z.string().min(1),
+  template: z.record(z.string(), z.unknown()),
   variants: z.array(z.record(z.string(), z.string())).min(1),
 });
 
@@ -48,16 +37,39 @@ const createJobId = (): string => {
 export const renderRouter = Router();
 
 renderRouter.post('/batch', (req, res) => {
-  const parsed = batchRequestSchema.safeParse(req.body);
-  if (!parsed.success) {
+  const baseParsed = batchRequestSchema.safeParse(req.body);
+  if (!baseParsed.success) {
     res.status(400).json({
       error: 'Invalid render batch request',
-      details: z.flattenError(parsed.error),
+      details: z.flattenError(baseParsed.error),
     });
     return;
   }
 
-  const request: BatchRenderRequest = parsed.data;
+  let schema: ZodType<any>;
+  try {
+    schema = getSchemaForTemplate(baseParsed.data.compositionId);
+  } catch (error) {
+    res.status(400).json({
+      error: error instanceof Error ? error.message : 'Unknown template',
+    });
+    return;
+  }
+
+  const templateParsed = schema.safeParse({
+    ...baseParsed.data.template,
+    data: {},
+  });
+
+  if (!templateParsed.success) {
+    res.status(400).json({
+      error: 'Invalid render template',
+      details: z.flattenError(templateParsed.error),
+    });
+    return;
+  }
+
+  const request: BatchRenderRequest = baseParsed.data;
   const jobId = createJobId();
   const job: RenderJob = {
     id: jobId,

@@ -26,14 +26,14 @@ export default function Home({onGetStarted}: HomeProps) {
           </div>
           <div className="mockup-content">
             <div className="mockup-preview">
-              <strong>Insurance Ad</strong>
-              <p>Are you a 52 year old man in Dublin?</p>
-              <span>Get a Quote Today</span>
+              <strong>Product Launch</strong>
+              <p>Introducing Vary Studio</p>
+              <span>Get Started Today</span>
             </div>
             <div className="mockup-panel">
-              <span />
-              <span />
-              <span />
+              <span>Insurance Ad</span>
+              <span>Real Estate</span>
+              <span>Social Clip</span>
             </div>
           </div>
         </div>

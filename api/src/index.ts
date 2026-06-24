@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {insuranceAdCompositionSchema} from '../../src/compositions';
+import {compositionSchemaFor, getAllTemplates} from '../../src/templates/registry';
 import {renderRouter} from './routes/render';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -16,9 +16,19 @@ app.use(express.json({limit: '2mb'}));
 app.use('/renders', express.static(path.join(projectRoot, 'public/renders')));
 app.use('/api/render', renderRouter);
 
+const compositions = getAllTemplates().map((template) =>
+  compositionSchemaFor(template.id),
+);
+
+app.get('/api/compositions', (_req, res) => {
+  res.json({
+    compositions,
+  });
+});
+
 app.post('/api/compositions', (_req, res) => {
   res.json({
-    compositions: [insuranceAdCompositionSchema],
+    compositions,
   });
 });
 
@@ -29,9 +39,12 @@ app.use(
     res: express.Response,
     _next: express.NextFunction,
   ) => {
-    const message =
-      error instanceof Error ? error.message : 'Unexpected server error';
-    res.status(500).json({error: message});
+    if (error instanceof Error) {
+      res.status(500).json({error: error.message});
+      return;
+    }
+
+    res.status(500).json({error: 'Unexpected server error'});
   },
 );
 

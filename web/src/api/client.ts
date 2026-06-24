@@ -1,25 +1,30 @@
 import type {VariantData} from '../utils/placeholder';
 
+export type TemplateCopyField = {
+  id: string;
+  label: string;
+  default: string;
+};
+
 export type Composition = {
   id: string;
+  name?: string;
+  description?: string;
+  useCase?: string;
   durationInFrames: number;
   fps: number;
   width: number;
   height: number;
   defaults?: Record<string, unknown>;
+  defaultProps?: Record<string, unknown>;
+  placeholders?: string[];
+  copyFields?: TemplateCopyField[];
+  category?: 'ad' | 'social' | 'property' | 'product';
 };
 
-export type TemplatePayload = {
-  headlineTemplate: string;
-  subheadlineTemplate: string;
-  ctaText: string;
-  brandColor: string;
-  secondaryColor: string;
-  logoUrl: string;
-  backgroundType: 'solid' | 'gradient' | 'image';
-  backgroundColor: string;
-  backgroundImageUrl?: string;
-};
+export type TemplateDefinition = Composition;
+
+export type RenderTemplatePayload = Record<string, unknown>;
 
 export type BatchRenderResponse = {
   jobId: string;
@@ -71,7 +76,7 @@ export const apiClient = {
     variants,
   }: {
     compositionId: string;
-    template: TemplatePayload;
+    template: RenderTemplatePayload;
     variants: VariantData[];
   }): Promise<BatchRenderResponse> {
     const response = await fetch('/api/render/batch', {

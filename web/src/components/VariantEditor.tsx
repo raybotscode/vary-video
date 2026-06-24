@@ -4,15 +4,17 @@ import VariantTable from './VariantTable';
 
 type VariantEditorProps = {
   variants: VariantData[];
+  columns: string[];
+  templateId: string;
   onChange: (variants: VariantData[]) => void;
   onError: (message: string) => void;
 };
 
-export default function VariantEditor({variants, onChange, onError}: VariantEditorProps) {
+export default function VariantEditor({variants, columns, templateId, onChange, onError}: VariantEditorProps) {
   const [importMode, setImportMode] = useState<'json' | 'csv' | null>(null);
   const [importText, setImportText] = useState('');
 
-  const updateVariant = (index: number, key: keyof VariantData, value: string) => {
+  const updateVariant = (index: number, key: string, value: string) => {
     onChange(
       variants.map((variant, variantIndex) =>
         variantIndex === index ? {...variant, [key]: value} : variant,
@@ -29,18 +31,17 @@ export default function VariantEditor({variants, onChange, onError}: VariantEdit
       const rows =
         importMode === 'json'
           ? (JSON.parse(importText) as VariantData[])
-          : parseCsv(importText);
+          : parseCsv(importText, columns);
 
       if (!Array.isArray(rows) || rows.length === 0) {
         throw new Error('Import must contain at least one row.');
       }
 
-      const normalized = rows.map((row) => ({
-        age: String(row.age ?? ''),
-        gender: (row.gender === 'woman' ? 'woman' : 'man') as 'man' | 'woman',
-        location: String(row.location ?? ''),
-        company: String(row.company ?? ''),
-      })) satisfies VariantData[];
+      const normalized = rows.map((row) =>
+        Object.fromEntries(
+          columns.map((column) => [column, String(row[column] ?? '')]),
+        ),
+      );
 
       onChange(normalized);
       setImportText('');
@@ -53,7 +54,7 @@ export default function VariantEditor({variants, onChange, onError}: VariantEdit
   return (
     <div className="stack">
       <div className="button-row">
-        <button type="button" className="secondary-button" onClick={() => onChange([...variants, createEmptyVariant()])}>
+        <button type="button" className="secondary-button" onClick={() => onChange([...variants, createEmptyVariant(templateId)])}>
           Add Row
         </button>
         <button type="button" className="ghost-button" onClick={() => setImportMode('json')}>
@@ -72,8 +73,8 @@ export default function VariantEditor({variants, onChange, onError}: VariantEdit
               rows={6}
               placeholder={
                 importMode === 'json'
-                  ? '[{"age":"52","gender":"man","location":"Dublin","company":"Vary Cover"}]'
-                  : 'age,gender,location,company\n52,man,Dublin,Vary Cover'
+                  ? `[${JSON.stringify(createEmptyVariant(templateId))}]`
+                  : `${columns.join(',')}\n${columns.map((column) => createEmptyVariant(templateId)[column] || column).join(',')}`
               }
               value={importText}
               onChange={(event) => setImportText(event.target.value)}
@@ -90,7 +91,7 @@ export default function VariantEditor({variants, onChange, onError}: VariantEdit
         </div>
       )}
 
-      <VariantTable variants={variants} onChange={updateVariant} onDelete={deleteVariant} />
+      <VariantTable variants={variants} columns={columns} onChange={updateVariant} onDelete={deleteVariant} />
     </div>
   );
 }

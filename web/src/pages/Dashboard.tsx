@@ -1,28 +1,32 @@
 import {useEffect, useMemo, useState} from 'react';
-import {apiClient, type Composition, type RenderStatus, type TemplatePayload} from '../api/client';
+import {
+  apiClient,
+  type RenderStatus,
+  type RenderTemplatePayload,
+  type TemplateDefinition,
+} from '../api/client';
 import BrandSettings from '../components/BrandSettings';
 import RenderProgress from '../components/RenderProgress';
 import TemplateForm from '../components/TemplateForm';
 import VariantEditor from '../components/VariantEditor';
-import {defaultVariants, type VariantData} from '../utils/placeholder';
+import {defaultVariantsForTemplate, type VariantData} from '../utils/placeholder';
+import {frontendTemplates, getFrontendTemplate} from '../utils/templates';
 
-const initialTemplate: TemplatePayload = {
-  headlineTemplate: 'Are you a {{age}} year old {{gender}} in {{location}}?',
-  subheadlineTemplate: 'Get covered today with {{company}}',
-  ctaText: 'Get a Quote Today',
-  brandColor: '#1A365D',
-  secondaryColor: '#3182CE',
-  logoUrl: '',
-  backgroundType: 'gradient',
-  backgroundColor: '#1A365D',
-  backgroundImageUrl: '',
+const templateDefaults = (template: TemplateDefinition): RenderTemplatePayload => {
+  const defaults = template.defaults ?? template.defaultProps ?? {};
+  const {data: _data, ...withoutData} = defaults;
+  return withoutData;
 };
 
 export default function Dashboard() {
-  const [compositions, setCompositions] = useState<Composition[]>([]);
-  const [selectedCompositionId, setSelectedCompositionId] = useState('InsuranceAd');
-  const [template, setTemplate] = useState<TemplatePayload>(initialTemplate);
-  const [variants, setVariants] = useState<VariantData[]>(defaultVariants);
+  const [compositions, setCompositions] = useState<TemplateDefinition[]>(frontendTemplates);
+  const [selectedCompositionId, setSelectedCompositionId] = useState(frontendTemplates[0].id);
+  const [template, setTemplate] = useState<RenderTemplatePayload>(
+    templateDefaults(frontendTemplates[0]),
+  );
+  const [variants, setVariants] = useState<VariantData[]>(
+    defaultVariantsForTemplate(frontendTemplates[0].id),
+  );
   const [isLoadingCompositions, setIsLoadingCompositions] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +44,25 @@ export default function Dashboard() {
           return;
         }
 
-        setCompositions(nextCompositions);
+        const merged = nextCompositions.map((composition) => ({
+          ...getFrontendTemplate(composition.id),
+          ...composition,
+          defaults:
+            composition.defaults ??
+            composition.defaultProps ??
+            getFrontendTemplate(composition.id).defaults,
+          copyFields:
+            composition.copyFields ?? getFrontendTemplate(composition.id).copyFields,
+          placeholders:
+            composition.placeholders ?? getFrontendTemplate(composition.id).placeholders,
+        }));
+
+        setCompositions(merged);
         if (nextCompositions[0]) {
-          setSelectedCompositionId(nextCompositions[0].id);
+          const nextTemplate = merged[0];
+          setSelectedCompositionId(nextTemplate.id);
+          setTemplate(templateDefaults(nextTemplate));
+          setVariants(defaultVariantsForTemplate(nextTemplate.id));
         }
       })
       .catch((apiError: unknown) => {
@@ -87,8 +107,24 @@ export default function Dashboard() {
     return () => window.clearInterval(interval);
   }, [jobId]);
 
-  const previewVariant = variants[0] ?? defaultVariants[0];
+  const selectedTemplate =
+    compositions.find((composition) => composition.id === selectedCompositionId) ??
+    getFrontendTemplate(selectedCompositionId);
+  const placeholders = selectedTemplate.placeholders ?? [];
+  const previewVariant =
+    variants[0] ?? defaultVariantsForTemplate(selectedCompositionId)[0] ?? {};
   const estimatedRenderTime = useMemo(() => variants.length * 45, [variants.length]);
+
+  const selectTemplate = (templateId: string) => {
+    const nextTemplate =
+      compositions.find((composition) => composition.id === templateId) ??
+      getFrontendTemplate(templateId);
+    setSelectedCompositionId(templateId);
+    setTemplate(templateDefaults(nextTemplate));
+    setVariants(defaultVariantsForTemplate(templateId));
+    setJobId(null);
+    setRenderStatus(null);
+  };
 
   const submitBatch = async () => {
     setError(null);
@@ -132,8 +168,9 @@ export default function Dashboard() {
       <TemplateForm
         compositions={compositions}
         selectedCompositionId={selectedCompositionId}
-        onSelectComposition={setSelectedCompositionId}
+        onSelectComposition={selectTemplate}
         template={template}
+        selectedTemplate={selectedTemplate}
         onTemplateChange={setTemplate}
         previewVariant={previewVariant}
       />
@@ -146,7 +183,13 @@ export default function Dashboard() {
           </div>
           {isLoadingCompositions && <span className="muted">Loading templates...</span>}
         </div>
-        <VariantEditor variants={variants} onChange={setVariants} onError={setError} />
+        <VariantEditor
+          variants={variants}
+          columns={placeholders}
+          templateId={selectedCompositionId}
+          onChange={setVariants}
+          onError={setError}
+        />
       </section>
 
       <section className="step-card">
@@ -170,7 +213,7 @@ export default function Dashboard() {
         <div className="summary-grid">
           <div>
             <span>Template</span>
-            <strong>{selectedCompositionId === 'InsuranceAd' ? 'Insurance Ad' : selectedCompositionId}</strong>
+            <strong>{selectedTemplate.name ?? selectedCompositionId}</strong>
           </div>
           <div>
             <span>Variants</span>

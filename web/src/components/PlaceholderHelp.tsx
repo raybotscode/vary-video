@@ -1,10 +1,9 @@
-import {placeholders} from '../utils/placeholder';
-
 type PlaceholderHelpProps = {
+  placeholders: string[];
   onInsert: (placeholder: string) => void;
 };
 
-export default function PlaceholderHelp({onInsert}: PlaceholderHelpProps) {
+export default function PlaceholderHelp({placeholders, onInsert}: PlaceholderHelpProps) {
   return (
     <aside className="helper-panel">
       <h3>Placeholders</h3>

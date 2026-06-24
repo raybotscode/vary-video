@@ -1,63 +1,79 @@
-import {useRef, useState, type ChangeEvent, type RefObject} from 'react';
-import type {Composition, TemplatePayload} from '../api/client';
+import {useMemo, useRef, useState, type ChangeEvent} from 'react';
+import type {
+  RenderTemplatePayload,
+  TemplateCopyField,
+  TemplateDefinition,
+} from '../api/client';
+import {templateIconFor} from '../utils/templates';
 import {insertPlaceholder, resolvePlaceholders, type VariantData} from '../utils/placeholder';
 import PlaceholderHelp from './PlaceholderHelp';
 
 type TemplateFormProps = {
-  compositions: Composition[];
+  compositions: TemplateDefinition[];
   selectedCompositionId: string;
   onSelectComposition: (id: string) => void;
-  template: TemplatePayload;
-  onTemplateChange: (template: TemplatePayload) => void;
+  template: RenderTemplatePayload;
+  selectedTemplate: TemplateDefinition;
+  onTemplateChange: (template: RenderTemplatePayload) => void;
   previewVariant: VariantData;
 };
 
-type CopyField = 'headlineTemplate' | 'subheadlineTemplate' | 'ctaText';
-
-const fieldLabels: Record<CopyField, string> = {
-  headlineTemplate: 'Headline',
-  subheadlineTemplate: 'Subheadline',
-  ctaText: 'Call to Action',
+const valueFor = (
+  template: RenderTemplatePayload,
+  field: TemplateCopyField,
+): string => {
+  const value = template[field.id];
+  return typeof value === 'string' ? value : field.default;
 };
+
+const fallbackCopyFields: TemplateCopyField[] = [
+  {id: 'headlineTemplate', label: 'Headline', default: ''},
+  {id: 'ctaText', label: 'Call to Action', default: ''},
+];
 
 export default function TemplateForm({
   compositions,
   selectedCompositionId,
   onSelectComposition,
   template,
+  selectedTemplate,
   onTemplateChange,
   previewVariant,
 }: TemplateFormProps) {
-  const [activeField, setActiveField] = useState<CopyField>('headlineTemplate');
-  const refs: Record<CopyField, RefObject<HTMLInputElement | null>> = {
-    headlineTemplate: useRef<HTMLInputElement>(null),
-    subheadlineTemplate: useRef<HTMLInputElement>(null),
-    ctaText: useRef<HTMLInputElement>(null),
-  };
+  const copyFields = selectedTemplate.copyFields?.length
+    ? selectedTemplate.copyFields
+    : fallbackCopyFields;
+  const [activeField, setActiveField] = useState(copyFields[0]?.id ?? 'headlineTemplate');
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const visibleCompositions = compositions.length > 0 ? compositions : [selectedTemplate];
+  const previewFields = useMemo(() => copyFields.slice(0, 3), [copyFields]);
 
-  const updateTemplate = <Key extends keyof TemplatePayload>(
-    key: Key,
-    value: TemplatePayload[Key],
-  ) => onTemplateChange({...template, [key]: value});
+  const updateTemplate = (key: string, value: string) =>
+    onTemplateChange({...template, [key]: value});
 
   const insertIntoActiveField = (placeholder: string) => {
-    const input = refs[activeField].current;
-    const value = template[activeField];
+    const field = copyFields.find((candidate) => candidate.id === activeField) ?? copyFields[0];
+    if (!field) {
+      return;
+    }
+
+    const input = inputRefs.current[field.id];
+    const currentValue = valueFor(template, field);
     const nextValue = insertPlaceholder(
-      value,
+      currentValue,
       placeholder,
       input?.selectionStart ?? null,
       input?.selectionEnd ?? null,
     );
 
-    updateTemplate(activeField, nextValue);
-    requestAnimationFrame(() => refs[activeField].current?.focus());
+    updateTemplate(field.id, nextValue);
+    requestAnimationFrame(() => inputRefs.current[field.id]?.focus());
   };
 
   const onCopyChange =
-    (field: CopyField) =>
+    (field: TemplateCopyField) =>
     (event: ChangeEvent<HTMLInputElement>) =>
-      updateTemplate(field, event.target.value);
+      updateTemplate(field.id, event.target.value);
 
   return (
     <div className="stack">
@@ -70,10 +86,7 @@ export default function TemplateForm({
         </div>
 
         <div className="template-grid">
-          {(compositions.length > 0
-            ? compositions
-            : [{id: 'InsuranceAd', durationInFrames: 450, fps: 30, width: 1920, height: 1080}]
-          ).map((composition) => (
+          {visibleCompositions.map((composition) => (
             <button
               key={composition.id}
               type="button"
@@ -82,11 +95,11 @@ export default function TemplateForm({
               }
               onClick={() => onSelectComposition(composition.id)}
             >
-              <span className="template-thumbnail">
-                <span>16:9</span>
+              <span className={`template-thumbnail ${composition.category ?? 'ad'}`}>
+                <span>{templateIconFor(composition.id)}</span>
               </span>
-              <strong>{composition.id === 'InsuranceAd' ? 'Insurance Ad' : composition.id}</strong>
-              <p>Personalized copy, brand styling, and dynamic audience details.</p>
+              <strong>{composition.name ?? composition.id}</strong>
+              <p>{composition.description ?? 'Dynamic video template for personalized variants.'}</p>
             </button>
           ))}
         </div>
@@ -103,35 +116,59 @@ export default function TemplateForm({
 
           <div className="copy-layout">
             <div className="form-grid">
-              {(Object.keys(fieldLabels) as CopyField[]).map((field) => (
-                <label key={field}>
-                  <span>{fieldLabels[field]}</span>
+              {copyFields.map((field) => (
+                <label key={field.id}>
+                  <span>{field.label}</span>
                   <input
-                    ref={refs[field]}
+                    ref={(element) => {
+                      inputRefs.current[field.id] = element;
+                    }}
                     type="text"
-                    value={template[field]}
-                    onFocus={() => setActiveField(field)}
+                    value={valueFor(template, field)}
+                    onFocus={() => setActiveField(field.id)}
                     onChange={onCopyChange(field)}
                   />
                 </label>
               ))}
             </div>
 
-            <PlaceholderHelp onInsert={insertIntoActiveField} />
+            <PlaceholderHelp
+              placeholders={selectedTemplate.placeholders ?? []}
+              onInsert={insertIntoActiveField}
+            />
           </div>
 
           <div
             className="video-preview"
             style={{
-              '--preview-primary': template.brandColor,
-              '--preview-secondary': template.secondaryColor,
-              '--preview-background': template.backgroundColor,
+              '--preview-primary':
+                typeof template.brandColor === 'string' ? template.brandColor : '#1A365D',
+              '--preview-secondary':
+                typeof template.secondaryColor === 'string' ? template.secondaryColor : '#3182CE',
+              '--preview-background':
+                typeof template.backgroundColor === 'string' ? template.backgroundColor : '#1A365D',
             } as React.CSSProperties}
           >
-            <div className="preview-logo">{template.logoUrl ? 'Logo loaded' : 'Vary Cover'}</div>
-            <h3>{resolvePlaceholders(template.headlineTemplate, previewVariant)}</h3>
-            <p>{resolvePlaceholders(template.subheadlineTemplate, previewVariant)}</p>
-            <span>{resolvePlaceholders(template.ctaText, previewVariant)}</span>
+            <div className="preview-logo">
+              {typeof template.logoUrl === 'string' && template.logoUrl
+                ? 'Logo loaded'
+                : selectedTemplate.name ?? 'Vary.video'}
+            </div>
+            <h3>
+              {previewFields[0]
+                ? resolvePlaceholders(valueFor(template, previewFields[0]), previewVariant)
+                : selectedTemplate.name}
+            </h3>
+            <p>
+              {previewFields[1]
+                ? resolvePlaceholders(valueFor(template, previewFields[1]), previewVariant)
+                : selectedTemplate.description}
+            </p>
+            <span>
+              {previewFields[2]
+                ? resolvePlaceholders(valueFor(template, previewFields[2]), previewVariant)
+                : resolvePlaceholders(String(template.ctaText ?? 'Get Started'), previewVariant)}
+            </span>
           </div>
         </section>
       )}
