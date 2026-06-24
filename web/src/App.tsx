@@ -3,12 +3,17 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import RenderHistory from './pages/RenderHistory';
+import SceneComposer from './pages/SceneComposer';
 
-export type Route = 'home' | 'dashboard' | 'history';
+export type Route = 'home' | 'dashboard' | 'composer' | 'history';
 
 const routeFromPath = (pathname: string): Route => {
   if (pathname.startsWith('/dashboard')) {
     return 'dashboard';
+  }
+
+  if (pathname.startsWith('/composer')) {
+    return 'composer';
   }
 
   if (pathname.startsWith('/history')) {
@@ -21,6 +26,10 @@ const routeFromPath = (pathname: string): Route => {
 const pathFromRoute = (route: Route): string => {
   if (route === 'dashboard') {
     return '/dashboard';
+  }
+
+  if (route === 'composer') {
+    return '/composer';
   }
 
   if (route === 'history') {
@@ -41,6 +50,10 @@ export default function App() {
       return 'Render History';
     }
 
+    if (route === 'composer') {
+      return 'Scene Composer';
+    }
+
     return 'Home';
   }, [route]);
 
@@ -54,8 +67,14 @@ export default function App() {
 
   return (
     <Layout activeRoute={route} onNavigate={navigate}>
-      {route === 'home' && <Home onGetStarted={() => navigate('dashboard')} />}
+      {route === 'home' && (
+        <Home
+          onGetStarted={() => navigate('dashboard')}
+          onOpenComposer={() => navigate('composer')}
+        />
+      )}
       {route === 'dashboard' && <Dashboard />}
+      {route === 'composer' && <SceneComposer />}
       {route === 'history' && <RenderHistory />}
       <span className="sr-only">{title}</span>
     </Layout>

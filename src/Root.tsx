@@ -3,11 +3,15 @@ import {
   InsuranceAd,
   ProductLaunch,
   RealEstate,
+  SceneBlockPlayer,
   SocialClip,
   defaultInsuranceAdProps,
   defaultProductLaunchProps,
   defaultRealEstateProps,
+  defaultSceneBlockPlayerProps,
   defaultSocialClipProps,
+  getSequenceDuration,
+  sceneBlockPlayerSchema,
 } from './compositions';
 
 export const RemotionRoot: React.FC = () => {
@@ -48,6 +52,25 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         defaultProps={defaultSocialClipProps}
+      />
+      <Composition
+        id="SceneBlockPlayer"
+        component={SceneBlockPlayer}
+        durationInFrames={getSequenceDuration(defaultSceneBlockPlayerProps.blocks)}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={defaultSceneBlockPlayerProps}
+        calculateMetadata={({props}) => {
+          const parsed = sceneBlockPlayerSchema.parse(props);
+
+          return {
+            durationInFrames: getSequenceDuration(parsed.blocks),
+            fps: parsed.fps,
+            width: parsed.width,
+            height: parsed.height,
+          };
+        }}
       />
     </>
   );

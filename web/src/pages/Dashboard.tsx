@@ -1,18 +1,28 @@
 import {useEffect, useMemo, useState} from 'react';
 import {
   apiClient,
+  type BlockSequence,
   type OutputFormat,
   type RenderStatus,
   type RenderTemplatePayload,
   type TemplateDefinition,
 } from '../api/client';
+import BlockEditor from '../components/BlockEditor';
+import BlockPalette from '../components/BlockPalette';
 import BrandSettings from '../components/BrandSettings';
 import FormatSelector from '../components/FormatSelector';
 import RenderProgress from '../components/RenderProgress';
+import SceneTimeline from '../components/SceneTimeline';
 import TemplateForm from '../components/TemplateForm';
 import VariantEditor from '../components/VariantEditor';
 import {defaultVariantsForTemplate, type VariantData} from '../utils/placeholder';
-import {frontendTemplates, getFrontendTemplate} from '../utils/templates';
+import {
+  createComposerBlock,
+  getBlockDefinition,
+  getDefaultBlockSequence,
+  type ComposerBlock,
+} from '../utils/blocks';
+import {frontendTemplates, getFrontendTemplate, templateIconFor} from '../utils/templates';
 
 const templateDefaults = (template: TemplateDefinition): RenderTemplatePayload => {
   const defaults = template.defaults ?? template.defaultProps ?? {};
@@ -20,7 +30,37 @@ const templateDefaults = (template: TemplateDefinition): RenderTemplatePayload =
   return withoutData;
 };
 
-export default function Dashboard() {
+type DashboardMode = 'quick' | 'composer';
+
+type DashboardProps = {
+  initialMode?: DashboardMode;
+};
+
+const composerBlocksForTemplate = (templateId: string): ComposerBlock[] =>
+  getDefaultBlockSequence(templateId).map(createComposerBlock);
+
+const initialComposerBlocks = composerBlocksForTemplate(frontendTemplates[0].id);
+
+const brandSettingsFromTemplate = (template: RenderTemplatePayload) => ({
+  brandColor: typeof template.brandColor === 'string' ? template.brandColor : '#1A365D',
+  secondaryColor:
+    typeof template.secondaryColor === 'string' ? template.secondaryColor : '#3182CE',
+  accentColor: typeof template.accentColor === 'string' ? template.accentColor : '#FF6B5B',
+  logoUrl: typeof template.logoUrl === 'string' ? template.logoUrl : '',
+  backgroundType:
+    template.backgroundType === 'solid' ||
+    template.backgroundType === 'gradient' ||
+    template.backgroundType === 'image'
+      ? template.backgroundType
+      : 'gradient',
+  backgroundColor:
+    typeof template.backgroundColor === 'string' ? template.backgroundColor : '#F7FAFC',
+  backgroundImageUrl:
+    typeof template.backgroundImageUrl === 'string' ? template.backgroundImageUrl : '',
+});
+
+export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
+  const [mode, setMode] = useState<DashboardMode>(initialMode);
   const [compositions, setCompositions] = useState<TemplateDefinition[]>(frontendTemplates);
   const [selectedCompositionId, setSelectedCompositionId] = useState(frontendTemplates[0].id);
   const [template, setTemplate] = useState<RenderTemplatePayload>(
@@ -36,6 +76,13 @@ export default function Dashboard() {
   const [estimatedTimeSeconds, setEstimatedTimeSeconds] = useState<number | null>(null);
   const [renderStatus, setRenderStatus] = useState<RenderStatus | null>(null);
   const [formats, setFormats] = useState<OutputFormat[]>(['16:9']);
+  const [composerBlocks, setComposerBlocks] = useState<ComposerBlock[]>(
+    initialComposerBlocks,
+  );
+  const [selectedBlockInstanceId, setSelectedBlockInstanceId] = useState<string | null>(
+    initialComposerBlocks[0]?.instanceId ?? null,
+  );
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -58,6 +105,8 @@ export default function Dashboard() {
             composition.copyFields ?? getFrontendTemplate(composition.id).copyFields,
           placeholders:
             composition.placeholders ?? getFrontendTemplate(composition.id).placeholders,
+          blockSequence:
+            composition.blockSequence ?? getFrontendTemplate(composition.id).blockSequence,
         }));
 
         setCompositions(merged);
@@ -65,6 +114,9 @@ export default function Dashboard() {
         setSelectedCompositionId(nextTemplate.id);
         setTemplate(templateDefaults(nextTemplate));
         setVariants(defaultVariantsForTemplate(nextTemplate.id));
+        const nextBlocks = composerBlocksForTemplate(nextTemplate.id);
+        setComposerBlocks(nextBlocks);
+        setSelectedBlockInstanceId(nextBlocks[0]?.instanceId ?? null);
       })
       .catch((apiError: unknown) => {
         if (isMounted) {
@@ -115,6 +167,8 @@ export default function Dashboard() {
   const previewVariant =
     variants[0] ?? defaultVariantsForTemplate(selectedCompositionId)[0] ?? {};
   const estimatedRenderTime = useMemo(() => variants.length * 45, [variants.length]);
+  const selectedComposerBlock =
+    composerBlocks.find((block) => block.instanceId === selectedBlockInstanceId) ?? null;
 
   const selectTemplate = (templateId: string) => {
     const nextTemplate =
@@ -123,9 +177,59 @@ export default function Dashboard() {
     setSelectedCompositionId(templateId);
     setTemplate(templateDefaults(nextTemplate));
     setVariants(defaultVariantsForTemplate(templateId));
+    const nextBlocks = composerBlocksForTemplate(templateId);
+    setComposerBlocks(nextBlocks);
+    setSelectedBlockInstanceId(nextBlocks[0]?.instanceId ?? null);
     setJobId(null);
     setRenderStatus(null);
   };
+
+  const addComposerBlock = (blockId: string) => {
+    const nextBlock = createComposerBlock(blockId);
+    setComposerBlocks((currentBlocks) => [...currentBlocks, nextBlock]);
+    setSelectedBlockInstanceId(nextBlock.instanceId);
+    setIsPaletteOpen(false);
+  };
+
+  const removeComposerBlock = (instanceId: string) => {
+    setComposerBlocks((currentBlocks) => {
+      const nextBlocks = currentBlocks.filter((block) => block.instanceId !== instanceId);
+      if (selectedBlockInstanceId === instanceId) {
+        setSelectedBlockInstanceId(nextBlocks[0]?.instanceId ?? null);
+      }
+
+      return nextBlocks;
+    });
+  };
+
+  const moveComposerBlock = (instanceId: string, direction: 'up' | 'down') => {
+    setComposerBlocks((currentBlocks) => {
+      const index = currentBlocks.findIndex((block) => block.instanceId === instanceId);
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (index < 0 || targetIndex < 0 || targetIndex >= currentBlocks.length) {
+        return currentBlocks;
+      }
+
+      const nextBlocks = [...currentBlocks];
+      const [moved] = nextBlocks.splice(index, 1);
+      nextBlocks.splice(targetIndex, 0, moved);
+      return nextBlocks;
+    });
+  };
+
+  const updateComposerBlock = (nextBlock: ComposerBlock) => {
+    setComposerBlocks((currentBlocks) =>
+      currentBlocks.map((block) =>
+        block.instanceId === nextBlock.instanceId ? nextBlock : block,
+      ),
+    );
+  };
+
+  const composerBlockSequence: BlockSequence = composerBlocks.map((block) => ({
+    blockId: block.blockId,
+    content: block.content,
+    durationFrames: block.durationFrames,
+  }));
 
   const submitBatch = async () => {
     setError(null);
@@ -133,9 +237,17 @@ export default function Dashboard() {
     setRenderStatus(null);
 
     try {
+      const sceneComposerTemplate = {
+        blocks: composerBlockSequence,
+        brandSettings: brandSettingsFromTemplate(template),
+        fps: selectedTemplate.fps,
+        width: selectedTemplate.width,
+        height: selectedTemplate.height,
+      };
       const response = await apiClient.startBatchRender({
-        compositionId: selectedCompositionId,
-        template,
+        compositionId: mode === 'composer' ? 'SceneBlockPlayer' : selectedCompositionId,
+        template: mode === 'composer' ? sceneComposerTemplate : template,
+        blockSequence: mode === 'composer' ? composerBlockSequence : undefined,
         variants,
         formats,
       });
@@ -165,17 +277,120 @@ export default function Dashboard() {
         <p>Create copy, variant data, and brand settings before sending the batch to render.</p>
       </div>
 
+      <div className="mode-toggle" aria-label="Dashboard mode">
+        <button
+          type="button"
+          className={mode === 'quick' ? 'mode-button active' : 'mode-button'}
+          onClick={() => setMode('quick')}
+        >
+          Quick Template
+        </button>
+        <button
+          type="button"
+          className={mode === 'composer' ? 'mode-button active' : 'mode-button'}
+          onClick={() => setMode('composer')}
+        >
+          Scene Composer
+        </button>
+      </div>
+
       {error && <div className="inline-error">{error}</div>}
 
-      <TemplateForm
-        compositions={compositions}
-        selectedCompositionId={selectedCompositionId}
-        onSelectComposition={selectTemplate}
-        template={template}
-        selectedTemplate={selectedTemplate}
-        onTemplateChange={setTemplate}
-        previewVariant={previewVariant}
-      />
+      {mode === 'quick' ? (
+        <TemplateForm
+          compositions={compositions}
+          selectedCompositionId={selectedCompositionId}
+          onSelectComposition={selectTemplate}
+          template={template}
+          selectedTemplate={selectedTemplate}
+          onTemplateChange={setTemplate}
+          previewVariant={previewVariant}
+        />
+      ) : (
+        <>
+          <section className="step-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Step 1</p>
+                <h2>Pick Base Template</h2>
+              </div>
+            </div>
+
+            <div className="template-grid">
+              {compositions.map((composition) => (
+                <button
+                  key={composition.id}
+                  type="button"
+                  className={
+                    selectedCompositionId === composition.id
+                      ? 'template-card selected'
+                      : 'template-card'
+                  }
+                  onClick={() => selectTemplate(composition.id)}
+                >
+                  <span className={`template-thumbnail ${composition.category ?? 'ad'}`}>
+                    <span>{templateIconFor(composition.id)}</span>
+                  </span>
+                  <strong>{composition.name ?? composition.id}</strong>
+                  <p>
+                    {composition.description ??
+                      'Dynamic video template for personalized variants.'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="step-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Step 2</p>
+                <h2>Compose Scenes</h2>
+              </div>
+            </div>
+
+            <div className="composer-layout">
+              <div className="composer-main">
+                <SceneTimeline
+                  blocks={composerBlocks}
+                  selectedBlockId={selectedBlockInstanceId}
+                  onSelectBlock={setSelectedBlockInstanceId}
+                  onRemoveBlock={removeComposerBlock}
+                  onMoveBlock={moveComposerBlock}
+                  onOpenPalette={() => setIsPaletteOpen(true)}
+                />
+
+                {isPaletteOpen && (
+                  <div className="palette-panel">
+                    <div className="timeline-header">
+                      <div>
+                        <h3>Block Library</h3>
+                        <p>Choose a block to append to the sequence.</p>
+                      </div>
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => setIsPaletteOpen(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <BlockPalette
+                      templateId={selectedCompositionId}
+                      onAddBlock={addComposerBlock}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <BlockEditor
+                block={selectedComposerBlock}
+                onChange={updateComposerBlock}
+              />
+            </div>
+          </section>
+        </>
+      )}
 
       <section className="step-card">
         <div className="section-heading">
@@ -225,9 +440,19 @@ export default function Dashboard() {
 
         <div className="summary-grid">
           <div>
-            <span>Template</span>
-            <strong>{selectedTemplate.name ?? selectedCompositionId}</strong>
+            <span>{mode === 'composer' ? 'Composition' : 'Template'}</span>
+            <strong>
+              {mode === 'composer'
+                ? 'Scene Composer'
+                : selectedTemplate.name ?? selectedCompositionId}
+            </strong>
           </div>
+          {mode === 'composer' && (
+            <div>
+              <span>Blocks</span>
+              <strong>{composerBlocks.length}</strong>
+            </div>
+          )}
           <div>
             <span>Variants</span>
             <strong>{variants.length}</strong>
@@ -250,7 +475,7 @@ export default function Dashboard() {
           className="primary-button generate-button"
           type="button"
           onClick={submitBatch}
-          disabled={isSubmitting || variants.length === 0}
+          disabled={isSubmitting || variants.length === 0 || (mode === 'composer' && composerBlocks.length === 0)}
         >
           {isSubmitting ? 'Starting Render...' : 'Generate All Variants'}
         </button>

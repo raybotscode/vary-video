@@ -8,6 +8,7 @@ type NavbarProps = {
 const navItems: Array<{route: Route; label: string}> = [
   {route: 'home', label: 'Home'},
   {route: 'dashboard', label: 'Dashboard'},
+  {route: 'composer', label: 'Composer'},
   {route: 'history', label: 'History'},
 ];
 

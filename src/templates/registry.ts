@@ -26,6 +26,7 @@ export type TemplateDefinition = {
   placeholders: string[];
   copyFields: TemplateCopyField[];
   category: TemplateCategory;
+  blockSequence: string[];
 };
 
 const commonBackgroundFields = {
@@ -36,6 +37,30 @@ const commonBackgroundFields = {
   backgroundColor: z.string().default('#1A365D'),
   backgroundImageUrl: z.string().optional(),
 };
+
+export const sceneBlockPlayerTemplateSchema = z.object({
+  blocks: z.array(
+    z.object({
+      blockId: z.string().min(1),
+      content: z.record(z.string(), z.string()).default({}),
+      durationFrames: z.number().int().positive().optional(),
+      transitionFrames: z.number().int().min(0).optional(),
+    }),
+  ).min(1),
+  brandSettings: z.object({
+    brandColor: z.string().default('#1A365D'),
+    secondaryColor: z.string().default('#3182CE'),
+    accentColor: z.string().default('#FF6B5B'),
+    logoUrl: z.string().default(''),
+    backgroundType: z.enum(['solid', 'gradient', 'image']).default('gradient'),
+    backgroundColor: z.string().default('#F7FAFC'),
+    backgroundImageUrl: z.string().optional(),
+  }),
+  fps: z.number().int().positive().default(30),
+  width: z.number().int().positive().default(1920),
+  height: z.number().int().positive().default(1080),
+  data: z.record(z.string(), z.string()).default({}),
+});
 
 export const productLaunchSchema = z.object({
   headlineTemplate: z.string().default('Introducing {{product_name}}'),
@@ -143,6 +168,7 @@ export const templateRegistry: Record<string, TemplateDefinition> = {
       },
     ],
     category: 'ad',
+    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
   },
   ProductLaunch: {
     id: 'ProductLaunch',
@@ -169,6 +195,7 @@ export const templateRegistry: Record<string, TemplateDefinition> = {
       {id: 'ctaText', label: 'Call to Action', default: 'Get Started Today'},
     ],
     category: 'product',
+    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
   },
   RealEstate: {
     id: 'RealEstate',
@@ -201,6 +228,7 @@ export const templateRegistry: Record<string, TemplateDefinition> = {
       {id: 'ctaText', label: 'Call to Action', default: 'Schedule a Viewing'},
     ],
     category: 'property',
+    blockSequence: ['property-hero', 'property-details', 'agent-cta', 'brand-frame'],
   },
   SocialClip: {
     id: 'SocialClip',
@@ -217,6 +245,7 @@ export const templateRegistry: Record<string, TemplateDefinition> = {
       {id: 'ctaText', label: 'Call to Action', default: '{{cta}}'},
     ],
     category: 'social',
+    blockSequence: ['social-hook', 'social-body', 'social-outro', 'brand-frame'],
   },
 };
 
@@ -235,8 +264,16 @@ export const getAllTemplates = (): TemplateDefinition[] =>
 export const getTemplatePlaceholders = (id: string): string[] =>
   getTemplate(id).placeholders;
 
-export const getSchemaForTemplate = (id: string): ZodType<any> =>
-  getTemplate(id).schema;
+export const getBlockSequence = (templateId: string): string[] =>
+  getTemplate(templateId).blockSequence;
+
+export const getSchemaForTemplate = (id: string): ZodType<any> => {
+  if (id === 'SceneBlockPlayer') {
+    return sceneBlockPlayerTemplateSchema;
+  }
+
+  return getTemplate(id).schema;
+};
 
 export const makeDefaultProps = (
   id: string,
@@ -267,5 +304,6 @@ export const compositionSchemaFor = (id: string) => {
     placeholders: template.placeholders,
     copyFields: template.copyFields,
     category: template.category,
+    blockSequence: template.blockSequence,
   };
 };

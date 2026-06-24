@@ -20,6 +20,7 @@ export type Composition = {
   placeholders?: string[];
   copyFields?: TemplateCopyField[];
   category?: 'ad' | 'social' | 'property' | 'product';
+  blockSequence?: string[];
 };
 
 export type TemplateDefinition = Composition;
@@ -27,6 +28,12 @@ export type TemplateDefinition = Composition;
 export type OutputFormat = '16:9' | '9:16' | '1:1';
 
 export type RenderTemplatePayload = Record<string, unknown>;
+
+export type BlockSequence = {
+  blockId: string;
+  content: Record<string, string>;
+  durationFrames?: number;
+}[];
 
 export type BatchRenderResponse = {
   jobId: string;
@@ -83,11 +90,13 @@ export const apiClient = {
   async startBatchRender({
     compositionId,
     template,
+    blockSequence,
     variants,
     formats,
   }: {
     compositionId: string;
     template: RenderTemplatePayload;
+    blockSequence?: BlockSequence;
     variants: VariantData[];
     formats: OutputFormat[];
   }): Promise<BatchRenderResponse> {
@@ -97,6 +106,7 @@ export const apiClient = {
       body: JSON.stringify({
         compositionId,
         template,
+        blockSequence,
         variants,
         formats,
       }),

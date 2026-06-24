@@ -28,6 +28,7 @@ export const frontendTemplates: TemplateDefinition[] = [
       backgroundColor: '#1A365D',
       backgroundImageUrl: '',
     },
+    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
   },
   {
     id: 'ProductLaunch',
@@ -64,6 +65,7 @@ export const frontendTemplates: TemplateDefinition[] = [
       backgroundImageUrl: '',
       productImageUrl: '',
     },
+    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
   },
   {
     id: 'RealEstate',
@@ -100,6 +102,7 @@ export const frontendTemplates: TemplateDefinition[] = [
       backgroundImageUrl: '',
       propertyImageUrl: '',
     },
+    blockSequence: ['property-hero', 'property-details', 'agent-cta', 'brand-frame'],
   },
   {
     id: 'SocialClip',
@@ -129,6 +132,7 @@ export const frontendTemplates: TemplateDefinition[] = [
       backgroundColor: '#1A365D',
       backgroundImageUrl: '',
     },
+    blockSequence: ['social-hook', 'social-body', 'social-outro', 'brand-frame'],
   },
 ];
 

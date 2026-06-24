@@ -26,3 +26,10 @@ export {
   socialClipSchema,
 } from './SocialClip/schema';
 export type {SocialClipProps} from './SocialClip/schema';
+export {SceneBlockPlayer} from './SceneBlockPlayer/SceneBlockPlayer';
+export {
+  defaultSceneBlockPlayerProps,
+  getSequenceDuration,
+  sceneBlockPlayerSchema,
+} from './SceneBlockPlayer/schema';
+export type {SceneBlockPlayerProps} from './SceneBlockPlayer/schema';
