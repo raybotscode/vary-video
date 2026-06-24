@@ -21,6 +21,7 @@
     "@remotion/google-fonts": "^4.0.482",
     "@remotion/layout-utils": "^4.0.482",
     "@remotion/renderer": "^4.0.482",
+    "archiver": "^8.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "react": "^19.2.7",
@@ -29,6 +30,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/archiver": "^8.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.0.0",

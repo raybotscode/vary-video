@@ -1,6 +1,7 @@
 import {Router} from 'express';
 import path from 'node:path';
 import {z, type ZodType} from 'zod';
+const {ZipArchive} = await import('archiver');
 import {getSchemaForTemplate} from '../../../src/templates/registry';
 import {
   BatchRenderRequest,
@@ -131,6 +132,41 @@ renderRouter.get('/status/:jobId', (req, res) => {
   }
 
   res.json(job);
+});
+
+renderRouter.get('/download/zip/:jobId', (req, res) => {
+  const jobId = req.params.jobId;
+  const outputs = jobOutputs.get(jobId);
+  if (!outputs || outputs.length === 0) {
+    res.status(404).json({error: 'No rendered outputs found for this job'});
+    return;
+  }
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="vary-video-${jobId}.zip"`,
+  );
+
+  const archive = new ZipArchive({zlib: {level: 9}});
+
+  archive.on('error', (error) => {
+    if (!res.headersSent) {
+      res.status(500).json({error: `ZIP error: ${error.message}`});
+      return;
+    }
+
+    res.destroy(error);
+  });
+
+  archive.pipe(res);
+
+  for (const output of outputs) {
+    const filename = `variant-${output.index + 1}.mp4`;
+    archive.file(path.resolve(output.outputPath), {name: filename});
+  }
+
+  void archive.finalize();
 });
 
 renderRouter.get('/download/:jobId/:variantIndex', (req, res) => {

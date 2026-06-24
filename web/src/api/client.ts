@@ -51,6 +51,13 @@ export type RenderStatus = {
   error?: string;
 };
 
+const isDeployed = typeof window !== 'undefined' && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+const API_BASE = isDeployed
+  ? 'https://powers-biz-retrieve-brother.trycloudflare.com'
+  : '';
+
+const api = (path: string) => `${API_BASE}${path}`;
+
 const readJson = async <T>(response: Response): Promise<T> => {
   const body = (await response.json().catch(() => ({}))) as T & {error?: string};
 
@@ -64,7 +71,7 @@ const readJson = async <T>(response: Response): Promise<T> => {
 export const apiClient = {
   async getCompositions(): Promise<Composition[]> {
     try {
-      const getResponse = await fetch('/api/compositions');
+      const getResponse = await fetch(api('/api/compositions'));
 
       if (getResponse.ok) {
         const data = await readJson<{compositions: Composition[]}>(getResponse);
@@ -79,7 +86,7 @@ export const apiClient = {
         }
       }
 
-      const postResponse = await fetch('/api/compositions', {method: 'POST'});
+      const postResponse = await fetch(api('/api/compositions'), {method: 'POST'});
       const data = await readJson<{compositions: Composition[]}>(postResponse);
       return data.compositions ?? [];
     } catch {
@@ -100,7 +107,7 @@ export const apiClient = {
     variants: VariantData[];
     formats: OutputFormat[];
   }): Promise<BatchRenderResponse> {
-    const response = await fetch('/api/render/batch', {
+    const response = await fetch(api('/api/render/batch'), {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
@@ -116,7 +123,7 @@ export const apiClient = {
   },
 
   async getRenderStatus(jobId: string): Promise<RenderStatus> {
-    const response = await fetch(`/api/render/status/${jobId}`);
+    const response = await fetch(api(`/api/render/status/${jobId}`));
     return readJson<RenderStatus>(response);
   },
 };

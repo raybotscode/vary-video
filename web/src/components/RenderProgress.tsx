@@ -1,5 +1,13 @@
 import type {RenderStatus} from '../api/client';
 
+const isDeployed =
+  typeof window !== 'undefined' &&
+  !window.location.hostname.includes('localhost') &&
+  !window.location.hostname.includes('127.0.0.1');
+const API_BASE = isDeployed
+  ? 'https://powers-biz-retrieve-brother.trycloudflare.com'
+  : '';
+
 type RenderProgressProps = {
   status: RenderStatus | null;
   jobId: string | null;
@@ -71,7 +79,7 @@ export default function RenderProgress({
                 <span style={{width: `${isComplete ? 100 : variantProgress}%`}} />
               </div>
               {isComplete ? (
-                <a href={`/api/render/download/${jobId}/${index}`}>Download MP4</a>
+                <a href={`${API_BASE}/api/render/download/${jobId}/${index}`}>Download MP4</a>
               ) : (
                 <span>{Math.round(isComplete ? 100 : variantProgress)}%</span>
               )}
@@ -81,8 +89,13 @@ export default function RenderProgress({
       </div>
 
       {status?.status === 'completed' && (
-        <div className="completion-note">
-          <p>ZIP download is not implemented by the API yet. Download individual MP4 files above.</p>
+        <div className="completion-actions">
+          <a
+            href={`${API_BASE}/api/render/download/zip/${jobId}`}
+            className="primary-button zip-button"
+          >
+            Download All as ZIP
+          </a>
         </div>
       )}
 
