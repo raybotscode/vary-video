@@ -54,20 +54,28 @@ const readJson = async <T>(response: Response): Promise<T> => {
 
 export const apiClient = {
   async getCompositions(): Promise<Composition[]> {
-    const getResponse = await fetch('/api/compositions');
+    try {
+      const getResponse = await fetch('/api/compositions');
 
-    if (getResponse.ok) {
-      const data = await readJson<{compositions: Composition[]}>(getResponse);
-      return data.compositions;
+      if (getResponse.ok) {
+        const data = await readJson<{compositions: Composition[]}>(getResponse);
+        return data.compositions ?? [];
+      }
+
+      if (getResponse.status !== 404 && getResponse.status !== 405) {
+        try {
+          await readJson(getResponse);
+        } catch {
+          return [];
+        }
+      }
+
+      const postResponse = await fetch('/api/compositions', {method: 'POST'});
+      const data = await readJson<{compositions: Composition[]}>(postResponse);
+      return data.compositions ?? [];
+    } catch {
+      return [];
     }
-
-    if (getResponse.status !== 404 && getResponse.status !== 405) {
-      await readJson(getResponse);
-    }
-
-    const postResponse = await fetch('/api/compositions', {method: 'POST'});
-    const data = await readJson<{compositions: Composition[]}>(postResponse);
-    return data.compositions;
   },
 
   async startBatchRender({

@@ -40,7 +40,7 @@ export default function Dashboard() {
     apiClient
       .getCompositions()
       .then((nextCompositions) => {
-        if (!isMounted) {
+        if (!isMounted || !nextCompositions?.length) {
           return;
         }
 
@@ -58,12 +58,10 @@ export default function Dashboard() {
         }));
 
         setCompositions(merged);
-        if (nextCompositions[0]) {
-          const nextTemplate = merged[0];
-          setSelectedCompositionId(nextTemplate.id);
-          setTemplate(templateDefaults(nextTemplate));
-          setVariants(defaultVariantsForTemplate(nextTemplate.id));
-        }
+        const nextTemplate = merged[0];
+        setSelectedCompositionId(nextTemplate.id);
+        setTemplate(templateDefaults(nextTemplate));
+        setVariants(defaultVariantsForTemplate(nextTemplate.id));
       })
       .catch((apiError: unknown) => {
         if (isMounted) {
