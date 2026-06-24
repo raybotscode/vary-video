@@ -9,7 +9,8 @@
     "api": "tsx api/src/index.ts",
     "batch": "tsx scripts/batch-render.ts --composition InsuranceAd --output ./public/renders",
     "typecheck": "tsc --noEmit",
-    "render": "remotion render src/index.ts InsuranceAd public/renders/variant.mp4"
+    "render": "remotion render src/index.ts InsuranceAd public/renders/variant.mp4",
+    "dev": "concurrently -n api,web -c blue,green \"npm run api\" \"npm run dev --prefix web\""
   },
   "workspaces": [
     "api"
@@ -33,6 +34,7 @@
     "@types/node": "^26.0.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "concurrently": "^10.0.3",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }

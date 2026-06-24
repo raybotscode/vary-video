@@ -293,6 +293,9 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
           Scene Composer
         </button>
       </div>
+      {mode === 'composer' && (
+        <p className="mode-description">Build a custom scene-by-scene sequence by picking, reordering, and editing individual video blocks.</p>
+      )}
 
       {error && <div className="inline-error">{error}</div>}
 
