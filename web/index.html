@@ -12,6 +12,32 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Runtime API base override for tunnel demos:
+      //   https://vary-video.pages.dev/?api=https://<tunnel-host>/api
+      // Persists in localStorage for the session so refreshes keep working.
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var api = params.get('api');
+          if (api) {
+            window.__VARY_API_URL = api;
+            localStorage.setItem('vary_api_url', api);
+            // Strip the ?api= param so it doesn't linger in the address bar.
+            var url = new URL(window.location.href);
+            url.searchParams.delete('api');
+            window.history.replaceState({}, '', url.toString());
+          } else {
+            var saved = localStorage.getItem('vary_api_url');
+            if (saved) {
+              window.__VARY_API_URL = saved;
+            }
+          }
+        } catch (e) {
+          // Never block app boot on override parsing.
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
