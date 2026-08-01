@@ -11,10 +11,29 @@ const port = Number.parseInt(process.env.PORT ?? '3001', 10);
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    },
+  }),
+);
 app.use(express.json({limit: '2mb'}));
 app.use('/renders', express.static(path.join(projectRoot, 'public/renders')));
 app.use('/api/render', renderRouter);
+
+app.get('/api/health', (_req, res) => {
+  res.json({ok: true});
+});
 
 const compositions = getAllTemplates().map((template) =>
   compositionSchemaFor(template.id),

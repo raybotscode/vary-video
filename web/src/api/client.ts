@@ -98,7 +98,22 @@ const apiBase = (typeof window !== 'undefined' && (window as any).__VARY_API_URL
 const apiUrl = (path: string) => `${apiBase}${path}`;
 
 const readJson = async <T>(response: Response): Promise<T> => {
-  const body = (await response.json().catch(() => ({}))) as T & {error?: string};
+  const contentType = response.headers.get('content-type') ?? '';
+  const isJson = contentType.includes('application/json');
+
+  if (!isJson) {
+    const text = await response.text().catch(() => '');
+    const looksLikeHtml =
+      text.trimStart().startsWith('<!doctype html') ||
+      text.includes('<div id="root">');
+    throw new Error(
+      looksLikeHtml
+        ? 'Render API is not reachable. The deployed frontend is serving the app shell for /api; configure VITE_API_URL to a running Node render API.'
+        : `Expected JSON from render API but received ${contentType || 'unknown content type'}.`,
+    );
+  }
+
+  const body = (await response.json()) as T & {error?: string};
 
   if (!response.ok) {
     throw new Error(body.error || `Request failed with ${response.status}`);
@@ -149,6 +164,12 @@ export const apiClient = {
         blockSequence,
       }),
     });
+
+    if (response.status === 404 || response.status === 405) {
+      throw new Error(
+        'Render API is not deployed at this URL. Configure VITE_API_URL to a running Node render API and redeploy the frontend.',
+      );
+    }
 
     return readJson<BatchRenderResponse>(response);
   },

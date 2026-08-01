@@ -441,6 +441,8 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
           </div>
         </div>
 
+        {error && <div className="inline-error generate-error">{error}</div>}
+
         <div className="summary-grid">
           <div>
             <span>{mode === 'composer' ? 'Composition' : 'Template'}</span>
