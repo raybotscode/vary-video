@@ -48,6 +48,16 @@ export default function RenderProgress({
     return `Variant ${vi + 1} — ${fmt}`;
   };
 
+  // The API returns relative download paths (e.g. /api/render/download/<job>/<i>).
+  // Resolve them against the configured API base (tunnel URL in deployed demos),
+  // otherwise the browser hits the static site and downloads an HTML fallback.
+  const resolveDownloadUrl = (url: string): string => {
+    if (/^https?:\/\//.test(url)) {
+      return url;
+    }
+    return `${apiBase}${url}`;
+  };
+
   return (
     <section className="render-progress" aria-live="polite">
       <div className="section-heading compact-heading">
@@ -78,7 +88,13 @@ export default function RenderProgress({
               <div key={i} className="variant-progress-row">
                 <span className="download-label">{labelFor(i)}</span>
                 <span className="download-badge completed">Ready</span>
-                <a href={url} download className="download-link">Download MP4</a>
+                <a
+                  href={resolveDownloadUrl(url)}
+                  download
+                  className="download-link"
+                >
+                  Download MP4
+                </a>
               </div>
             ))
           : Array.from({length: variantCount}).map((_, vi) => (
