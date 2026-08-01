@@ -220,6 +220,10 @@ export const getDefaultBlockSequence = (templateId: string): string[] => {
     return ['social-hook', 'social-body', 'social-outro', 'brand-frame'];
   }
 
+  if (templateId === 'WebinarPromo') {
+    return ['text-overlay', 'data-callout', 'brand-frame'];
+  }
+
   return ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'];
 };
 

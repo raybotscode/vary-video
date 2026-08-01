@@ -134,6 +134,44 @@ export const frontendTemplates: TemplateDefinition[] = [
     },
     blockSequence: ['social-hook', 'social-body', 'social-outro', 'brand-frame'],
   },
+  {
+    id: 'WebinarPromo',
+    name: 'Webinar Promo',
+    description: 'Promote live webinars, product demos, and online workshops.',
+    useCase: 'B2B, Webinars, Events, Thought Leadership',
+    durationInFrames: 450,
+    fps: 30,
+    width: 1920,
+    height: 1080,
+    category: 'social',
+    placeholders: ['eventTitle', 'hostName', 'eventDate', 'eventTime', 'audience', 'keyTakeaway', 'ctaText', 'brandName'],
+    copyFields: [
+      {id: 'eventTitleTemplate', label: 'Event Title', default: 'Build a repeatable content engine'},
+      {id: 'hostNameTemplate', label: 'Host Name', default: 'Hosted by {{hostName}}'},
+      {id: 'eventDateTemplate', label: 'Event Date', default: '{{eventDate}}'},
+      {id: 'eventTimeTemplate', label: 'Event Time', default: '{{eventTime}}'},
+      {id: 'audienceTemplate', label: 'Audience', default: 'For {{audience}}'},
+      {id: 'keyTakeawayTemplate', label: 'Key Takeaway', default: '{{keyTakeaway}}'},
+      {id: 'ctaText', label: 'Call to Action', default: 'Reserve your seat'},
+      {id: 'brandName', label: 'Brand Name', default: '{{brandName}}'},
+    ],
+    defaults: {
+      eventTitleTemplate: 'Build a repeatable content engine',
+      hostNameTemplate: 'Hosted by {{hostName}}',
+      eventDateTemplate: '{{eventDate}}',
+      eventTimeTemplate: '{{eventTime}}',
+      audienceTemplate: 'For {{audience}}',
+      keyTakeawayTemplate: '{{keyTakeaway}}',
+      ctaText: 'Reserve your seat',
+      brandName: '{{brandName}}',
+      primaryColor: '#2563eb',
+      accentColor: '#14b8a6',
+      backgroundColor: '#0f172a',
+      textColor: '#f8fafc',
+      seed: 'webinar-promo',
+    },
+    blockSequence: ['text-overlay', 'data-callout', 'brand-frame'],
+  },
 ];
 
 export const getFrontendTemplate = (templateId: string): TemplateDefinition =>
@@ -149,6 +187,9 @@ export const templateIconFor = (templateId: string): string => {
   }
   if (templateId === 'SocialClip') {
     return 'SC';
+  }
+  if (templateId === 'WebinarPromo') {
+    return 'WB';
   }
   return 'IA';
 };

@@ -8,3 +8,11 @@ public/renders/*.webm
 public/renders/*.png
 .DS_Store
 *.log
+
+# Review / workflow artifacts (kept locally, not committed)
+SUPERVISOR.md
+IMPLEMENTATION_REPORT.md
+CODEX_REVIEW.md
+CODEX_SPEC_*.md
+BUILD_PROMPT*.md
+.wrangler/

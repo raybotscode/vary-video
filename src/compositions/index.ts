@@ -33,3 +33,10 @@ export {
   sceneBlockPlayerSchema,
 } from './SceneBlockPlayer/schema';
 export type {SceneBlockPlayerProps} from './SceneBlockPlayer/schema';
+export {WebinarPromo} from './WebinarPromo/WebinarPromo';
+export {
+  defaultWebinarPromoProps,
+  webinarPromoCompositionSchema,
+  webinarPromoSchema,
+} from './WebinarPromo/schema';
+export type {WebinarPromoProps} from './WebinarPromo/schema';

@@ -5,11 +5,13 @@ import {
   RealEstate,
   SceneBlockPlayer,
   SocialClip,
+  WebinarPromo,
   defaultInsuranceAdProps,
   defaultProductLaunchProps,
   defaultRealEstateProps,
   defaultSceneBlockPlayerProps,
   defaultSocialClipProps,
+  defaultWebinarPromoProps,
   getSequenceDuration,
   sceneBlockPlayerSchema,
 } from './compositions';
@@ -52,6 +54,15 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         defaultProps={defaultSocialClipProps}
+      />
+      <Composition
+        id="WebinarPromo"
+        component={WebinarPromo}
+        durationInFrames={450}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={defaultWebinarPromoProps}
       />
       <Composition
         id="SceneBlockPlayer"

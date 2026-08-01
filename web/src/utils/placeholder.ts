@@ -79,6 +79,31 @@ export const defaultVariantsForTemplate = (templateId: string): VariantData[] =>
     ];
   }
 
+  if (templateId === 'WebinarPromo') {
+    return [
+      {
+        eventTitle: 'Build a repeatable content engine',
+        hostName: 'Maya Chen',
+        eventDate: 'August 22',
+        eventTime: '11:00 AM PT',
+        audience: 'growth teams',
+        keyTakeaway: 'Turn one live session into a month of campaigns',
+        ctaText: 'Reserve your seat',
+        brandName: 'Northstar Labs',
+      },
+      {
+        eventTitle: 'From demo to deal: closing the loop',
+        hostName: 'Devon Park',
+        eventDate: 'September 5',
+        eventTime: '2:00 PM GMT',
+        audience: 'sales teams',
+        keyTakeaway: 'Walk away with a repeatable demo-to-close playbook.',
+        ctaText: 'Save my seat',
+        brandName: 'Harbor Analytics',
+      },
+    ];
+  }
+
   return [
     {
       age: '52',

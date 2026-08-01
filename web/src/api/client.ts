@@ -7,6 +7,14 @@ export type Composition = {
   width: number;
   height: number;
   defaults?: Record<string, unknown>;
+  defaultProps?: Record<string, unknown>;
+  name?: string;
+  description?: string;
+  useCase?: string;
+  category?: string;
+  placeholders?: string[];
+  copyFields?: TemplateCopyField[];
+  blockSequence?: string[];
 };
 
 export type TemplatePayload = {
@@ -20,6 +28,40 @@ export type TemplatePayload = {
   backgroundColor: string;
   backgroundImageUrl?: string;
 };
+
+/** Template copy values as edited in the dashboard. Any template's fields. */
+export type RenderTemplatePayload = Record<string, unknown>;
+
+export type TemplateCopyField = {
+  id: string;
+  label: string;
+  default: string;
+};
+
+export type TemplateDefinition = {
+  id: string;
+  name: string;
+  description: string;
+  useCase: string;
+  durationInFrames: number;
+  fps: number;
+  width: number;
+  height: number;
+  category?: string;
+  placeholders?: string[];
+  copyFields?: TemplateCopyField[];
+  defaults?: Record<string, unknown>;
+  defaultProps?: Record<string, unknown>;
+  blockSequence?: string[];
+};
+
+export type OutputFormat = VideoFormat;
+
+export type BlockSequence = Array<{
+  blockId: string;
+  content: Record<string, string>;
+  durationFrames?: number;
+}>;
 
 export type VideoFormat = '16:9' | '1:1' | '9:16' | '4:5';
 
@@ -88,11 +130,13 @@ export const apiClient = {
     template,
     variants,
     formats = ['16:9'],
+    blockSequence,
   }: {
     compositionId: string;
-    template: TemplatePayload;
+    template: RenderTemplatePayload;
     variants: VariantData[];
     formats?: VideoFormat[];
+    blockSequence?: BlockSequence;
   }): Promise<BatchRenderResponse> {
     const response = await fetch(apiUrl('/render/batch'), {
       method: 'POST',
@@ -102,6 +146,7 @@ export const apiClient = {
         template,
         variants,
         formats,
+        blockSequence,
       }),
     });
 

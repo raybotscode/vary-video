@@ -133,6 +133,37 @@ export type SocialClipProps = z.infer<typeof socialClipSchema>;
 
 export const defaultSocialClipProps: SocialClipProps = socialClipSchema.parse({});
 
+export const webinarPromoSchema = z.object({
+  eventTitleTemplate: z.string().default('Build a repeatable content engine'),
+  hostNameTemplate: z.string().default('Hosted by {{hostName}}'),
+  eventDateTemplate: z.string().default('{{eventDate}}'),
+  eventTimeTemplate: z.string().default('{{eventTime}}'),
+  audienceTemplate: z.string().default('For {{audience}}'),
+  keyTakeawayTemplate: z.string().default('{{keyTakeaway}}'),
+  ctaText: z.string().default('Reserve your seat'),
+  brandName: z.string().default('{{brandName}}'),
+  data: z.record(z.string(), z.string()).default({
+    eventTitle: 'Build a repeatable content engine',
+    hostName: 'Maya Chen',
+    eventDate: 'August 22',
+    eventTime: '11:00 AM PT',
+    audience: 'growth teams',
+    keyTakeaway: 'Turn one live session into a month of campaigns',
+    ctaText: 'Reserve your seat',
+    brandName: 'Northstar Labs',
+  }),
+  primaryColor: z.string().default('#2563eb'),
+  accentColor: z.string().default('#14b8a6'),
+  backgroundColor: z.string().default('#0f172a'),
+  textColor: z.string().default('#f8fafc'),
+  seed: z.string().default('webinar-promo'),
+});
+
+export type WebinarPromoProps = z.infer<typeof webinarPromoSchema>;
+
+export const defaultWebinarPromoProps: WebinarPromoProps =
+  webinarPromoSchema.parse({});
+
 const dimensions = {
   durationInFrames: 450,
   fps: 30,
@@ -246,6 +277,69 @@ export const templateRegistry: Record<string, TemplateDefinition> = {
     ],
     category: 'social',
     blockSequence: ['social-hook', 'social-body', 'social-outro', 'brand-frame'],
+  },
+  WebinarPromo: {
+    id: 'WebinarPromo',
+    name: 'Webinar Promo',
+    description: 'Promote live webinars, product demos, and online workshops.',
+    useCase: 'B2B, Webinars, Events, Thought Leadership',
+    ...dimensions,
+    schema: webinarPromoSchema,
+    defaultProps: defaultWebinarPromoProps,
+    placeholders: [
+      'eventTitle',
+      'hostName',
+      'eventDate',
+      'eventTime',
+      'audience',
+      'keyTakeaway',
+      'ctaText',
+      'brandName',
+    ],
+    copyFields: [
+      {
+        id: 'eventTitleTemplate',
+        label: 'Event Title',
+        default: 'Build a repeatable content engine',
+      },
+      {
+        id: 'hostNameTemplate',
+        label: 'Host Name',
+        default: 'Hosted by {{hostName}}',
+      },
+      {
+        id: 'eventDateTemplate',
+        label: 'Event Date',
+        default: '{{eventDate}}',
+      },
+      {
+        id: 'eventTimeTemplate',
+        label: 'Event Time',
+        default: '{{eventTime}}',
+      },
+      {
+        id: 'audienceTemplate',
+        label: 'Audience',
+        default: 'For {{audience}}',
+      },
+      {
+        id: 'keyTakeawayTemplate',
+        label: 'Key Takeaway',
+        default: '{{keyTakeaway}}',
+      },
+      {
+        id: 'ctaText',
+        label: 'Call to Action',
+        default: 'Reserve your seat',
+      },
+      {
+        id: 'brandName',
+        label: 'Brand Name',
+        default: '{{brandName}}',
+      },
+    ],
+    category: 'social',
+    blockSequence: ['text-overlay', 'data-callout', 'brand-frame'],
   },
 };
 

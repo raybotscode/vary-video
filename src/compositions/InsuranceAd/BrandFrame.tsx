@@ -6,6 +6,7 @@ type BrandFrameProps = {
   secondaryColor: string;
   logoUrl: string;
   ctaText: string;
+  tagline?: string;
 };
 
 export const BrandFrame: React.FC<BrandFrameProps> = ({
@@ -13,6 +14,7 @@ export const BrandFrame: React.FC<BrandFrameProps> = ({
   secondaryColor,
   logoUrl,
   ctaText,
+  tagline = 'Start your quote in minutes',
 }) => {
   const frame = useCurrentFrame();
   const {fps, width, height} = useVideoConfig();
@@ -93,7 +95,7 @@ export const BrandFrame: React.FC<BrandFrameProps> = ({
           letterSpacing: 0,
         }}
       >
-        Start your quote in minutes
+        {tagline}
       </div>
     </div>
   );

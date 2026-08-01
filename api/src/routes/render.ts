@@ -3,6 +3,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import {z} from 'zod';
 import {ZipArchive} from 'archiver';
+import {compositionIdSchema} from '../validation/composition';
+import {validateTemplateForComposition} from '../validation/composition';
 import {
   BatchRenderRequest,
   publicRenderDir,
@@ -32,20 +34,10 @@ const FORMAT_PRESETS: Record<string, {width: number; height: number; suffix: str
   '4:5':   {width: 1080, height: 1350, suffix: '-instagram', label: 'Instagram'},
 };
 
-const renderTemplateSchema = z.object({
-  headlineTemplate: z.string(),
-  subheadlineTemplate: z.string(),
-  ctaText: z.string(),
-  brandColor: z.string(),
-  secondaryColor: z.string(),
-  logoUrl: z.string().default(''),
-  backgroundType: z.enum(['solid', 'gradient', 'image']),
-  backgroundColor: z.string(),
-  backgroundImageUrl: z.string().optional(),
-});
+const renderTemplateSchema = z.record(z.string(), z.unknown());
 
 const batchRequestSchema = z.object({
-  compositionId: z.literal('InsuranceAd'),
+  compositionId: compositionIdSchema,
   template: renderTemplateSchema,
   variants: z.array(z.record(z.string(), z.string())).min(1),
   formats: z.array(z.enum(['16:9', '1:1', '9:16', '4:5'])).optional().default(['16:9']),
@@ -66,6 +58,19 @@ renderRouter.post('/batch', (req, res) => {
     res.status(400).json({
       error: 'Invalid render batch request',
       details: z.flattenError(parsed.error),
+    });
+    return;
+  }
+
+  const templateCheck = validateTemplateForComposition(
+    parsed.data.compositionId,
+    parsed.data.template,
+    parsed.data.variants[0] ?? {},
+  );
+  if (!templateCheck.success) {
+    res.status(400).json({
+      error: 'Template props are invalid for the selected composition',
+      details: z.flattenError(templateCheck.error),
     });
     return;
   }
