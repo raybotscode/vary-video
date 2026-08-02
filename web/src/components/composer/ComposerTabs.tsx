@@ -29,6 +29,9 @@ export default function ComposerTabs({
     content: null,
   });
 
+  const isTabEnabled = (id: ComposerTabId): boolean =>
+    id === 'scenes' || hasSelectedBlock;
+
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const index = TABS.findIndex((tab) => tab.id === activeTab);
     let nextIndex = index;
@@ -46,9 +49,27 @@ export default function ComposerTabs({
     }
 
     event.preventDefault();
-    const next = TABS[nextIndex];
-    onChange(next.id);
-    tabRefs.current[next.id]?.focus();
+
+    // Skip disabled tabs (e.g. Content with no selected block) when navigating
+    // with the keyboard, so a disabled tab can never become active.
+    let candidate = TABS[nextIndex];
+    if (!isTabEnabled(candidate.id)) {
+      const step = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      const start = nextIndex;
+      let cursor = (nextIndex + step + TABS.length) % TABS.length;
+      while (cursor !== start) {
+        candidate = TABS[cursor];
+        if (isTabEnabled(candidate.id)) {
+          break;
+        }
+        cursor = (cursor + step + TABS.length) % TABS.length;
+      }
+    }
+
+    if (isTabEnabled(candidate.id) && candidate.id !== activeTab) {
+      onChange(candidate.id);
+      tabRefs.current[candidate.id]?.focus();
+    }
   };
 
   return (
@@ -70,8 +91,8 @@ export default function ComposerTabs({
             className={selected ? 'composer-tab active' : 'composer-tab'}
             onClick={() => onChange(tab.id)}
             onKeyDown={onKeyDown}
-            disabled={tab.id === 'content' && !hasSelectedBlock}
-            title={tab.id === 'content' && !hasSelectedBlock ? 'Select a scene first' : undefined}
+            disabled={!isTabEnabled(tab.id)}
+            title={!isTabEnabled(tab.id) ? 'Select a scene first' : undefined}
           >
             {tab.label}
           </button>
