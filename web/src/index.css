@@ -429,6 +429,13 @@ img{max-width:100%;height:auto}
   .variant-table td::before{content:attr(data-label);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted)}
   .variant-table td input,.variant-table td select{min-height:44px;font-size:1rem}
   .variant-table td .ghost-button{min-height:44px}
+
+  /* Render results → one card per output on mobile */
+  .variant-progress-row{flex-direction:column;align-items:stretch;gap:8px;border:2px solid var(--border);border-radius:var(--radius);padding:var(--space-4);background:var(--surface)}
+  .variant-progress-row .download-label{min-width:0;font-weight:600}
+  .variant-progress-row .download-link{margin-left:0}
+  .variant-progress-row .mini-progress{flex:1}
+  .variant-progress-row span:first-child{min-width:0}
 }
 @media(max-width:480px){
   .page-section{padding:24px 16px}

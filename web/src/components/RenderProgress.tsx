@@ -1,11 +1,5 @@
 import type {RenderStatus} from '../api/client';
-import {apiClient} from '../api/client';
-
-// Same logic as api/client.ts to resolve the API base URL
-const apiBase =
-  (typeof window !== 'undefined' && (window as any).__VARY_API_URL) ||
-  import.meta.env.VITE_API_URL ||
-  '/api';
+import {apiClient, resolveApiDownloadUrl} from '../api/client';
 
 type RenderProgressProps = {
   status: RenderStatus | null;
@@ -49,14 +43,9 @@ export default function RenderProgress({
   };
 
   // The API returns relative download paths (e.g. /api/render/download/<job>/<i>).
-  // Resolve them against the configured API base (tunnel URL in deployed demos),
-  // otherwise the browser hits the static site and downloads an HTML fallback.
-  const resolveDownloadUrl = (url: string): string => {
-    if (/^https?:\/\//.test(url)) {
-      return url;
-    }
-    return `${apiBase}${url}`;
-  };
+  // Resolve against the configured API base so tunnel overrides apply to
+  // downloads too (otherwise the browser hits the static site HTML fallback).
+  const resolveDownloadUrl = resolveApiDownloadUrl;
 
   return (
     <section className="render-progress" aria-live="polite">
