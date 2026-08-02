@@ -7,15 +7,22 @@ import {
 type BlockPaletteProps = {
   templateId: string;
   onAddBlock: (blockId: string) => void;
+  query?: string;
 };
 
 const isCompatible = (block: SceneBlockDefinition, templateId: string): boolean =>
   block.compatibleSchemas.includes('any') ||
   block.compatibleSchemas.includes(templateId);
 
-export default function BlockPalette({templateId, onAddBlock}: BlockPaletteProps) {
-  const visibleBlocks = blockDefinitions.filter((block) =>
-    isCompatible(block, templateId),
+export default function BlockPalette({templateId, onAddBlock, query = ''}: BlockPaletteProps) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleBlocks = blockDefinitions.filter(
+    (block) =>
+      isCompatible(block, templateId) &&
+      (normalizedQuery === '' ||
+        block.name.toLowerCase().includes(normalizedQuery) ||
+        block.description.toLowerCase().includes(normalizedQuery) ||
+        block.category.includes(normalizedQuery)),
   );
 
   return (
