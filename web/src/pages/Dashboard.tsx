@@ -15,6 +15,10 @@ import RenderProgress from '../components/RenderProgress';
 import SceneTimeline from '../components/SceneTimeline';
 import TemplateForm from '../components/TemplateForm';
 import VariantEditor from '../components/VariantEditor';
+import MobileActionBar from '../components/dashboard/MobileActionBar';
+import RenderSummary from '../components/dashboard/RenderSummary';
+import TemplatePicker from '../components/dashboard/TemplatePicker';
+import WorkflowSection from '../components/dashboard/WorkflowSection';
 import {defaultVariantsForTemplate, type VariantData} from '../utils/placeholder';
 import {
   createComposerBlock,
@@ -269,6 +273,10 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     }
   };
 
+  const isRenderDisabled =
+    isSubmitting || variants.length === 0 || (mode === 'composer' && composerBlocks.length === 0);
+  const estimatedMinutes = Math.ceil((estimatedRenderTime * formats.length) / 60);
+
   return (
     <section className="page-section dashboard-page">
       <div className="page-title">
@@ -311,47 +319,15 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
         />
       ) : (
         <>
-          <section className="step-card">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Step 1</p>
-                <h2>Pick Base Template</h2>
-              </div>
-            </div>
+          <WorkflowSection step="Step 1" title="Pick Base Template">
+            <TemplatePicker
+              compositions={compositions}
+              selectedCompositionId={selectedCompositionId}
+              onSelect={selectTemplate}
+            />
+          </WorkflowSection>
 
-            <div className="template-grid">
-              {compositions.map((composition) => (
-                <button
-                  key={composition.id}
-                  type="button"
-                  className={
-                    selectedCompositionId === composition.id
-                      ? 'template-card selected'
-                      : 'template-card'
-                  }
-                  onClick={() => selectTemplate(composition.id)}
-                >
-                  <span className={`template-thumbnail ${composition.category ?? 'ad'}`}>
-                    <span>{templateIconFor(composition.id)}</span>
-                  </span>
-                  <strong>{composition.name ?? composition.id}</strong>
-                  <p>
-                    {composition.description ??
-                      'Dynamic video template for personalized variants.'}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="step-card">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">Step 2</p>
-                <h2>Compose Scenes</h2>
-              </div>
-            </div>
-
+          <WorkflowSection step="Step 2" title="Compose Scenes">
             <div className="composer-layout">
               <div className="composer-main">
                 <SceneTimeline
@@ -391,18 +367,15 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
                 onChange={updateComposerBlock}
               />
             </div>
-          </section>
+          </WorkflowSection>
         </>
       )}
 
-      <section className="step-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Step 3</p>
-            <h2>Add Variant Data</h2>
-          </div>
-          {isLoadingCompositions && <span className="muted">Loading templates...</span>}
-        </div>
+      <WorkflowSection
+        step="Step 3"
+        title="Add Variant Data"
+        rightSlot={isLoadingCompositions ? <span className="muted">Loading templates...</span> : undefined}
+      >
         <VariantEditor
           variants={variants}
           columns={placeholders}
@@ -410,87 +383,46 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
           onChange={setVariants}
           onError={setError}
         />
-      </section>
+      </WorkflowSection>
 
-      <section className="step-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Step 4</p>
-            <h2>Brand Settings</h2>
-          </div>
-        </div>
+      <WorkflowSection step="Step 4" title="Brand Settings">
         <BrandSettings template={template} onChange={setTemplate} />
-      </section>
+      </WorkflowSection>
 
-      <section className="step-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Step 5</p>
-            <h2>Output Formats</h2>
-          </div>
-        </div>
-        <p className="format-hint">Choose which aspect ratios to render. Each format multiplies the render time.</p>
+      <WorkflowSection step="Step 5" title="Output Formats" hint="Choose which aspect ratios to render. Each format multiplies the render time.">
         <FormatSelector formats={formats} onChange={setFormats} />
-      </section>
+      </WorkflowSection>
 
-      <section className="step-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Step 6</p>
-            <h2>Generate</h2>
-          </div>
-        </div>
-
+      <WorkflowSection step="Step 6" title="Generate">
         {error && <div className="inline-error generate-error">{error}</div>}
-
-        <div className="summary-grid">
-          <div>
-            <span>{mode === 'composer' ? 'Composition' : 'Template'}</span>
-            <strong>
-              {mode === 'composer'
-                ? 'Scene Composer'
-                : selectedTemplate.name ?? selectedCompositionId}
-            </strong>
-          </div>
-          {mode === 'composer' && (
-            <div>
-              <span>Blocks</span>
-              <strong>{composerBlocks.length}</strong>
-            </div>
-          )}
-          <div>
-            <span>Variants</span>
-            <strong>{variants.length}</strong>
-          </div>
-          <div>
-            <span>Formats</span>
-            <strong>{formats.join(', ')}</strong>
-          </div>
-          <div>
-            <span>Total outputs</span>
-            <strong>{variants.length * formats.length}</strong>
-          </div>
-          <div>
-            <span>Estimated render time</span>
-            <strong>{Math.ceil((estimatedRenderTime * formats.length) / 60)} min</strong>
-          </div>
+        <div className="render-summary-desktop">
+          <RenderSummary
+            templateLabel={selectedTemplate.name ?? selectedCompositionId}
+            isComposer={mode === 'composer'}
+            blockCount={composerBlocks.length}
+            variantCount={variants.length}
+            formats={formats}
+            estimatedMinutes={estimatedMinutes}
+            isSubmitting={isSubmitting}
+            disabled={isRenderDisabled}
+            onSubmit={submitBatch}
+          />
         </div>
-
-        <button
-          className="primary-button generate-button"
-          type="button"
-          onClick={submitBatch}
-          disabled={isSubmitting || variants.length === 0 || (mode === 'composer' && composerBlocks.length === 0)}
-        >
-          {isSubmitting ? 'Starting Render...' : 'Generate All Variants'}
-        </button>
-      </section>
+      </WorkflowSection>
 
       <RenderProgress
         status={renderStatus}
         jobId={jobId}
         variantCount={variants.length}
         estimatedTimeSeconds={estimatedTimeSeconds}
+      />
+
+      <MobileActionBar
+        variantCount={variants.length}
+        formatCount={formats.length}
+        isSubmitting={isSubmitting}
+        disabled={isRenderDisabled}
+        onSubmit={submitBatch}
       />
     </section>
   );
