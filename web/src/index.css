@@ -1,28 +1,92 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
 
 :root {
+  /* Brand */
   --primary: #1A365D;
   --primary-light: #2D4A7A;
   --secondary: #3182CE;
   --secondary-light: #6AABF0;
   --accent: #FF6B5B;
   --accent-dark: #E55A4B;
+
+  /* Surfaces */
   --bg: #F7FAFC;
   --surface: #FFFFFF;
+  --surface-muted: #F1F5F9;
   --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+
+  /* Text */
   --text: #1A202C;
   --text-muted: #718096;
   --text-inverse: #FFFFFF;
+
+  /* Status */
+  --success: #38A169;
+  --success-bg: #F0FFF4;
+  --warning: #D69E2E;
+  --warning-bg: #FFFFF0;
+  --danger: #E53E3E;
+  --danger-bg: #FFF5F5;
+
+  /* Radius scale */
+  --radius-sm: 6px;
   --radius: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 100px;
+
+  /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow: 0 4px 16px rgba(26,54,93,0.08);
   --shadow-lg: 0 12px 40px rgba(26,54,93,0.12);
-  --max-w: 1080px;
-  --nav-height: 64px;
+
+  /* Spacing scale (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Typography */
   --font: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.85rem;
+  --text-base: 1rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.3rem;
+  --text-2xl: 1.8rem;
+  --text-3xl: 2.5rem;
+
+  /* Layout */
+  --max-w: 1080px;
+  --max-w-narrow: 720px;
+  --nav-height: 64px;
+
+  /* Controls — 44px touch targets (mobile-first requirement) */
+  --control-height: 44px;
+  --control-height-sm: 36px;
+  --control-radius: var(--radius);
+
+  /* Focus rings */
+  --focus-ring: 0 0 0 3px rgba(49,130,206,0.35);
+  --focus-ring-accent: 0 0 0 3px rgba(255,107,91,0.35);
+
+  /* Motion */
   --transition: 0.2s ease;
+  --transition-fast: 0.12s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Breakpoints (as reference values; media queries use px directly) */
+  --bp-sm: 480px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1440px;
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -32,6 +96,11 @@ body{
   line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
   font-size:16px;
 }
+
+/* Accessible focus rings — visible for keyboard, hidden for pointer */
+:focus-visible{outline:2px solid var(--secondary);outline-offset:2px;border-radius:var(--radius-sm)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--secondary);outline-offset:2px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var(--secondary);box-shadow:var(--focus-ring)}
 h1,h2,h3,h4{line-height:1.2;font-weight:700;color:var(--primary)}
 h1{font-size:clamp(1.8rem,4vw,2.5rem)}
 h2{font-size:clamp(1.3rem,3vw,1.8rem)}
