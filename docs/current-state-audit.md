@@ -107,8 +107,6 @@ These need either a live browser session (Playwright/manual) or a completed mult
 | K5 | Low | Client types not derived from Zod schemas | `web/src/api/client.ts` | Phase 2 type consolidation |
 | K6 | Info | `jq` not installed on dev box (smoke script uses it) | dev env | install jq or make script python-fallback |
 
----
-
 ## 7. What's Working Well (preserve)
 
 - **SceneBlockPlayer** — the generic JSON-driven composition is the right foundation for user templates + AI generation.
@@ -117,9 +115,23 @@ These need either a live browser session (Playwright/manual) or a completed mult
 - **Format override** — width/height propagation works (9:16 fix holds).
 - **Static frontend + tunnel** — deployable anywhere, render API stays on real hardware.
 
----
+## 8. Phase 1 Delivered (2026-08-02, branch feat/mobile-first-foundation)
 
-## 8. Recommended Order (from audit)
+Mobile-first UI foundation implemented and verified:
+
+- **Design tokens** — full CSS custom property system (spacing scale, radii, 44px control heights, focus rings, breakpoints, motion). Fixes previously-missing `--radius-sm`.
+- **Responsive shell** — hamburger nav ≤768px (aria-expanded, Escape-close, focus return), desktop nav unchanged.
+- **Dashboard** — extracted `WorkflowSection` / `TemplatePicker` / `RenderSummary` / `MobileActionBar`; sticky bottom action bar with output count + validation + render button (safe-area aware).
+- **Mobile composer** — `ComposerWorkspace` with Scenes/Content tabs on mobile, side-by-side desktop layout, full-screen searchable palette sheet. Timeline uses move up/down buttons (no drag dependency).
+- **Composer CSS** — was entirely missing (structural components rendered as raw unstyled HTML); full styling added for timeline, palette, block editor.
+- **Responsive variant editor** — card-per-variant with labels on mobile (plan §7.5), table on desktop.
+- **Responsive render results** — output cards on mobile, tunnel-safe URL resolution centralized into `web/src/api/client.ts` (`resolveApiUrl` / `resolveApiDownloadUrl`); `RenderProgress` no longer duplicates apiBase.
+- **Feedback primitives** — `ToastProvider`, `LoadingState`, `EmptyState`; import errors toast.
+- **Tests** — 14/14 Playwright e2e green at all six required viewports (360×800 → 1440×900), 12 screenshot captures, 24/24 unit tests still green.
+
+**Deferred:** Playwright visual regression baselines (screenshots stored in `web/test-results/screenshots/` but not yet diffed against future runs); Lighthouse score baseline; CSV/JSON import manual confirmation; per-template render benchmarks.
+
+## 9. Recommended Order (from audit)
 
 1. Finish the deferred audit items (early Phase 1, low risk).
 2. Phase 1: mobile-first shell + quick mode (no structural change).
