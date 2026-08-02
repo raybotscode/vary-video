@@ -200,6 +200,26 @@ img{max-width:100%;height:auto}
 .template-card strong{display:block;font-size:1rem;margin-bottom:4px}
 .template-card p{font-size:0.85rem;color:var(--text-muted);margin:0}
 
+/* Composer layout (desktop: timeline + editor side by side) */
+.composer-layout{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start}
+.composer-main{display:flex;flex-direction:column;gap:16px}
+.composer-desktop{display:grid}
+.composer-mobile{display:none}
+
+/* Mobile composer tabs + sheet */
+.composer-tabs{display:flex;gap:8px;margin-bottom:16px}
+.composer-tab{flex:1;padding:12px;border:2px solid var(--border);border-radius:var(--radius);background:var(--surface);font-family:var(--font);font-size:0.95rem;font-weight:600;color:var(--text-muted);cursor:pointer;min-height:var(--control-height);transition:all var(--transition)}
+.composer-tab.active{border-color:var(--secondary);color:var(--secondary);background:rgba(49,130,206,0.04)}
+.composer-tab:disabled{opacity:0.45;cursor:not-allowed}
+.composer-mobile-panel{min-height:120px}
+
+.palette-sheet{position:fixed;inset:0;z-index:120;background:var(--surface);display:flex;flex-direction:column;padding:var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom))}
+.palette-sheet-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.palette-sheet-header h3{font-size:1.1rem}
+.palette-sheet-header p{font-size:0.85rem;color:var(--text-muted)}
+.palette-search{width:100%;padding:12px 14px;border-radius:var(--radius);font-size:1rem;font-family:var(--font);border:2px solid var(--border);background:var(--surface);outline:none;margin-bottom:16px;min-height:var(--control-height)}
+.palette-sheet-body{flex:1;overflow-y:auto}
+
 /* Copy/Form Layout */
 .copy-layout{display:grid;grid-template-columns:1fr 220px;gap:24px}
 .form-grid{display:flex;flex-direction:column;gap:16px}
@@ -352,6 +372,11 @@ img{max-width:100%;height:auto}
   .mobile-action-summary span{font-size:0.8rem;color:var(--text-muted)}
   .mobile-action-warning{font-size:0.75rem;color:var(--warning);font-style:normal}
   .mobile-action-button{flex:1;min-width:0;white-space:nowrap;padding:0 var(--space-4);font-size:0.95rem}
+
+  /* Composer: switch to mobile tabs layout */
+  .composer-desktop{display:none}
+  .composer-mobile{display:block}
+  .composer-layout{grid-template-columns:1fr}
 }
 @media(max-width:480px){
   .page-section{padding:24px 16px}

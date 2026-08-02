@@ -7,14 +7,12 @@ import {
   type RenderTemplatePayload,
   type TemplateDefinition,
 } from '../api/client';
-import BlockEditor from '../components/BlockEditor';
-import BlockPalette from '../components/BlockPalette';
 import BrandSettings from '../components/BrandSettings';
 import FormatSelector from '../components/FormatSelector';
 import RenderProgress from '../components/RenderProgress';
-import SceneTimeline from '../components/SceneTimeline';
 import TemplateForm from '../components/TemplateForm';
 import VariantEditor from '../components/VariantEditor';
+import ComposerWorkspace from '../components/composer/ComposerWorkspace';
 import MobileActionBar from '../components/dashboard/MobileActionBar';
 import RenderSummary from '../components/dashboard/RenderSummary';
 import TemplatePicker from '../components/dashboard/TemplatePicker';
@@ -171,8 +169,6 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
   const previewVariant =
     variants[0] ?? defaultVariantsForTemplate(selectedCompositionId)[0] ?? {};
   const estimatedRenderTime = useMemo(() => variants.length * 45, [variants.length]);
-  const selectedComposerBlock =
-    composerBlocks.find((block) => block.instanceId === selectedBlockInstanceId) ?? null;
 
   const selectTemplate = (templateId: string) => {
     const nextTemplate =
@@ -328,45 +324,16 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
           </WorkflowSection>
 
           <WorkflowSection step="Step 2" title="Compose Scenes">
-            <div className="composer-layout">
-              <div className="composer-main">
-                <SceneTimeline
-                  blocks={composerBlocks}
-                  selectedBlockId={selectedBlockInstanceId}
-                  onSelectBlock={setSelectedBlockInstanceId}
-                  onRemoveBlock={removeComposerBlock}
-                  onMoveBlock={moveComposerBlock}
-                  onOpenPalette={() => setIsPaletteOpen(true)}
-                />
-
-                {isPaletteOpen && (
-                  <div className="palette-panel">
-                    <div className="timeline-header">
-                      <div>
-                        <h3>Block Library</h3>
-                        <p>Choose a block to append to the sequence.</p>
-                      </div>
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() => setIsPaletteOpen(false)}
-                      >
-                        Close
-                      </button>
-                    </div>
-                    <BlockPalette
-                      templateId={selectedCompositionId}
-                      onAddBlock={addComposerBlock}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <BlockEditor
-                block={selectedComposerBlock}
-                onChange={updateComposerBlock}
-              />
-            </div>
+            <ComposerWorkspace
+              blocks={composerBlocks}
+              selectedBlockId={selectedBlockInstanceId}
+              selectedTemplateId={selectedCompositionId}
+              onSelectBlock={setSelectedBlockInstanceId}
+              onRemoveBlock={removeComposerBlock}
+              onMoveBlock={moveComposerBlock}
+              onAddBlock={addComposerBlock}
+              onUpdateBlock={updateComposerBlock}
+            />
           </WorkflowSection>
         </>
       )}
