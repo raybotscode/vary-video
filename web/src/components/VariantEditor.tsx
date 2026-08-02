@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {createEmptyVariant, parseCsv, type VariantData} from '../utils/placeholder';
+import {useToast} from './ui/useToast';
 import VariantTable from './VariantTable';
 
 type VariantEditorProps = {
@@ -13,6 +14,7 @@ type VariantEditorProps = {
 export default function VariantEditor({variants, columns, templateId, onChange, onError}: VariantEditorProps) {
   const [importMode, setImportMode] = useState<'json' | 'csv' | null>(null);
   const [importText, setImportText] = useState('');
+  const {toast} = useToast();
 
   const updateVariant = (index: number, key: string, value: string) => {
     onChange(
@@ -47,7 +49,9 @@ export default function VariantEditor({variants, columns, templateId, onChange, 
       setImportText('');
       setImportMode(null);
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Could not import variants.');
+      const message = error instanceof Error ? error.message : 'Could not import variants.';
+      onError(message);
+      toast(message, 'error');
     }
   };
 

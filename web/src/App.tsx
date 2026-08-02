@@ -1,5 +1,6 @@
 import {useMemo, useState} from 'react';
 import Layout from './components/Layout';
+import {ToastProvider} from './components/ui/ToastProvider';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import RenderHistory from './pages/RenderHistory';
@@ -66,17 +67,19 @@ export default function App() {
   window.onpopstate = () => setRoute(routeFromPath(window.location.pathname));
 
   return (
-    <Layout activeRoute={route} onNavigate={navigate}>
-      {route === 'home' && (
-        <Home
-          onGetStarted={() => navigate('dashboard')}
-          onOpenComposer={() => navigate('composer')}
-        />
-      )}
-      {route === 'dashboard' && <Dashboard />}
-      {route === 'composer' && <SceneComposer />}
-      {route === 'history' && <RenderHistory />}
-      <span className="sr-only">{title}</span>
-    </Layout>
+    <ToastProvider>
+      <Layout activeRoute={route} onNavigate={navigate}>
+        {route === 'home' && (
+          <Home
+            onGetStarted={() => navigate('dashboard')}
+            onOpenComposer={() => navigate('composer')}
+          />
+        )}
+        {route === 'dashboard' && <Dashboard />}
+        {route === 'composer' && <SceneComposer />}
+        {route === 'history' && <RenderHistory />}
+        <span className="sr-only">{title}</span>
+      </Layout>
+    </ToastProvider>
   );
 }
