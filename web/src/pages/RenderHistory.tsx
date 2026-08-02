@@ -1,12 +1,4 @@
-const historyItems = [
-  {
-    id: 'sample-1',
-    date: 'No completed API-backed batches yet',
-    template: 'Insurance Ad',
-    variants: 0,
-    status: 'Waiting for first render',
-  },
-];
+import EmptyState from '../components/ui/EmptyState';
 
 export default function RenderHistory() {
   return (
@@ -17,18 +9,10 @@ export default function RenderHistory() {
         <p>Completed jobs will be listed here when persistent job history is added to the API.</p>
       </div>
 
-      <div className="history-list">
-        {historyItems.map((item) => (
-          <article className="history-card" key={item.id}>
-            <div>
-              <strong>{item.template}</strong>
-              <p>{item.date}</p>
-            </div>
-            <span>{item.variants} variants</span>
-            <span className="status-pill queued">{item.status}</span>
-          </article>
-        ))}
-      </div>
+      <EmptyState
+        title="No render history yet"
+        description="Start a batch render and your completed jobs will appear here with per-variant downloads."
+      />
     </section>
   );
 }

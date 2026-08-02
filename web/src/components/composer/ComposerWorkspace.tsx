@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import BlockEditor from '../BlockEditor';
 import BlockPalette from '../BlockPalette';
 import SceneTimeline from '../SceneTimeline';
@@ -36,7 +36,13 @@ export default function ComposerWorkspace({
 }: ComposerWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<ComposerTabId>('scenes');
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const paletteOpenerRef = useRef<HTMLElement | null>(null);
   const selectedBlock = blocks.find((block) => block.instanceId === selectedBlockId) ?? null;
+
+  const openPalette = (opener: HTMLElement) => {
+    paletteOpenerRef.current = opener;
+    setIsPaletteOpen(true);
+  };
 
   return (
     <>
@@ -49,7 +55,7 @@ export default function ComposerWorkspace({
             onSelectBlock={onSelectBlock}
             onRemoveBlock={onRemoveBlock}
             onMoveBlock={onMoveBlock}
-            onOpenPalette={() => setIsPaletteOpen(true)}
+            onOpenPalette={(event) => openPalette(event.currentTarget)}
           />
 
           {isPaletteOpen && (
@@ -90,7 +96,12 @@ export default function ComposerWorkspace({
         />
 
         {activeTab === 'scenes' ? (
-          <div className="composer-mobile-panel">
+          <div
+            id="composer-panel-scenes"
+            role="tabpanel"
+            aria-labelledby="composer-tab-scenes"
+            className="composer-mobile-panel"
+          >
             <SceneTimeline
               blocks={blocks}
               selectedBlockId={selectedBlockId}
@@ -100,11 +111,16 @@ export default function ComposerWorkspace({
               }}
               onRemoveBlock={onRemoveBlock}
               onMoveBlock={onMoveBlock}
-              onOpenPalette={() => setIsPaletteOpen(true)}
+              onOpenPalette={(event) => openPalette(event.currentTarget)}
             />
           </div>
         ) : (
-          <div className="composer-mobile-panel">
+          <div
+            id="composer-panel-content"
+            role="tabpanel"
+            aria-labelledby="composer-tab-content"
+            className="composer-mobile-panel"
+          >
             <BlockEditor block={selectedBlock} onChange={onUpdateBlock} />
           </div>
         )}
@@ -115,6 +131,7 @@ export default function ComposerWorkspace({
           templateId={selectedTemplateId}
           onAddBlock={onAddBlock}
           onClose={() => setIsPaletteOpen(false)}
+          openerRef={paletteOpenerRef}
         />
       )}
     </>

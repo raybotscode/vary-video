@@ -98,22 +98,40 @@ const apiBase = (typeof window !== 'undefined' && (window as any).__VARY_API_URL
 const apiUrl = (path: string) => `${apiBase}${path}`;
 
 /**
- * Resolve an API-relative path against the configured API base (tunnel-aware).
- * Absolute http(s) URLs pass through unchanged.
+ * Normalize an API-relative path against a configured base.
+ * Handles every current path shape without double-prefixing:
+ * - absolute http(s) URL → returned unchanged
+ * - `/api/...` path + base ending in `/api` (default or tunnel) → leading
+ *   `/api` is stripped before joining so we never produce `/api/api/...`
+ * - `/render/...` or other relative path → joined onto the base
  */
-export const resolveApiUrl = (pathOrUrl: string): string => {
+export const resolveApiPath = (pathOrUrl: string, base: string): string => {
   if (/^https?:\/\//.test(pathOrUrl)) {
     return pathOrUrl;
   }
-  return apiUrl(pathOrUrl);
+
+  const normalizedBase = base.replace(/\/+$/, '');
+  const baseEndsWithApi = normalizedBase.endsWith('/api');
+  const path = baseEndsWithApi && pathOrUrl.startsWith('/api/')
+    ? pathOrUrl.slice('/api'.length)
+    : pathOrUrl;
+
+  return `${normalizedBase}${path}`;
 };
+
+/**
+ * Resolve an API-relative path against the configured API base (tunnel-aware).
+ * Absolute http(s) URLs pass through unchanged.
+ */
+export const resolveApiUrl = (pathOrUrl: string): string => resolveApiPath(pathOrUrl, apiBase);
 
 /**
  * Resolve a download URL from the API. The API returns relative paths
  * (e.g. /api/render/download/<job>/<i>); resolve against the configured base
  * so tunnel overrides (window.__VARY_API_URL) apply to downloads too.
  */
-export const resolveApiDownloadUrl = (pathOrUrl: string): string => resolveApiUrl(pathOrUrl);
+export const resolveApiDownloadUrl = (pathOrUrl: string): string =>
+  resolveApiPath(pathOrUrl, apiBase);
 
 const readJson = async <T>(response: Response): Promise<T> => {
   const contentType = response.headers.get('content-type') ?? '';

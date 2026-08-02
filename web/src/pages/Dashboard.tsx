@@ -17,6 +17,7 @@ import MobileActionBar from '../components/dashboard/MobileActionBar';
 import RenderSummary from '../components/dashboard/RenderSummary';
 import TemplatePicker from '../components/dashboard/TemplatePicker';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
+import LoadingState from '../components/ui/LoadingState';
 import {defaultVariantsForTemplate, type VariantData} from '../utils/placeholder';
 import {
   createComposerBlock,
@@ -341,7 +342,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       <WorkflowSection
         step="Step 3"
         title="Add Variant Data"
-        rightSlot={isLoadingCompositions ? <span className="muted">Loading templates...</span> : undefined}
+        rightSlot={isLoadingCompositions ? <LoadingState label="Loading templates..." /> : undefined}
       >
         <VariantEditor
           variants={variants}

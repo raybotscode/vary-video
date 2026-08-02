@@ -6,7 +6,7 @@ type SceneTimelineProps = {
   onSelectBlock: (instanceId: string) => void;
   onRemoveBlock: (instanceId: string) => void;
   onMoveBlock: (instanceId: string, direction: 'up' | 'down') => void;
-  onOpenPalette: () => void;
+  onOpenPalette: (event: React.MouseEvent<HTMLButtonElement>) => void;
 };
 
 export default function SceneTimeline({
