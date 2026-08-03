@@ -78,6 +78,42 @@ export const assertKnownEnabledTemplateId = (templateId: string): void => {
   }
 };
 
+/**
+ * Get the media field IDs for a given template/composition.
+ * Returns an empty array if the template has no media fields.
+ * Used server-side to derive validation targets from the composition,
+ * not from the untrusted request body.
+ */
+export const getMediaFieldIdsForTemplate = (templateId: string): string[] => {
+  const template = templateCapabilities.find((t) => t.id === templateId);
+  return template?.mediaFields ?? [];
+};
+
+/**
+ * Get the media field IDs for a given template, including media fields
+ * from its default blocks. This catches media fields that are on blocks
+ * but not on the template itself.
+ */
+export const getAllMediaFieldIdsForComposition = (templateId: string): string[] => {
+  const templateFields = getMediaFieldIdsForTemplate(templateId);
+
+  // Also check default blocks for media fields
+  const template = templateCapabilities.find((t) => t.id === templateId);
+  if (!template) return templateFields;
+
+  const blockFields = new Set(templateFields);
+  for (const blockId of template.defaultBlocks) {
+    const block = blockCapabilities.find((b) => b.id === blockId);
+    if (block?.mediaFields) {
+      for (const field of block.mediaFields) {
+        blockFields.add(field);
+      }
+    }
+  }
+
+  return [...blockFields];
+};
+
 /** Compact AI-facing summary — omits large defaults, includes the essentials. */
 export const getCompactCapabilitySummary = (): CompactCapabilitySummary => {
   const registry = getCapabilityRegistry();

@@ -6,6 +6,7 @@ import {ZipArchive} from 'archiver';
 import {compositionIdSchema} from '../validation/composition';
 import {validateTemplateForComposition} from '../validation/composition';
 import {validateBatchVariants} from '../services/variantResolution';
+import {getAllMediaFieldIdsForComposition} from '../../../src/shared/capabilities/registry';
 import {
   BatchRenderRequest,
   publicRenderDir,
@@ -77,7 +78,8 @@ renderRouter.post('/batch', (req, res) => {
   }
 
   // Validate all variants for media field errors (Phase 3)
-  const mediaFieldIds = (parsed.data.template.mediaFields as string[]) ?? [];
+  // Derive media field IDs server-side from composition, not from request body
+  const mediaFieldIds = getAllMediaFieldIdsForComposition(parsed.data.compositionId);
   if (mediaFieldIds.length > 0) {
     const variantErrors = validateBatchVariants(parsed.data.variants, mediaFieldIds);
     if (variantErrors.size > 0) {

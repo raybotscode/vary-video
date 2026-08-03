@@ -16,7 +16,7 @@ describe('GET /api/v1/capabilities', () => {
     expect(res.status).toBe(200);
     expect(res.body.version.hash).toBeTruthy();
     expect(res.body.templates).toHaveLength(5);
-    expect(res.body.blocks).toHaveLength(13);
+    expect(res.body.blocks).toHaveLength(12);
     expect(res.body.animations.map((a: {id: string}) => a.id)).toEqual(['none']);
     expect(res.body.compactSummary.templates).toHaveLength(5);
     expect(res.body.compactSummary.version).toBe(res.body.version.hash);
@@ -50,7 +50,7 @@ describe('GET /api/v1/blocks', () => {
     const ids = res.body.blocks.map((b: {id: string}) => b.id);
     expect(ids).toContain('property-hero');
     // All Phase 2 blocks are enabled; disabled animation presets live under /animations.
-    expect(ids).toHaveLength(13);
+    expect(ids).toHaveLength(12);
   });
 
   it('returns a single block by id', async () => {

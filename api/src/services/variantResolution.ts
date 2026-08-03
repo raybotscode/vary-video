@@ -9,6 +9,7 @@
 import type {RenderTemplate, RenderVariant} from './renderer';
 import {mediaFieldById, MEDIA_FIELD_PROP_MAP} from '../../../src/shared/capabilities/media';
 import {resolvePlaceholders} from '../../../src/shared/placeholders';
+import {validateUrlLocally} from './mediaValidation';
 
 /**
  * Map of variant data keys to their resolved template prop names.
@@ -77,31 +78,56 @@ export const resolveBrandSettings = (
  * 2. Resolve placeholders in template brand settings
  * 3. Merge with template defaults
  * 4. Return resolved props ready for schema parsing
+ *
+ * Handles two template shapes:
+ * - SceneBlockPlayer: brand/media values go into `brandSettings`
+ * - Quick templates: brand/media values go to top-level props
  */
 export const resolveVariantProps = (
   template: RenderTemplate,
   variant: RenderVariant,
 ): RenderTemplate => {
-  // Get existing brand settings from template
-  const templateBrandSettings = (template.brandSettings as Record<string, unknown>) ?? {};
-
   // Extract per-variant brand/media values from CSV data
-  const variantBrandSettings = extractVariantBrandSettings(variant, templateBrandSettings);
+  const variantValues = extractVariantBrandSettings(variant);
 
-  // Resolve any remaining placeholders in brand settings
-  const resolvedBrandSettings = resolveBrandSettings(variantBrandSettings, variant);
+  // Check if this template uses brandSettings (SceneBlockPlayer) or top-level props (quick templates)
+  const hasBrandSettings = template.brandSettings !== undefined;
 
-  // Build resolved template
-  return {
-    ...template,
-    brandSettings: resolvedBrandSettings,
-    data: variant,
-  };
+  if (hasBrandSettings) {
+    // SceneBlockPlayer: resolve into brandSettings
+    const templateBrandSettings = (template.brandSettings as Record<string, unknown>) ?? {};
+    const mergedBrandSettings = {...templateBrandSettings, ...variantValues};
+    const resolvedBrandSettings = resolveBrandSettings(mergedBrandSettings, variant);
+
+    return {
+      ...template,
+      brandSettings: resolvedBrandSettings,
+      data: variant,
+    };
+  }
+
+  // Quick templates: resolve brand/media values to top-level props
+  // Also resolve any placeholder tokens in existing template props
+  const resolved: RenderTemplate = {};
+  for (const [key, value] of Object.entries(template)) {
+    if (typeof value === 'string') {
+      resolved[key] = resolvePlaceholders(value, variant, {missing: 'empty'});
+    } else {
+      resolved[key] = value;
+    }
+  }
+
+  // Apply variant brand/media values at top level
+  Object.assign(resolved, variantValues);
+  resolved.data = variant;
+
+  return resolved;
 };
 
 /**
  * Validate a single variant's brand/media values.
  * Returns an array of error strings (empty if valid).
+ * Uses the comprehensive URL validation from mediaValidation.ts.
  */
 export const validateVariantMedia = (
   variant: RenderVariant,
@@ -123,18 +149,10 @@ export const validateVariantMedia = (
       continue;
     }
 
-    // Validate URL scheme
-    try {
-      const url = new URL(value);
-      if (!['http:', 'https:'].includes(url.protocol)) {
-        errors.push(`${field.label}: invalid URL scheme '${url.protocol}' (must be http/https)`);
-      }
-      // Block localhost/private IPs
-      if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1') {
-        errors.push(`${field.label}: localhost URLs are not allowed`);
-      }
-    } catch {
-      errors.push(`${field.label}: invalid URL '${value}'`);
+    // Use comprehensive URL validation from mediaValidation.ts
+    const urlErrors = validateUrlLocally(value);
+    for (const err of urlErrors) {
+      errors.push(`${field.label}: ${err}`);
     }
   }
 

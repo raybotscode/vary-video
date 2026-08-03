@@ -103,11 +103,12 @@ describe('resolveVariantProps', () => {
     expect(result.data).toEqual(variant);
   });
 
-  it('handles template without brand settings', () => {
-    const template = {compositionId: 'Test'};
+  it('handles quick template by resolving to top-level props', () => {
+    const template = {compositionId: 'Test', brandColor: '{{brand_color}}'};
     const variant = {brand_color: '#FF0000'};
     const result = resolveVariantProps(template, variant);
-    expect(result.brandSettings).toEqual({brandColor: '#FF0000'});
+    expect(result.brandColor).toBe('#FF0000');
+    expect(result.data).toEqual(variant);
   });
 });
 
@@ -135,28 +136,28 @@ describe('validateVariantMedia', () => {
     const variant = {logo_url: 'ftp://example.com/logo.png'};
     const errors = validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('invalid URL scheme');
+    expect(errors[0]).toContain('Invalid URL scheme');
   });
 
   it('fails for localhost URLs', () => {
     const variant = {logo_url: 'http://localhost:3000/logo.png'};
     const errors = validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('localhost');
+    expect(errors[0]).toContain('Private/internal');
   });
 
   it('fails for 127.0.0.1 URLs', () => {
     const variant = {logo_url: 'http://127.0.0.1:3000/logo.png'};
     const errors = validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('localhost');
+    expect(errors[0]).toContain('Private/internal');
   });
 
   it('fails for invalid URLs', () => {
     const variant = {logo_url: 'not-a-url'};
     const errors = validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('invalid URL');
+    expect(errors[0]).toContain('Invalid URL');
   });
 });
 

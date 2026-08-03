@@ -11,7 +11,7 @@ describe('capability registry', () => {
   it('includes all current templates and blocks', () => {
     const registry = getCapabilityRegistry();
     expect(registry.templates.length).toBe(5);
-    expect(registry.blocks).toHaveLength(13)
+    expect(registry.blocks).toHaveLength(12)
     // Only 'none' animation is enabled in Phase 2.
     expect(registry.animations.map((a) => a.id)).toEqual(['none']);
     expect(registry.styles.length).toBeGreaterThanOrEqual(3);
@@ -27,7 +27,7 @@ describe('capability registry', () => {
     expect(summary.animations).not.toContain('fade-in');
     expect(summary.animations).toContain('none');
     expect(summary.templates.length).toBe(5);
-    expect(summary.blocks.length).toBe(13);
+    expect(summary.blocks.length).toBe(12);
   });
 
   it('asserts known block IDs and rejects unknown', () => {
