@@ -1,9 +1,8 @@
 import type {AnimationPresetCapability} from './types';
 
 /**
- * Animation preset metadata. METADATA ONLY in Phase 2 — no render behavior
- * exists yet. `none` is enabled; all others are disabled until Phase 4
- * implements the actual Remotion animation functions.
+ * Animation preset metadata. All presets are enabled — render support
+ * exists in `src/compositions/animations/presets.ts`.
  *
  * The API exposes these so AI/UI knows what's planned, but disabled presets
  * are excluded from the compact AI summary and must not appear as selectable
@@ -26,10 +25,10 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     name: 'Fade In',
     description: 'Fade the scene in from transparent.',
     direction: 'in',
-    parameters: {durationFrames: true},
+    parameters: {durationFrames: true, easing: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['fade', 'entry'],
   },
   {
@@ -37,10 +36,10 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     name: 'Fade Out',
     description: 'Fade the scene out to transparent.',
     direction: 'out',
-    parameters: {durationFrames: true},
+    parameters: {durationFrames: true, easing: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['fade', 'exit'],
   },
   {
@@ -49,10 +48,10 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     description: 'Slide the scene in from the left edge.',
     direction: 'in',
     supportedPositions: ['left'],
-    parameters: {durationFrames: true, intensity: true},
+    parameters: {durationFrames: true, intensity: true, easing: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['slide', 'entry'],
   },
   {
@@ -61,10 +60,10 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     description: 'Slide the scene in from the right edge.',
     direction: 'in',
     supportedPositions: ['right'],
-    parameters: {durationFrames: true, intensity: true},
+    parameters: {durationFrames: true, intensity: true, easing: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['slide', 'entry'],
   },
   {
@@ -73,10 +72,10 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     description: 'Slide the scene in from below.',
     direction: 'in',
     supportedPositions: ['up'],
-    parameters: {durationFrames: true, intensity: true},
+    parameters: {durationFrames: true, intensity: true, easing: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['slide', 'entry'],
   },
   {
@@ -85,10 +84,10 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     description: 'Slide the scene in from above.',
     direction: 'in',
     supportedPositions: ['down'],
-    parameters: {durationFrames: true, intensity: true},
+    parameters: {durationFrames: true, intensity: true, easing: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['slide', 'entry'],
   },
   {
@@ -96,10 +95,10 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     name: 'Zoom In',
     description: 'Scale the scene up from smaller.',
     direction: 'in',
-    parameters: {durationFrames: true, intensity: true},
+    parameters: {durationFrames: true, intensity: true, easing: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['zoom', 'entry'],
   },
   {
@@ -110,7 +109,7 @@ export const animationPresetCapabilities: AnimationPresetCapability[] = [
     parameters: {durationFrames: true, intensity: true},
     compatibleBlockTypes: ['any'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['bounce', 'entry'],
   },
 ];

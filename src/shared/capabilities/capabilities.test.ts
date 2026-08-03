@@ -101,9 +101,12 @@ describe('preset capabilities', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('only none is enabled until Phase 4', () => {
+  it('all animation presets are enabled', () => {
     const enabled = getEnabledAnimationPresets();
-    expect(enabled.map((preset) => preset.id)).toEqual(['none']);
+    expect(enabled.length).toBe(animationPresetCapabilities.length);
+    expect(enabled.map((p) => p.id)).toContain('none');
+    expect(enabled.map((p) => p.id)).toContain('fade-in');
+    expect(enabled.map((p) => p.id)).toContain('bounce-in');
   });
 
   it('style IDs are unique and all enabled', () => {

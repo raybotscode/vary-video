@@ -17,7 +17,8 @@ describe('GET /api/v1/capabilities', () => {
     expect(res.body.version.hash).toBeTruthy();
     expect(res.body.templates).toHaveLength(5);
     expect(res.body.blocks).toHaveLength(13);
-    expect(res.body.animations.map((a: {id: string}) => a.id)).toEqual(['none']);
+    expect(res.body.animations.length).toBe(9);
+    expect(res.body.animations.map((a: {id: string}) => a.id)).toContain('fade-in');
     expect(res.body.compactSummary.templates).toHaveLength(5);
     expect(res.body.compactSummary.version).toBe(res.body.version.hash);
   });
@@ -72,9 +73,11 @@ describe('GET /api/v1/styles and /api/v1/animations', () => {
     expect(res.body.styles.map((s: {id: string}) => s.id)).toContain('clean-brand');
   });
 
-  it('returns only enabled animation presets (none in Phase 2)', async () => {
+  it('returns all enabled animation presets (Phase 4)', async () => {
     const res = await request(buildApp()).get('/api/v1/animations');
     expect(res.status).toBe(200);
-    expect(res.body.animations.map((a: {id: string}) => a.id)).toEqual(['none']);
+    expect(res.body.animations.length).toBe(9);
+    expect(res.body.animations.map((a: {id: string}) => a.id)).toContain('fade-in');
+    expect(res.body.animations.map((a: {id: string}) => a.id)).toContain('bounce-in');
   });
 });

@@ -12,8 +12,10 @@ describe('capability registry', () => {
     const registry = getCapabilityRegistry();
     expect(registry.templates.length).toBe(5);
     expect(registry.blocks).toHaveLength(13)
-    // Only 'none' animation is enabled in Phase 2.
-    expect(registry.animations.map((a) => a.id)).toEqual(['none']);
+    // All 9 animation presets are enabled in Phase 4.
+    expect(registry.animations.length).toBe(9);
+    expect(registry.animations.map((a) => a.id)).toContain('none');
+    expect(registry.animations.map((a) => a.id)).toContain('fade-in');
     expect(registry.styles.length).toBeGreaterThanOrEqual(3);
   });
 
@@ -21,11 +23,12 @@ describe('capability registry', () => {
     expect(getCapabilityVersion()).toBe(getCapabilityVersion());
   });
 
-  it('compact summary excludes disabled capabilities', () => {
+  it('compact summary includes all enabled capabilities', () => {
     const summary = getCompactCapabilitySummary();
-    // 'fade-in' etc. are disabled — must not appear.
-    expect(summary.animations).not.toContain('fade-in');
+    // Phase 4: all animation presets are enabled.
+    expect(summary.animations).toContain('fade-in');
     expect(summary.animations).toContain('none');
+    expect(summary.animations.length).toBe(9);
     expect(summary.templates.length).toBe(5);
     expect(summary.blocks.length).toBe(13);
   });
