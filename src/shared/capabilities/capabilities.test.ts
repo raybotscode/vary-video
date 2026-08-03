@@ -1,0 +1,122 @@
+import {describe, expect, it} from 'vitest';
+import {templateCapabilities} from './templates';
+import {blockCapabilities} from './blocks';
+import {
+  animationPresetCapabilities,
+  getEnabledAnimationPresets,
+} from './animations';
+import {stylePresetCapabilities, getEnabledStylePresets} from './styles';
+import {
+  templateCapabilitySchema,
+  blockCapabilitySchema,
+  animationPresetCapabilitySchema,
+  stylePresetCapabilitySchema,
+} from './schema';
+
+describe('template capabilities', () => {
+  it('has the five hand-coded templates', () => {
+    expect(templateCapabilities.map((t) => t.id).sort()).toEqual([
+      'InsuranceAd',
+      'ProductLaunch',
+      'RealEstate',
+      'SocialClip',
+      'WebinarPromo',
+    ]);
+  });
+
+  it('IDs match existing Remotion compositions', () => {
+    for (const template of templateCapabilities) {
+      expect(template.id.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('every template has copy fields and default blocks', () => {
+    for (const template of templateCapabilities) {
+      expect(template.copyFields.length).toBeGreaterThan(0);
+      expect(template.defaultBlocks.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('every template passes its strict schema (unknown keys rejected)', () => {
+    for (const template of templateCapabilities) {
+      expect(() => templateCapabilitySchema.parse(template)).not.toThrow();
+    }
+  });
+
+  it('default blocks exist in the block registry', () => {
+    const blockIds = new Set(blockCapabilities.map((block) => block.id));
+    for (const template of templateCapabilities) {
+      for (const blockId of template.defaultBlocks) {
+        expect(blockIds.has(blockId), `${template.id} references unknown block ${blockId}`).toBe(true);
+      }
+    }
+  });
+});
+
+describe('block capabilities', () => {
+  it('block IDs are unique', () => {
+    const ids = blockCapabilities.map((block) => block.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('has all 12 expected blocks', () => {
+    expect(blockCapabilities.map((block) => block.id).sort()).toEqual([
+      'agent-cta',
+      'brand-frame',
+      'data-callout',
+      'features-grid',
+      'pricing-card',
+      'product-intro',
+      'property-details',
+      'property-hero',
+      'social-body',
+      'social-hook',
+      'social-outro',
+      'text-overlay',
+    ]);
+  });
+
+  it('every block has content field metadata for each default content key', () => {
+    for (const block of blockCapabilities) {
+      const keys = new Set(block.contentFields.map((field) => field.key));
+      expect(block.contentFields.length).toBeGreaterThan(0);
+      for (const field of block.contentFields) {
+        expect(field.label.length).toBeGreaterThan(0);
+        expect(keys.has(field.key)).toBe(true);
+      }
+    }
+  });
+
+  it('passes strict schema', () => {
+    for (const block of blockCapabilities) {
+      expect(() => blockCapabilitySchema.parse(block)).not.toThrow();
+    }
+  });
+});
+
+describe('preset capabilities', () => {
+  it('animation IDs are unique', () => {
+    const ids = animationPresetCapabilities.map((preset) => preset.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('only none is enabled until Phase 4', () => {
+    const enabled = getEnabledAnimationPresets();
+    expect(enabled.map((preset) => preset.id)).toEqual(['none']);
+  });
+
+  it('style IDs are unique and all enabled', () => {
+    const ids = stylePresetCapabilities.map((preset) => preset.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(getEnabledStylePresets().length).toBe(stylePresetCapabilities.length);
+  });
+
+  it('passes strict schemas', () => {
+    for (const preset of animationPresetCapabilities) {
+      expect(() => animationPresetCapabilitySchema.parse(preset)).not.toThrow();
+    }
+    for (const preset of stylePresetCapabilities) {
+      expect(() => stylePresetCapabilitySchema.parse(preset)).not.toThrow();
+    }
+  });
+});

@@ -90,4 +90,18 @@ describe('validateTemplateForComposition', () => {
     );
     expect(result.success).toBe(true);
   });
+
+  it('rejects SceneBlockPlayer with an unknown block id before render', () => {
+    const result = validateTemplateForComposition(
+      'SceneBlockPlayer',
+      {
+        blocks: [
+          {blockId: 'not-a-real-block', content: {}},
+        ],
+        brandSettings: {},
+      },
+      {},
+    );
+    expect(result.success).toBe(false);
+  });
 });

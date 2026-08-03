@@ -1,61 +1,42 @@
 import type {TemplateDefinition} from '../api/client';
+import {templateCapabilities} from '@vary/shared/capabilities/templates';
 
-export const frontendTemplates: TemplateDefinition[] = [
-  {
-    id: 'InsuranceAd',
-    name: 'Insurance Ad',
-    description: 'Personalized quote ads for local insurance campaigns.',
-    useCase: 'Insurance, Finance',
-    durationInFrames: 450,
-    fps: 30,
-    width: 1920,
-    height: 1080,
-    category: 'ad',
-    placeholders: ['age', 'gender', 'location', 'company'],
-    copyFields: [
-      {id: 'headlineTemplate', label: 'Headline', default: 'Are you a {{age}} year old {{gender}} in {{location}}?'},
-      {id: 'subheadlineTemplate', label: 'Subheadline', default: 'Get covered today with {{company}}'},
-      {id: 'ctaText', label: 'Call to Action', default: 'Get a Quote Today'},
-    ],
+/**
+ * Frontend template registry — now a thin adapter over the canonical shared
+ * capability metadata (src/shared/capabilities/templates.ts).
+ *
+ * No hand-maintained duplication here anymore: IDs, names, descriptions,
+ * placeholders, copy fields and default blocks all come from the shared
+ * source of truth. The frontend TemplateDefinition shape adds duration/fps/
+ * width/height defaults that the shared metadata doesn't carry (those are
+ * Remotion-runtime concerns owned by src/templates/registry.ts).
+ */
+
+const FRONTEND_DEFAULTS: Record<string, {durationInFrames: number; fps: number; width: number; height: number}> = {
+  InsuranceAd: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+  ProductLaunch: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+  RealEstate: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+  SocialClip: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+  WebinarPromo: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+};
+
+const toFrontendDefinition = (template: (typeof templateCapabilities)[number]): TemplateDefinition => {
+  const runtime = FRONTEND_DEFAULTS[template.id] ?? {durationInFrames: 450, fps: 30, width: 1920, height: 1080};
+
+  return {
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    useCase: template.useCase,
+    ...runtime,
+    category: template.category,
+    placeholders: [...template.requiredPlaceholders, ...template.optionalPlaceholders],
+    copyFields: template.copyFields,
     defaults: {
-      headlineTemplate: 'Are you a {{age}} year old {{gender}} in {{location}}?',
-      subheadlineTemplate: 'Get covered today with {{company}}',
-      ctaText: 'Get a Quote Today',
-      brandColor: '#1A365D',
-      secondaryColor: '#3182CE',
-      logoUrl: '',
-      backgroundType: 'gradient',
-      backgroundColor: '#1A365D',
-      backgroundImageUrl: '',
-    },
-    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
-  },
-  {
-    id: 'ProductLaunch',
-    name: 'Product Launch',
-    description: 'Showcase a new product with punchy feature highlights.',
-    useCase: 'SaaS, Product, Startup',
-    durationInFrames: 450,
-    fps: 30,
-    width: 1920,
-    height: 1080,
-    category: 'product',
-    placeholders: ['product_name', 'tagline', 'feature1', 'feature2', 'feature3', 'company'],
-    copyFields: [
-      {id: 'headlineTemplate', label: 'Headline', default: 'Introducing {{product_name}}'},
-      {id: 'taglineTemplate', label: 'Tagline', default: '{{tagline}}'},
-      {id: 'feature1Template', label: 'Feature 1', default: '{{feature1}}'},
-      {id: 'feature2Template', label: 'Feature 2', default: '{{feature2}}'},
-      {id: 'feature3Template', label: 'Feature 3', default: '{{feature3}}'},
-      {id: 'ctaText', label: 'Call to Action', default: 'Get Started Today'},
-    ],
-    defaults: {
-      headlineTemplate: 'Introducing {{product_name}}',
-      taglineTemplate: '{{tagline}}',
-      feature1Template: '{{feature1}}',
-      feature2Template: '{{feature2}}',
-      feature3Template: '{{feature3}}',
-      ctaText: 'Get Started Today',
+      // Frontend template defaults: copy fields + brand defaults.
+      ...Object.fromEntries(
+        template.copyFields.map((field) => [field.id, field.default]),
+      ),
       brandColor: '#1A365D',
       secondaryColor: '#3182CE',
       accentColor: '#FF6B5B',
@@ -63,133 +44,27 @@ export const frontendTemplates: TemplateDefinition[] = [
       backgroundType: 'gradient',
       backgroundColor: '#1A365D',
       backgroundImageUrl: '',
-      productImageUrl: '',
     },
-    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
-  },
-  {
-    id: 'RealEstate',
-    name: 'Real Estate',
-    description: 'Property showcase videos for listings and agents.',
-    useCase: 'Real Estate, Property',
-    durationInFrames: 450,
-    fps: 30,
-    width: 1920,
-    height: 1080,
-    category: 'property',
-    placeholders: ['property_name', 'tagline', 'price', 'bedrooms', 'bathrooms', 'sqft', 'location', 'agent'],
-    copyFields: [
-      {id: 'headlineTemplate', label: 'Property Name', default: '{{property_name}}'},
-      {id: 'taglineTemplate', label: 'Tagline', default: '{{tagline}}'},
-      {id: 'priceTemplate', label: 'Price', default: '{{price}}'},
-      {id: 'specsLine', label: 'Specs Line', default: '{{bedrooms}} bed · {{bathrooms}} bath · {{sqft}} sq ft'},
-      {id: 'locationLine', label: 'Location', default: '{{location}}'},
-      {id: 'ctaText', label: 'Call to Action', default: 'Schedule a Viewing'},
-    ],
-    defaults: {
-      headlineTemplate: '{{property_name}}',
-      taglineTemplate: '{{tagline}}',
-      priceTemplate: '{{price}}',
-      specsLine: '{{bedrooms}} bed · {{bathrooms}} bath · {{sqft}} sq ft',
-      locationLine: '{{location}}',
-      ctaText: 'Schedule a Viewing',
-      brandColor: '#1A365D',
-      secondaryColor: '#3182CE',
-      accentColor: '#38A169',
-      logoUrl: '',
-      backgroundType: 'gradient',
-      backgroundColor: '#1A365D',
-      backgroundImageUrl: '',
-      propertyImageUrl: '',
-    },
-    blockSequence: ['property-hero', 'property-details', 'agent-cta', 'brand-frame'],
-  },
-  {
-    id: 'SocialClip',
-    name: 'Social Clip',
-    description: 'Short-form social ads with bold hooks and fast CTA pacing.',
-    useCase: 'Social, Creator, DTC',
-    durationInFrames: 450,
-    fps: 30,
-    width: 1920,
-    height: 1080,
-    category: 'social',
-    placeholders: ['hook', 'body', 'cta', 'brand'],
-    copyFields: [
-      {id: 'hookTemplate', label: 'Hook', default: '{{hook}}'},
-      {id: 'bodyTemplate', label: 'Body', default: '{{body}}'},
-      {id: 'ctaText', label: 'Call to Action', default: '{{cta}}'},
-    ],
-    defaults: {
-      hookTemplate: '{{hook}}',
-      bodyTemplate: '{{body}}',
-      ctaText: '{{cta}}',
-      brandColor: '#1A365D',
-      secondaryColor: '#3182CE',
-      accentColor: '#9F7AEA',
-      logoUrl: '',
-      backgroundType: 'gradient',
-      backgroundColor: '#1A365D',
-      backgroundImageUrl: '',
-    },
-    blockSequence: ['social-hook', 'social-body', 'social-outro', 'brand-frame'],
-  },
-  {
-    id: 'WebinarPromo',
-    name: 'Webinar Promo',
-    description: 'Promote live webinars, product demos, and online workshops.',
-    useCase: 'B2B, Webinars, Events, Thought Leadership',
-    durationInFrames: 450,
-    fps: 30,
-    width: 1920,
-    height: 1080,
-    category: 'social',
-    placeholders: ['eventTitle', 'hostName', 'eventDate', 'eventTime', 'audience', 'keyTakeaway', 'ctaText', 'brandName'],
-    copyFields: [
-      {id: 'eventTitleTemplate', label: 'Event Title', default: 'Build a repeatable content engine'},
-      {id: 'hostNameTemplate', label: 'Host Name', default: 'Hosted by {{hostName}}'},
-      {id: 'eventDateTemplate', label: 'Event Date', default: '{{eventDate}}'},
-      {id: 'eventTimeTemplate', label: 'Event Time', default: '{{eventTime}}'},
-      {id: 'audienceTemplate', label: 'Audience', default: 'For {{audience}}'},
-      {id: 'keyTakeawayTemplate', label: 'Key Takeaway', default: '{{keyTakeaway}}'},
-      {id: 'ctaText', label: 'Call to Action', default: 'Reserve your seat'},
-      {id: 'brandName', label: 'Brand Name', default: '{{brandName}}'},
-    ],
-    defaults: {
-      eventTitleTemplate: 'Build a repeatable content engine',
-      hostNameTemplate: 'Hosted by {{hostName}}',
-      eventDateTemplate: '{{eventDate}}',
-      eventTimeTemplate: '{{eventTime}}',
-      audienceTemplate: 'For {{audience}}',
-      keyTakeawayTemplate: '{{keyTakeaway}}',
-      ctaText: 'Reserve your seat',
-      brandName: '{{brandName}}',
-      primaryColor: '#2563eb',
-      accentColor: '#14b8a6',
-      backgroundColor: '#0f172a',
-      textColor: '#f8fafc',
-      seed: 'webinar-promo',
-    },
-    blockSequence: ['text-overlay', 'data-callout', 'brand-frame'],
-  },
-];
-
-export const getFrontendTemplate = (templateId: string): TemplateDefinition =>
-  frontendTemplates.find((template) => template.id === templateId) ??
-  frontendTemplates[0];
-
-export const templateIconFor = (templateId: string): string => {
-  if (templateId === 'ProductLaunch') {
-    return 'PL';
-  }
-  if (templateId === 'RealEstate') {
-    return 'RE';
-  }
-  if (templateId === 'SocialClip') {
-    return 'SC';
-  }
-  if (templateId === 'WebinarPromo') {
-    return 'WB';
-  }
-  return 'IA';
+    blockSequence: template.defaultBlocks,
+  };
 };
+
+export const frontendTemplates: TemplateDefinition[] = templateCapabilities.map(toFrontendDefinition);
+
+export const getFrontendTemplate = (id: string): TemplateDefinition => {
+  const template = frontendTemplates.find((candidate) => candidate.id === id);
+  if (!template) {
+    throw new Error(`Unknown frontend template: ${id}`);
+  }
+  return template;
+};
+
+const TEMPLATE_ICONS: Record<string, string> = {
+  InsuranceAd: 'IA',
+  ProductLaunch: 'PL',
+  RealEstate: 'RE',
+  SocialClip: 'SC',
+  WebinarPromo: 'WB',
+};
+
+export const templateIconFor = (id: string): string => TEMPLATE_ICONS[id] ?? id.slice(0, 2).toUpperCase();
