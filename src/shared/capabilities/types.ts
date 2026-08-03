@@ -114,13 +114,38 @@ export type BlockCapability = {
   owner?: CapabilityOwner;
 };
 
+export type AnimationEasing = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'spring';
+
+export type BlockAnimationConfig = {
+  presetId: string;
+  durationFrames?: number;
+  intensity?: number;
+  easing?: AnimationEasing;
+};
+
+export type BlockAnimationSettings = {
+  entry?: BlockAnimationConfig;
+  exit?: BlockAnimationConfig;
+};
+
+export type TransitionType = 'crossfade' | 'slide' | 'zoom' | 'wipe';
+export type TransitionDirection = 'left' | 'right' | 'up' | 'down';
+
+export type BlockTransitionConfig = {
+  type: TransitionType;
+  durationFrames?: number;
+  direction?: TransitionDirection;
+  easing?: AnimationEasing;
+  intensity?: number;
+};
+
 export type AnimationPresetCapability = {
   id: string;
   name: string;
   description: string;
   direction?: 'in' | 'out';
   supportedPositions?: string[];
-  parameters: {intensity?: boolean; durationFrames?: boolean};
+  parameters: {intensity?: boolean; durationFrames?: boolean; easing?: boolean};
   compatibleBlockTypes: string[];
   version: string;
   status: CapabilityStatus;

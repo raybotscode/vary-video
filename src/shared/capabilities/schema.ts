@@ -60,6 +60,45 @@ export const mediaFieldCapabilitySchema = z
   })
   .strict();
 
+// --- Animation / transition runtime config schemas ---
+
+export const animationEasingSchema = z.enum([
+  'linear',
+  'ease-in',
+  'ease-out',
+  'ease-in-out',
+  'spring',
+]);
+
+export const blockAnimationConfigSchema = z
+  .object({
+    presetId: z.string().min(1),
+    durationFrames: z.number().int().positive().max(120).optional(),
+    intensity: z.number().min(0).max(1).optional(),
+    easing: animationEasingSchema.optional(),
+  })
+  .strict();
+
+export const blockAnimationSettingsSchema = z
+  .object({
+    entry: blockAnimationConfigSchema.optional(),
+    exit: blockAnimationConfigSchema.optional(),
+  })
+  .strict();
+
+export const transitionTypeSchema = z.enum(['crossfade', 'slide', 'zoom', 'wipe']);
+export const transitionDirectionSchema = z.enum(['left', 'right', 'up', 'down']);
+
+export const blockTransitionConfigSchema = z
+  .object({
+    type: transitionTypeSchema,
+    durationFrames: z.number().int().min(0).max(120).optional(),
+    direction: transitionDirectionSchema.optional(),
+    easing: animationEasingSchema.optional(),
+    intensity: z.number().min(0).max(2).optional(),
+  })
+  .strict();
+
 // --- Template / block / animation / style schemas ---
 
 export const templateCopyFieldSchema = z
@@ -143,6 +182,7 @@ export const animationPresetCapabilitySchema = z
     parameters: z.object({
       intensity: z.boolean().optional(),
       durationFrames: z.boolean().optional(),
+      easing: z.boolean().optional(),
     }),
     compatibleBlockTypes: z.array(z.string()),
     version: z.string(),

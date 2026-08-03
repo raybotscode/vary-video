@@ -1,7 +1,11 @@
 import {z} from 'zod';
 import {getBlock} from '../blocks/registry';
 import {assertKnownEnabledBlockIds} from '../../shared/capabilities/registry';
-import {imageTreatmentSchema} from '../../shared/capabilities/schema';
+import {
+  imageTreatmentSchema,
+  blockAnimationSettingsSchema,
+  blockTransitionConfigSchema,
+} from '../../shared/capabilities/schema';
 
 /**
  * Block ID validation: rejects unknown/disabled block IDs at schema-parse
@@ -27,6 +31,8 @@ const blockSequenceItemSchema = z.object({
   blockId: blockIdSchema,
   content: z.record(z.string(), z.string()).default({}),
   imageTreatment: imageTreatmentSchema.optional(),
+  animation: blockAnimationSettingsSchema.optional(),
+  transition: blockTransitionConfigSchema.optional(),
   durationFrames: z.number().int().positive().optional(),
   transitionFrames: z.number().int().min(0).optional(),
 });

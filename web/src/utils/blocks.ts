@@ -55,6 +55,18 @@ export type ComposerBlock = {
   blockId: string;
   content: Record<string, string>;
   durationFrames?: number;
+  animation?: {
+    entry?: {presetId: string; durationFrames?: number; intensity?: number; easing?: string};
+    exit?: {presetId: string; durationFrames?: number; intensity?: number; easing?: string};
+  };
+  transition?: {
+    type: string;
+    durationFrames?: number;
+    direction?: string;
+    easing?: string;
+    intensity?: number;
+  };
+  imageTreatment?: Record<string, unknown>;
 };
 
 export const categories: SceneBlockCategory[] = [

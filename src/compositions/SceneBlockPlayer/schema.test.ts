@@ -59,4 +59,92 @@ describe('sceneBlockPlayerSchema', () => {
       expect(result.success).toBe(true);
     }
   });
+
+  it('accepts animation entry and exit config', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      blocks: [{
+        blockId: 'product-intro',
+        content: {},
+        animation: {
+          entry: {presetId: 'fade-in', durationFrames: 12, intensity: 0.5, easing: 'ease-out'},
+          exit: {presetId: 'fade-out', durationFrames: 8},
+        },
+      }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts transition config', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      blocks: [{
+        blockId: 'product-intro',
+        content: {},
+        transition: {type: 'slide', durationFrames: 15, direction: 'left', easing: 'ease-in-out'},
+      }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts backward-compatible transitionFrames alongside new transition', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      blocks: [{
+        blockId: 'product-intro',
+        content: {},
+        transitionFrames: 12,
+        transition: {type: 'crossfade', durationFrames: 15},
+      }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid easing value', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      blocks: [{
+        blockId: 'product-intro',
+        content: {},
+        animation: {entry: {presetId: 'fade-in', easing: 'invalid-easing'}},
+      }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects invalid transition type', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      blocks: [{
+        blockId: 'product-intro',
+        content: {},
+        transition: {type: 'invalid', durationFrames: 12},
+      }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects negative animation duration', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      blocks: [{
+        blockId: 'product-intro',
+        content: {},
+        animation: {entry: {presetId: 'fade-in', durationFrames: -1}},
+      }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects intensity outside 0..1 for animation', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      blocks: [{
+        blockId: 'product-intro',
+        content: {},
+        animation: {entry: {presetId: 'zoom-in', intensity: 1.5}},
+      }],
+    });
+    expect(result.success).toBe(false);
+  });
 });
