@@ -17,6 +17,7 @@ import MobileActionBar from '../components/dashboard/MobileActionBar';
 import RenderSummary from '../components/dashboard/RenderSummary';
 import TemplatePicker from '../components/dashboard/TemplatePicker';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
+import {useCapabilities} from '../hooks/useCapabilities';
 import LoadingState from '../components/ui/LoadingState';
 import {defaultVariantsForTemplate, type VariantData} from '../utils/placeholder';
 import {
@@ -72,7 +73,6 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
   const [variants, setVariants] = useState<VariantData[]>(
     defaultVariantsForTemplate(frontendTemplates[0].id),
   );
-  const [isLoadingCompositions, setIsLoadingCompositions] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -87,59 +87,35 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
   );
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
+  const {
+    templates: capabilityTemplates,
+    capabilityVersion,
+    loading: isLoadingCompositions,
+    error: capabilityError,
+  } = useCapabilities();
+
+  // Apply resolved capabilities to local state (v1 → legacy → local fallback
+  // is handled inside useCapabilities). Runs once when loading completes.
   useEffect(() => {
-    let isMounted = true;
+    if (isLoadingCompositions || capabilityTemplates.length === 0) {
+      return;
+    }
 
-    apiClient
-      .getCompositions()
-      .then((nextCompositions) => {
-        if (!isMounted || !nextCompositions?.length) {
-          return;
-        }
+    const nextTemplate = capabilityTemplates[0];
+    setCompositions(capabilityTemplates);
+    setSelectedCompositionId(nextTemplate.id);
+    setTemplate(templateDefaults(nextTemplate));
+    setVariants(defaultVariantsForTemplate(nextTemplate.id));
+    const nextBlocks = composerBlocksForTemplate(nextTemplate.id);
+    setComposerBlocks(nextBlocks);
+    setSelectedBlockInstanceId(nextBlocks[0]?.instanceId ?? null);
+  }, [isLoadingCompositions, capabilityTemplates]);
 
-        const merged = nextCompositions.map((composition) => ({
-          ...getFrontendTemplate(composition.id),
-          ...composition,
-          defaults:
-            composition.defaults ??
-            composition.defaultProps ??
-            getFrontendTemplate(composition.id).defaults,
-          copyFields:
-            composition.copyFields ?? getFrontendTemplate(composition.id).copyFields,
-          placeholders:
-            composition.placeholders ?? getFrontendTemplate(composition.id).placeholders,
-          blockSequence:
-            composition.blockSequence ?? getFrontendTemplate(composition.id).blockSequence,
-        }));
-
-        setCompositions(merged);
-        const nextTemplate = merged[0];
-        setSelectedCompositionId(nextTemplate.id);
-        setTemplate(templateDefaults(nextTemplate));
-        setVariants(defaultVariantsForTemplate(nextTemplate.id));
-        const nextBlocks = composerBlocksForTemplate(nextTemplate.id);
-        setComposerBlocks(nextBlocks);
-        setSelectedBlockInstanceId(nextBlocks[0]?.instanceId ?? null);
-      })
-      .catch((apiError: unknown) => {
-        if (isMounted) {
-          setError(
-            apiError instanceof Error
-              ? `Could not load API templates: ${apiError.message}`
-              : 'Could not load API templates. You can still draft a batch locally.',
-          );
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setIsLoadingCompositions(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  useEffect(() => {
+    if (capabilityError) {
+      setError(capabilityError);
+    }
+  }, [capabilityError]);
 
   useEffect(() => {
     if (!jobId) {

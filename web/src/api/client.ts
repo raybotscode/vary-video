@@ -1,4 +1,17 @@
 import type {VariantData} from '../utils/placeholder';
+import type {
+  BlockCapability,
+  CapabilityRegistry,
+  CompactCapabilitySummary,
+  TemplateCapability,
+} from '@vary/shared/capabilities/types';
+
+/** /api/v1/capabilities response — full registry + compact summary. */
+export type CapabilityRegistryResponse = CapabilityRegistry & {
+  compactSummary: CompactCapabilitySummary;
+};
+
+export type {TemplateCapability, BlockCapability};
 
 export type Composition = {
   id: string;
@@ -159,6 +172,30 @@ const readJson = async <T>(response: Response): Promise<T> => {
 };
 
 export const apiClient = {
+  /**
+   * Fetch the canonical capability registry (v1). Includes templates,
+   * blocks, styles, animations, version hash, and the compact AI summary.
+   */
+  async getCapabilities(): Promise<CapabilityRegistryResponse> {
+    const response = await fetch(apiUrl('/v1/capabilities'));
+    return readJson<CapabilityRegistryResponse>(response);
+  },
+
+  /** Fetch enabled templates from v1. */
+  async getTemplates(): Promise<TemplateCapability[]> {
+    const response = await fetch(apiUrl('/v1/templates'));
+    const data = await readJson<{templates: TemplateCapability[]}>(response);
+    return data.templates;
+  },
+
+  /** Fetch enabled blocks from v1. */
+  async getBlocks(): Promise<BlockCapability[]> {
+    const response = await fetch(apiUrl('/v1/blocks'));
+    const data = await readJson<{blocks: BlockCapability[]}>(response);
+    return data.blocks;
+  },
+
+  /** Legacy compositions list — fallback when v1 is unavailable. */
   async getCompositions(): Promise<Composition[]> {
     const getResponse = await fetch(apiUrl('/compositions'));
 
