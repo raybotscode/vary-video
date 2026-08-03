@@ -90,6 +90,25 @@ export type BlockSequence = Array<{
 
 export type VideoFormat = '16:9' | '1:1' | '9:16' | '4:5';
 
+export type AudioConfig = {
+  src: string;
+  volume?: number;
+  fadeIn?: number;
+  fadeOut?: number;
+  loop?: boolean;
+  startOffset?: number;
+};
+
+export type UploadedAudio = {
+  id: string;
+  jobId: string;
+  filename: string;
+  url: string;
+  sizeBytes: number;
+  durationSeconds: number | null;
+  mimeType: string;
+};
+
 export const FORMAT_LABELS: Record<VideoFormat, string> = {
   '16:9': 'Landscape (1920×1080)',
   '1:1': 'Square (1080×1080)',
@@ -266,5 +285,22 @@ export const apiClient = {
 
   getZipDownloadUrl(jobId: string): string {
     return apiUrl(`/render/download-zip/${jobId}`);
+  },
+
+  async uploadAudio(file: File, jobId?: string): Promise<UploadedAudio> {
+    const form = new FormData();
+    form.append('file', file);
+    if (jobId) form.append('jobId', jobId);
+    const response = await fetch(apiUrl('/v1/audio/upload'), {
+      method: 'POST',
+      body: form,
+    });
+    return readJson<UploadedAudio>(response);
+  },
+
+  async listAudio(): Promise<UploadedAudio[]> {
+    const response = await fetch(apiUrl('/v1/audio'));
+    const data = await readJson<{audio: UploadedAudio[]}>(response);
+    return data.audio;
   },
 };

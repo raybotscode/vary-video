@@ -1,5 +1,5 @@
 import {loadFont} from '@remotion/google-fonts/Inter';
-import {AbsoluteFill, Img, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Audio, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {safeHexColor} from '../../components/util';
 import {blockRenderers, getBlock} from '../blocks/registry';
 import {getAnimationStyle, mergeMotionStyles} from '../animations';
@@ -16,6 +16,47 @@ loadFont('normal', {
   subsets: ['latin'],
   ignoreTooManyRequestsWarning: true,
 });
+
+const resolveAudioSrc = (src: string): string => {
+  if (src.startsWith('/audio/')) return staticFile(src.slice(1));
+  if (src.startsWith('audio/')) return staticFile(src);
+  return src;
+};
+
+const getAudioVolume = ({
+  frame,
+  durationInFrames,
+  fps,
+  volume,
+  fadeIn,
+  fadeOut,
+}: {
+  frame: number;
+  durationInFrames: number;
+  fps: number;
+  volume: number;
+  fadeIn: number;
+  fadeOut: number;
+}): number => {
+  const fadeInFrames = Math.round(fadeIn * fps);
+  const fadeOutFrames = Math.round(fadeOut * fps);
+  const fadeInMultiplier =
+    fadeInFrames > 0
+      ? interpolate(frame, [0, fadeInFrames], [0, 1], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        })
+      : 1;
+  const fadeOutStart = Math.max(0, durationInFrames - fadeOutFrames);
+  const fadeOutMultiplier =
+    fadeOutFrames > 0
+      ? interpolate(frame, [fadeOutStart, durationInFrames], [1, 0], {
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'clamp',
+        })
+      : 1;
+  return volume * fadeInMultiplier * fadeOutMultiplier;
+};
 
 type PositionedBlock = {
   block: SceneBlockSequenceItem;
@@ -94,6 +135,7 @@ const renderPositionedBlock = ({
 export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
   const props = sceneBlockPlayerSchema.parse(rawProps);
   const currentFrame = useCurrentFrame();
+  const {durationInFrames, fps} = useVideoConfig();
   const positionedBlocks = getPositionedBlocks(props.blocks);
   const currentIndex = positionedBlocks.findIndex(
     ({startFrame, duration}) =>
@@ -222,6 +264,24 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
             objectFit: 'cover',
             opacity: 0.16,
           }}
+        />
+      ) : null}
+
+      {props.audio ? (
+        <Audio
+          src={resolveAudioSrc(props.audio.src)}
+          volume={() =>
+            getAudioVolume({
+              frame: currentFrame,
+              durationInFrames,
+              fps,
+              volume: props.audio!.volume,
+              fadeIn: props.audio!.fadeIn,
+              fadeOut: props.audio!.fadeOut,
+            })
+          }
+          startFrom={Math.round(props.audio.startOffset * fps)}
+          loop={props.audio.loop}
         />
       ) : null}
 

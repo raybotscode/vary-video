@@ -6,6 +6,8 @@ public/renders/*.mp4
 public/renders/*.mov
 public/renders/*.webm
 public/renders/*.png
+public/audio/*/
+public/audio/*.tmp
 .DS_Store
 *.log
 

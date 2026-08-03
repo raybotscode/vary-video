@@ -228,6 +228,11 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     imageTreatment: block.imageTreatment,
   }));
 
+  const audioFromTemplate = (template: RenderTemplatePayload) => {
+    if (template.audio && typeof template.audio === 'object') return template.audio;
+    return undefined;
+  };
+
   const submitBatch = async () => {
     setError(null);
     setIsSubmitting(true);
@@ -237,6 +242,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       const sceneComposerTemplate = {
         blocks: composerBlockSequence,
         brandSettings: brandSettingsFromTemplate(template),
+        audio: audioFromTemplate(template),
         fps: selectedTemplate.fps,
         width: selectedTemplate.width,
         height: selectedTemplate.height,
@@ -358,6 +364,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
           selectedStylePresetId={selectedStylePresetId}
           onSelectStylePreset={setSelectedStylePresetId}
           onChange={setTemplate}
+          enableAudio={mode === 'composer'}
         />
       </WorkflowSection>
 

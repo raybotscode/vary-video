@@ -147,4 +147,75 @@ describe('sceneBlockPlayerSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts valid audio config', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      audio: {src: '/audio/job1/music.mp3'},
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('defaults audio volume to 0.3', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      audio: {src: '/audio/test.mp3'},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.audio?.volume).toBe(0.3);
+    }
+  });
+
+  it('defaults audio fadeIn to 2 and fadeOut to 2', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      audio: {src: '/audio/test.mp3'},
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.audio?.fadeIn).toBe(2);
+      expect(result.data.audio?.fadeOut).toBe(2);
+    }
+  });
+
+  it('rejects audio volume > 1', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      audio: {src: '/audio/test.mp3', volume: 1.5},
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects audio volume < 0', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      audio: {src: '/audio/test.mp3', volume: -0.1},
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects negative audio fadeIn', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      audio: {src: '/audio/test.mp3', fadeIn: -1},
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects negative audio startOffset', () => {
+    const result = sceneBlockPlayerSchema.safeParse({
+      ...validProps,
+      audio: {src: '/audio/test.mp3', startOffset: -5},
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts block-only payloads without audio', () => {
+    const result = sceneBlockPlayerSchema.safeParse(validProps);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.audio).toBeUndefined();
+    }
+  });
 });

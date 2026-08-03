@@ -30,6 +30,7 @@ app.use(
 );
 app.use(express.json({limit: '2mb'}));
 app.use('/renders', express.static(path.join(projectRoot, 'public/renders')));
+app.use('/audio', express.static(path.join(projectRoot, 'public/audio')));
 app.use('/api/v1', v1Router);
 app.use('/api/render', renderRouter);
 

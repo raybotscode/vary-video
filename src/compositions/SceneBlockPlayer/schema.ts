@@ -37,6 +37,17 @@ const blockSequenceItemSchema = z.object({
   transitionFrames: z.number().int().min(0).optional(),
 });
 
+export const audioConfigSchema = z.object({
+  src: z.string().min(1),
+  volume: z.number().min(0).max(1).default(0.3),
+  fadeIn: z.number().min(0).default(2),
+  fadeOut: z.number().min(0).default(2),
+  loop: z.boolean().default(true),
+  startOffset: z.number().min(0).default(0),
+});
+
+export type AudioConfig = z.infer<typeof audioConfigSchema>;
+
 export const sceneBlockPlayerSchema = z.object({
   blocks: z.array(blockSequenceItemSchema).min(1),
   brandSettings: z.object({
@@ -51,6 +62,7 @@ export const sceneBlockPlayerSchema = z.object({
   fps: z.number().int().positive().default(30),
   width: z.number().int().positive().default(1920),
   height: z.number().int().positive().default(1080),
+  audio: audioConfigSchema.optional(),
   data: z.record(z.string(), z.string()).default({}),
 });
 

@@ -32,7 +32,7 @@ export {
   getSequenceDuration,
   sceneBlockPlayerSchema,
 } from './SceneBlockPlayer/schema';
-export type {SceneBlockPlayerProps} from './SceneBlockPlayer/schema';
+export type {AudioConfig, SceneBlockPlayerProps} from './SceneBlockPlayer/schema';
 export {WebinarPromo} from './WebinarPromo/WebinarPromo';
 export {
   defaultWebinarPromoProps,

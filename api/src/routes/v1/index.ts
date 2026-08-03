@@ -1,5 +1,6 @@
 import {Router} from 'express';
 import {animationsRouter} from './animations';
+import {audioRouter} from '../audio';
 import {blocksRouter} from './blocks';
 import {capabilitiesRouter} from './capabilities';
 import {mediaRouter} from './media';
@@ -19,3 +20,4 @@ v1Router.use('/blocks', blocksRouter);
 v1Router.use('/styles', stylesRouter);
 v1Router.use('/animations', animationsRouter);
 v1Router.use('/media', mediaRouter);
+v1Router.use('/audio', audioRouter);
