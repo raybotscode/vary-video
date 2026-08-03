@@ -3,6 +3,7 @@ import {AbsoluteFill, Img, useCurrentFrame} from 'remotion';
 import {safeHexColor} from '../../components/util';
 import {blockRenderers, getBlock} from '../blocks/registry';
 import {getAnimationStyle, mergeMotionStyles} from '../animations';
+import {getTransitionStyle} from '../transitions';
 import {
   getBlockDuration,
   sceneBlockPlayerSchema,
@@ -107,14 +108,22 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
 
   const localFrame = Math.max(0, currentFrame - current.startFrame);
   const next = positionedBlocks[currentIndex + 1];
-  const transitionFrames = Math.min(
-    current.block.transitionFrames ?? 12,
+
+  // Transition config: use new `transition` field, fall back to legacy `transitionFrames`
+  const transitionConfig = current.block.transition;
+  const transitionDuration = Math.min(
+    transitionConfig?.durationFrames ?? current.block.transitionFrames ?? 12,
     current.duration,
   );
-  const transitionStart = current.duration - transitionFrames;
+  const transitionType = transitionConfig?.type ?? 'crossfade';
+  const transitionDirection = transitionConfig?.direction;
+  const transitionEasing = transitionConfig?.easing;
+  const transitionIntensity = transitionConfig?.intensity;
+
+  const transitionStart = current.duration - transitionDuration;
   const transitionProgress =
-    next && transitionFrames > 0 && localFrame >= transitionStart
-      ? (localFrame - transitionStart) / transitionFrames
+    next && transitionDuration > 0 && localFrame >= transitionStart
+      ? (localFrame - transitionStart) / transitionDuration
       : 0;
 
   // Animation styles for current block
@@ -156,7 +165,7 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
   const nextEntryStyle = next && nextEntryAnimation && transitionProgress > 0
     ? getAnimationStyle({
         presetId: nextEntryAnimation.presetId,
-        frame: transitionProgress * transitionFrames,
+        frame: transitionProgress * transitionDuration,
         fps: props.fps,
         width: props.width,
         height: props.height,
@@ -166,9 +175,32 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
       })
     : {};
 
-  // Transition style (existing crossfade logic)
-  const transitionOpacityIn = transitionProgress;
-  const transitionOpacityOut = next ? 1 - transitionProgress : 1;
+  // Transition styles using the transition utility
+  const currentTransitionStyle = transitionProgress > 0
+    ? getTransitionStyle({
+        type: transitionType,
+        layer: 'current',
+        progress: transitionProgress,
+        width: props.width,
+        height: props.height,
+        direction: transitionDirection,
+        intensity: transitionIntensity,
+        easing: transitionEasing,
+      })
+    : {};
+
+  const nextTransitionStyle = transitionProgress > 0
+    ? getTransitionStyle({
+        type: transitionType,
+        layer: 'next',
+        progress: transitionProgress,
+        width: props.width,
+        height: props.height,
+        direction: transitionDirection,
+        intensity: transitionIntensity,
+        easing: transitionEasing,
+      })
+    : {};
 
   return (
     <AbsoluteFill
@@ -198,16 +230,16 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
           position: 'absolute',
           inset: 0,
           ...mergeMotionStyles(
-            {opacity: transitionOpacityIn},
+            nextTransitionStyle,
             nextEntryStyle,
           ),
         }}>
           {renderPositionedBlock({
             positioned: {
               ...next,
-              startFrame: currentFrame - transitionProgress * transitionFrames,
+              startFrame: currentFrame - transitionProgress * transitionDuration,
             },
-            localFrame: transitionProgress * transitionFrames,
+            localFrame: transitionProgress * transitionDuration,
             props,
           })}
         </div>
@@ -218,7 +250,7 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
           position: 'absolute',
           inset: 0,
           ...mergeMotionStyles(
-            {opacity: transitionOpacityOut},
+            currentTransitionStyle,
             entryStyle,
             exitStyle,
           ),
