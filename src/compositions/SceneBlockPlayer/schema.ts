@@ -1,8 +1,29 @@
 import {z} from 'zod';
 import {getBlock} from '../blocks/registry';
+import {assertKnownEnabledBlockIds} from '../../shared/capabilities/registry';
+
+/**
+ * Block ID validation: rejects unknown/disabled block IDs at schema-parse
+ * time so invalid specs fail before reaching the renderer (previously they
+ * failed mid-render inside getBlock).
+ */
+const blockIdSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (blockId) => {
+      try {
+        assertKnownEnabledBlockIds([blockId]);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    {message: 'Unknown or disabled block id'},
+  );
 
 const blockSequenceItemSchema = z.object({
-  blockId: z.string().min(1),
+  blockId: blockIdSchema,
   content: z.record(z.string(), z.string()).default({}),
   durationFrames: z.number().int().positive().optional(),
   transitionFrames: z.number().int().min(0).optional(),

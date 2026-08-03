@@ -1,5 +1,6 @@
 import {z, type ZodType} from 'zod';
 import {templateCapabilities} from '../shared/capabilities/templates';
+import {sceneBlockPlayerSchema as sceneBlockPlayerTemplateSchema} from '../compositions/SceneBlockPlayer/schema';
 import {
   defaultInsuranceAdProps,
   insuranceAdSchema,
@@ -39,29 +40,10 @@ const commonBackgroundFields = {
   backgroundImageUrl: z.string().optional(),
 };
 
-export const sceneBlockPlayerTemplateSchema = z.object({
-  blocks: z.array(
-    z.object({
-      blockId: z.string().min(1),
-      content: z.record(z.string(), z.string()).default({}),
-      durationFrames: z.number().int().positive().optional(),
-      transitionFrames: z.number().int().min(0).optional(),
-    }),
-  ).min(1),
-  brandSettings: z.object({
-    brandColor: z.string().default('#1A365D'),
-    secondaryColor: z.string().default('#3182CE'),
-    accentColor: z.string().default('#FF6B5B'),
-    logoUrl: z.string().default(''),
-    backgroundType: z.enum(['solid', 'gradient', 'image']).default('gradient'),
-    backgroundColor: z.string().default('#F7FAFC'),
-    backgroundImageUrl: z.string().optional(),
-  }),
-  fps: z.number().int().positive().default(30),
-  width: z.number().int().positive().default(1920),
-  height: z.number().int().positive().default(1080),
-  data: z.record(z.string(), z.string()).default({}),
-});
+// Canonical SceneBlockPlayer schema — imported from the composition schema so
+// this registry cannot drift from runtime validation (includes blockId
+// known-block validation). Kept under this name for API validation compat.
+export {sceneBlockPlayerTemplateSchema};
 
 export const productLaunchSchema = z.object({
   headlineTemplate: z.string().default('Introducing {{product_name}}'),
