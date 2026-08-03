@@ -8,6 +8,7 @@ import {mediaRouter} from './media';
 import {rendersRouter} from './renders';
 import {stylesRouter} from './styles';
 import {templatesRouter} from './templates';
+import {previewRouter} from './preview';
 
 /**
  * /api/v1 — versioned commercial API surface.
@@ -24,4 +25,5 @@ v1Router.use('/animations', animationsRouter);
 v1Router.use('/media', mediaRouter);
 v1Router.use('/audio', audioRouter);
 v1Router.use('/renders', rendersRouter);
+v1Router.use('/preview', previewRouter);
 v1Router.use('/generate-template', generateTemplateRouter);

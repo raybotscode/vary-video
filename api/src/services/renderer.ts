@@ -37,7 +37,7 @@ const entryPoint = path.join(projectRoot, 'src/index.ts');
 
 let bundlePromise: Promise<string> | null = null;
 
-const getBundleUrl = async (): Promise<string> => {
+export const getBundleUrl = async (): Promise<string> => {
   bundlePromise ??= bundle({
     entryPoint,
     publicDir: path.join(projectRoot, 'public'),
