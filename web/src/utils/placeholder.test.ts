@@ -13,6 +13,16 @@ const webinarPlaceholders = [
   'brandName',
 ];
 
+const webinarMediaPlaceholders = [
+  'brand_color',
+  'secondary_color',
+  'accent_color',
+  'background_color',
+  'logo_url',
+  'background_image_url',
+  'speaker_image_url',
+];
+
 describe('defaultVariantsForTemplate', () => {
   it('returns exactly two webinar-specific variants for WebinarPromo', () => {
     const variants = defaultVariantsForTemplate('WebinarPromo');
@@ -32,7 +42,7 @@ describe('defaultVariantsForTemplate', () => {
   it('has a frontend template entry with matching placeholders', () => {
     const template = getFrontendTemplate('WebinarPromo');
     expect(template.id).toBe('WebinarPromo');
-    expect(template.placeholders).toEqual(webinarPlaceholders);
+    expect(template.placeholders).toEqual([...webinarPlaceholders, ...webinarMediaPlaceholders]);
     expect(template.category).toBe('social');
   });
 

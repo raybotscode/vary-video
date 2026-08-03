@@ -1,5 +1,6 @@
 import {getEnabledAnimationPresets} from './animations';
 import {blockCapabilities, isBlockEnabled} from './blocks';
+import {getEnabledMediaFields} from './media';
 import {getEnabledStylePresets} from './styles';
 import {templateCapabilities} from './templates';
 import type {
@@ -31,6 +32,7 @@ const buildRegistry = (): CapabilityRegistry => {
     blocks: enabledBlocks(),
     animations: getEnabledAnimationPresets(),
     styles: getEnabledStylePresets(),
+    media: getEnabledMediaFields(),
   };
 
   return {
@@ -96,5 +98,10 @@ export const getCompactCapabilitySummary = (): CompactCapabilitySummary => {
     })),
     styles: registry.styles.map((style) => style.id),
     animations: registry.animations.map((animation) => animation.id),
+    media: registry.media.map((field) => ({
+      id: field.id,
+      variantKey: field.variantKey,
+      required: field.required,
+    })),
   };
 };

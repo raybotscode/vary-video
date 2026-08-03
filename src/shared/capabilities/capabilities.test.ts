@@ -59,12 +59,13 @@ describe('block capabilities', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('has all 12 expected blocks', () => {
+  it('has all 13 expected blocks', () => {
     expect(blockCapabilities.map((block) => block.id).sort()).toEqual([
       'agent-cta',
       'brand-frame',
       'data-callout',
       'features-grid',
+      'media-image',
       'pricing-card',
       'product-intro',
       'property-details',

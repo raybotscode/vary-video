@@ -27,7 +27,7 @@ describe('capabilityAdapters', () => {
   });
   it('maps blocks to the composer shape', () => {
     const mapped = blockCapabilitiesToFrontend(blockCapabilities);
-    expect(mapped).toHaveLength(12);
+    expect(mapped).toHaveLength(13);
     const hero = mapped.find((block) => block.id === 'property-hero');
     expect(hero).toBeDefined();
     expect(hero!.defaultDurationFrames).toBe(150);

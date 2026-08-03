@@ -40,14 +40,43 @@ export type TemplateCapability = {
   version: string;
   status: CapabilityStatus;
   tags: string[];
+  /** Media field IDs this template supports (e.g. ['propertyImage', 'logo']). */
+  mediaFields?: string[];
   /** Tenant-aware future field — reserved for Phase 5/10, not populated now. */
   owner?: CapabilityOwner;
+};
+
+export type ImageFitMode = 'cover' | 'contain' | 'fit-width' | 'fit-height';
+export type ImageHorizontalPosition = 'left' | 'center' | 'right';
+export type ImageVerticalPosition = 'top' | 'center' | 'bottom';
+
+export type ImageFocalPoint = {
+  x: number; // 0..1
+  y: number; // 0..1
+};
+
+export type GradientOverlay = {
+  enabled: boolean;
+  from: string;
+  to: string;
+  direction: 'to-top' | 'to-bottom' | 'to-left' | 'to-right';
+  opacity: number; // 0..1
+};
+
+export type ImageTreatment = {
+  fit: ImageFitMode;
+  focalPoint?: ImageFocalPoint;
+  horizontalPosition?: ImageHorizontalPosition;
+  verticalPosition?: ImageVerticalPosition;
+  darkOverlay?: number; // 0..1
+  blur?: number; // px, clamp 0..24
+  gradientOverlay?: GradientOverlay;
 };
 
 export type BlockContentField = {
   key: string;
   label: string;
-  type: 'text' | 'url' | 'color' | 'number';
+  type: 'text' | 'url' | 'color' | 'number' | 'image' | 'image-treatment';
   placeholder?: string;
 };
 
@@ -75,6 +104,10 @@ export type BlockCapability = {
   status: CapabilityStatus;
   tags: string[];
   exampleUses: string[];
+  /** Media field IDs this block renders (e.g. ['propertyImage', 'productImage']). */
+  mediaFields?: string[];
+  /** Default image treatment for media rendered by this block. */
+  defaultImageTreatment?: ImageTreatment;
   /** Tenant-aware future field — reserved for Phase 5/10, not populated now. */
   owner?: CapabilityOwner;
 };
@@ -111,12 +144,15 @@ export type CapabilityVersion = {
   generatedAt: string;
 };
 
+import type {MediaFieldCapability} from './media';
+
 export type CapabilityRegistry = {
   version: CapabilityVersion;
   templates: TemplateCapability[];
   blocks: BlockCapability[];
   animations: AnimationPresetCapability[];
   styles: StylePresetCapability[];
+  media: MediaFieldCapability[];
 };
 
 /** Compact AI-facing summary. Omits large defaults; includes the essentials. */
@@ -132,4 +168,5 @@ export type CompactCapabilitySummary = {
   }>;
   styles: string[];
   animations: string[];
+  media: Array<{id: string; variantKey: string; required: boolean}>;
 };

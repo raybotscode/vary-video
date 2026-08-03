@@ -36,6 +36,13 @@ describe('template registry', () => {
       'keyTakeaway',
       'ctaText',
       'brandName',
+      'brand_color',
+      'secondary_color',
+      'accent_color',
+      'background_color',
+      'logo_url',
+      'background_image_url',
+      'speaker_image_url',
     ]);
     expect(template.blockSequence).toEqual([
       'text-overlay',
@@ -52,17 +59,13 @@ describe('template registry', () => {
     expect(template.height).toBe(1080);
   });
 
-  it('keeps every WebinarPromo placeholder aligned with a copy field', () => {
+  it('keeps every WebinarPromo copy field aligned with a placeholder', () => {
     const template = getTemplate('WebinarPromo');
-    const placeholderToCopyField = new Map(
-      template.copyFields.map((field) => [
-        field.id.replace(/Template$/, ''),
-        field,
-      ]),
-    );
+    const placeholderSet = new Set(template.placeholders);
 
-    for (const placeholder of template.placeholders) {
-      expect(placeholderToCopyField.has(placeholder), placeholder).toBe(true);
+    for (const field of template.copyFields) {
+      const key = field.id.replace(/Template$/, '');
+      expect(placeholderSet.has(key), `copy field '${field.id}' should map to placeholder '${key}'`).toBe(true);
     }
   });
 

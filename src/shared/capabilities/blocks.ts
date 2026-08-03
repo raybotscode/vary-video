@@ -235,6 +235,32 @@ export const blockCapabilities: BlockCapability[] = [
     tags: ['data', 'stats', 'generic'],
     exampleUses: ['Large statistic or data point scene'],
   },
+  {
+    id: 'media-image',
+    name: 'Media Image',
+    description: 'Configurable image with cover/contain/fit modes, focal point, and overlays.',
+    icon: 'MI',
+    category: 'feature',
+    compatibleSchemas: ['any'],
+    contentFields: [
+      {key: 'imageUrl', label: 'Image URL', type: 'image', placeholder: '{{primary_image_url}}'},
+      {key: 'altText', label: 'Alt Text', type: 'text', placeholder: 'Descriptive text'},
+      {key: 'treatment', label: 'Image Treatment', type: 'image-treatment'},
+    ],
+    defaultDurationFrames: 120,
+    requiredBrandSettings: ['brandColor', 'secondaryColor', 'accentColor', 'backgroundType', 'backgroundColor'],
+    supportedAnimations: ['none'],
+    version: '1.0.0',
+    status: 'enabled',
+    tags: ['image', 'media', 'generic'],
+    exampleUses: ['Property photo scene', 'Product showcase scene', 'Speaker headshot scene'],
+    mediaFields: ['propertyImage', 'productImage', 'backgroundImage'],
+    defaultImageTreatment: {
+      fit: 'cover',
+      horizontalPosition: 'center',
+      verticalPosition: 'center',
+    },
+  },
 ];
 
 export const blockCapabilityById = (id: string): BlockCapability | undefined =>

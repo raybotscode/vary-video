@@ -10,6 +10,57 @@ export const capabilityStatusSchema = z.enum(['enabled', 'disabled', 'deprecated
 
 export const outputFormatSchema = z.enum(['16:9', '1:1', '9:16', '4:5']);
 
+// --- Media / image treatment schemas ---
+
+export const imageFitModeSchema = z.enum(['cover', 'contain', 'fit-width', 'fit-height']);
+
+export const imageFocalPointSchema = z
+  .object({
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+  })
+  .strict();
+
+export const gradientOverlaySchema = z
+  .object({
+    enabled: z.boolean(),
+    from: z.string(),
+    to: z.string(),
+    direction: z.enum(['to-top', 'to-bottom', 'to-left', 'to-right']),
+    opacity: z.number().min(0).max(1),
+  })
+  .strict();
+
+export const imageTreatmentSchema = z
+  .object({
+    fit: imageFitModeSchema.default('cover'),
+    focalPoint: imageFocalPointSchema.optional(),
+    horizontalPosition: z.enum(['left', 'center', 'right']).optional(),
+    verticalPosition: z.enum(['top', 'center', 'bottom']).optional(),
+    darkOverlay: z.number().min(0).max(1).optional(),
+    blur: z.number().min(0).max(24).optional(),
+    gradientOverlay: gradientOverlaySchema.optional(),
+  })
+  .strict();
+
+export const mediaFieldCapabilitySchema = z
+  .object({
+    id: z.string().min(1),
+    kind: z.enum(['logo', 'background-image', 'property-image', 'product-image', 'agent-image', 'speaker-image']),
+    label: z.string().min(1),
+    description: z.string().min(1),
+    variantKey: z.string().min(1),
+    templateProp: z.string().min(1),
+    required: z.boolean(),
+    acceptedMimeTypes: z.array(z.string().min(1)).min(1),
+    maxBytes: z.number().int().positive(),
+    defaultTreatment: imageTreatmentSchema,
+    status: capabilityStatusSchema,
+  })
+  .strict();
+
+// --- Template / block / animation / style schemas ---
+
 export const templateCopyFieldSchema = z
   .object({
     id: z.string().min(1),
@@ -34,6 +85,7 @@ export const templateCapabilitySchema = z
     version: z.string(),
     status: capabilityStatusSchema,
     tags: z.array(z.string()),
+    mediaFields: z.array(z.string()).optional(),
     owner: z
       .discriminatedUnion('ownerType', [
         z.object({ownerType: z.literal('system')}).strict(),
@@ -47,7 +99,7 @@ export const blockContentFieldSchema = z
   .object({
     key: z.string().min(1),
     label: z.string().min(1),
-    type: z.enum(['text', 'url', 'color', 'number']),
+    type: z.enum(['text', 'url', 'color', 'number', 'image', 'image-treatment']),
     placeholder: z.string().optional(),
   })
   .strict();
@@ -68,6 +120,8 @@ export const blockCapabilitySchema = z
     status: capabilityStatusSchema,
     tags: z.array(z.string()),
     exampleUses: z.array(z.string()),
+    mediaFields: z.array(z.string()).optional(),
+    defaultImageTreatment: imageTreatmentSchema.optional(),
     owner: z
       .discriminatedUnion('ownerType', [
         z.object({ownerType: z.literal('system')}).strict(),
@@ -130,6 +184,7 @@ export const capabilityRegistrySchema = z
     blocks: z.array(blockCapabilitySchema),
     animations: z.array(animationPresetCapabilitySchema),
     styles: z.array(stylePresetCapabilitySchema),
+    media: z.array(mediaFieldCapabilitySchema),
   })
   .strict();
 
@@ -158,5 +213,14 @@ export const compactCapabilitySummarySchema = z
     ),
     styles: z.array(z.string()),
     animations: z.array(z.string()),
+    media: z.array(
+      z
+        .object({
+          id: z.string(),
+          variantKey: z.string(),
+          required: z.boolean(),
+        })
+        .strict(),
+    ),
   })
   .strict();
