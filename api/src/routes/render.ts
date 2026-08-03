@@ -5,6 +5,7 @@ import {z} from 'zod';
 import {ZipArchive} from 'archiver';
 import {compositionIdSchema} from '../validation/composition';
 import {validateTemplateForComposition} from '../validation/composition';
+import {validateBatchVariants} from '../services/variantResolution';
 import {
   BatchRenderRequest,
   publicRenderDir,
@@ -73,6 +74,23 @@ renderRouter.post('/batch', (req, res) => {
       details: z.flattenError(templateCheck.error),
     });
     return;
+  }
+
+  // Validate all variants for media field errors (Phase 3)
+  const mediaFieldIds = (parsed.data.template.mediaFields as string[]) ?? [];
+  if (mediaFieldIds.length > 0) {
+    const variantErrors = validateBatchVariants(parsed.data.variants, mediaFieldIds);
+    if (variantErrors.size > 0) {
+      const details: Record<number, string[]> = {};
+      for (const [index, errors] of variantErrors) {
+        details[index] = errors;
+      }
+      res.status(400).json({
+        error: 'Some variants have invalid media fields',
+        details: {variantErrors: details},
+      });
+      return;
+    }
   }
 
   const {formats, ...request} = parsed.data;

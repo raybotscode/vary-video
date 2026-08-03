@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {getSchemaForTemplate} from '../../../src/templates/registry';
+import {resolveVariantProps} from './variantResolution';
 
 export type RenderTemplate = Record<string, unknown>;
 export type RenderVariant = Record<string, string>;
@@ -12,6 +13,7 @@ export type BatchRenderRequest = {
   compositionId: string;
   template: RenderTemplate;
   variants: RenderVariant[];
+  mediaFieldIds?: string[];
 };
 
 export type VariantRenderResult = {
@@ -50,10 +52,9 @@ export const makeInputProps = (
   template: RenderTemplate,
   variant: RenderVariant,
 ): Record<string, unknown> => {
-  return getSchemaForTemplate(compositionId).parse({
-    ...template,
-    data: variant,
-  });
+  // Resolve per-variant brand/media placeholders before schema parsing
+  const resolvedTemplate = resolveVariantProps(template, variant);
+  return getSchemaForTemplate(compositionId).parse(resolvedTemplate);
 };
 
 export const renderVariant = async ({
