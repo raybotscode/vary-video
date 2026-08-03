@@ -186,6 +186,98 @@ describe('validateVariantMedia', () => {
   });
 });
 
+describe('resolveVariantProps integration — generic and legacy keys reach composition props', () => {
+  it('RealEstate: legacy property_image_url maps to generic image1Url at top level', () => {
+    const template = {
+      brandColor: '#1A365D',
+      headlineTemplate: '{{property_name}}',
+      image1Url: '',
+    };
+    const variant = {
+      property_name: 'The Elm',
+      property_image_url: 'https://cdn.example.com/elm.jpg',
+    };
+    // legacy key maps to image1Url (generic), not propertyImageUrl
+    const result = resolveVariantProps(template, variant, 'RealEstate');
+    expect(result.image1Url).toBe('https://cdn.example.com/elm.jpg');
+  });
+
+  it('RealEstate: generic image1_url also maps to image1Url', () => {
+    const template = {
+      brandColor: '#1A365D',
+      headlineTemplate: '{{property_name}}',
+      image1Url: '',
+    };
+    const variant = {
+      property_name: 'The Elm',
+      image1_url: 'https://cdn.example.com/elm.jpg',
+    };
+    const result = resolveVariantProps(template, variant, 'RealEstate');
+    expect(result.image1Url).toBe('https://cdn.example.com/elm.jpg');
+  });
+
+  it('ProductLaunch: legacy product_image_url maps to generic image1Url at top level', () => {
+    const template = {
+      brandColor: '#1A365D',
+      headlineTemplate: 'Introducing {{product_name}}',
+      image1Url: '',
+    };
+    const variant = {
+      product_name: 'Vary Studio',
+      product_image_url: 'https://cdn.example.com/product.jpg',
+    };
+    const result = resolveVariantProps(template, variant, 'ProductLaunch');
+    expect(result.image1Url).toBe('https://cdn.example.com/product.jpg');
+  });
+
+  it('ProductLaunch: generic image1_url maps to image1Url at top level', () => {
+    const template = {
+      brandColor: '#1A365D',
+      headlineTemplate: 'Introducing {{product_name}}',
+      image1Url: '',
+    };
+    const variant = {
+      product_name: 'Vary Studio',
+      image1_url: 'https://cdn.example.com/product.jpg',
+    };
+    const result = resolveVariantProps(template, variant, 'ProductLaunch');
+    expect(result.image1Url).toBe('https://cdn.example.com/product.jpg');
+  });
+
+  it('RealEstate: brand colours resolve alongside media keys', () => {
+    const template = {
+      brandColor: '#1A365D',
+      headlineTemplate: '{{property_name}}',
+      image1Url: '',
+    };
+    const variant = {
+      property_name: 'The Elm',
+      property_image_url: 'https://cdn.example.com/elm.jpg',
+      brand_color: '#FF0000',
+      person1_url: 'https://cdn.example.com/agent.jpg',
+    };
+    const result = resolveVariantProps(template, variant, 'RealEstate');
+    expect(result.image1Url).toBe('https://cdn.example.com/elm.jpg');
+    expect(result.person1Url).toBe('https://cdn.example.com/agent.jpg');
+    expect(result.brandColor).toBe('#FF0000');
+  });
+
+  it('SceneBlockPlayer: brand colours and media populate brandSettings', () => {
+    const template = {
+      brandSettings: {brandColor: '#000'},
+      blocks: [{blockId: 'text-overlay', content: {}}],
+    };
+    const variant = {
+      brand_color: '#FF0000',
+      logo_url: 'https://cdn.example.com/logo.png',
+    };
+    const result = resolveVariantProps(template, variant, 'InsuranceAd');
+    const bs = result.brandSettings as Record<string, unknown>;
+    expect(bs.brandColor).toBe('#FF0000');
+    expect(bs.logoUrl).toBe('https://cdn.example.com/logo.png');
+  });
+});
+
 describe('validateBatchVariants', () => {
   it('returns empty map for all valid variants', async () => {
     const variants = [
