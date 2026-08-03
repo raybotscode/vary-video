@@ -1,3 +1,5 @@
+import type {BlockTransitionConfig} from '@vary/shared/capabilities/types';
+import TransitionControls from './TransitionControls';
 import {getBlockDefinition, type ComposerBlock} from '../utils/blocks';
 
 type SceneTimelineProps = {
@@ -6,6 +8,7 @@ type SceneTimelineProps = {
   onSelectBlock: (instanceId: string) => void;
   onRemoveBlock: (instanceId: string) => void;
   onMoveBlock: (instanceId: string, direction: 'up' | 'down') => void;
+  onUpdateTransition?: (instanceId: string, transition: BlockTransitionConfig) => void;
   onOpenPalette: (event: React.MouseEvent<HTMLButtonElement>) => void;
 };
 
@@ -15,6 +18,7 @@ export default function SceneTimeline({
   onSelectBlock,
   onRemoveBlock,
   onMoveBlock,
+  onUpdateTransition,
   onOpenPalette,
 }: SceneTimelineProps) {
   const totalDuration = blocks.reduce((sum, block) => {
@@ -40,49 +44,56 @@ export default function SceneTimeline({
           const duration = block.durationFrames ?? definition.defaultDurationFrames;
 
           return (
-            <article
-              key={block.instanceId}
-              className={
-                selectedBlockId === block.instanceId
-                  ? 'timeline-block selected'
-                  : 'timeline-block'
-              }
-            >
-              <button
-                type="button"
-                className="timeline-block-main"
-                onClick={() => onSelectBlock(block.instanceId)}
+            <div key={block.instanceId} className="timeline-item">
+              <article
+                className={
+                  selectedBlockId === block.instanceId
+                    ? 'timeline-block selected'
+                    : 'timeline-block'
+                }
               >
-                <span className="block-icon">{definition.icon}</span>
-                <strong>{definition.name}</strong>
-                <small>{duration} frames</small>
-              </button>
-              <div className="timeline-actions">
                 <button
-                  className="ghost-button"
                   type="button"
-                  disabled={index === 0}
-                  onClick={() => onMoveBlock(block.instanceId, 'up')}
+                  className="timeline-block-main"
+                  onClick={() => onSelectBlock(block.instanceId)}
                 >
-                  Up
+                  <span className="block-icon">{definition.icon}</span>
+                  <strong>{definition.name}</strong>
+                  <small>{duration} frames</small>
                 </button>
-                <button
-                  className="ghost-button"
-                  type="button"
-                  disabled={index === blocks.length - 1}
-                  onClick={() => onMoveBlock(block.instanceId, 'down')}
-                >
-                  Down
-                </button>
-                <button
-                  className="ghost-button danger"
-                  type="button"
-                  onClick={() => onRemoveBlock(block.instanceId)}
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
+                <div className="timeline-actions">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => onMoveBlock(block.instanceId, 'up')}
+                  >
+                    Up
+                  </button>
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    disabled={index === blocks.length - 1}
+                    onClick={() => onMoveBlock(block.instanceId, 'down')}
+                  >
+                    Down
+                  </button>
+                  <button
+                    className="ghost-button danger"
+                    type="button"
+                    onClick={() => onRemoveBlock(block.instanceId)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+              {index < blocks.length - 1 && onUpdateTransition && (
+                <TransitionControls
+                  value={block.transition}
+                  onChange={(transition) => onUpdateTransition(block.instanceId, transition)}
+                />
+              )}
+            </div>
           );
         })}
       </div>

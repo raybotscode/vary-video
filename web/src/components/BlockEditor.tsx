@@ -1,7 +1,10 @@
+import type {AnimationPresetCapability} from '@vary/shared/capabilities/types';
+import AnimationControls from './AnimationControls';
 import {getBlockDefinition, type ComposerBlock} from '../utils/blocks';
 
 type BlockEditorProps = {
   block: ComposerBlock | null;
+  animations?: AnimationPresetCapability[];
   onChange: (block: ComposerBlock) => void;
 };
 
@@ -13,7 +16,7 @@ const labelFor = (key: string): string =>
     .trim()
     .replace(/^./, (char) => char.toUpperCase());
 
-export default function BlockEditor({block, onChange}: BlockEditorProps) {
+export default function BlockEditor({block, animations = [], onChange}: BlockEditorProps) {
   if (!block) {
     return (
       <aside className="block-editor empty">
@@ -56,6 +59,14 @@ export default function BlockEditor({block, onChange}: BlockEditorProps) {
             />
           </label>
         ))}
+
+        <div className="wide-field">
+          <AnimationControls
+            animations={animations}
+            value={block.animation}
+            onChange={(animation) => onChange({...block, animation})}
+          />
+        </div>
 
         <label>
           <span>Duration Frames</span>

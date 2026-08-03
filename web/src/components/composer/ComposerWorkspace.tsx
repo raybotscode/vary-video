@@ -1,4 +1,8 @@
 import {useRef, useState} from 'react';
+import type {
+  AnimationPresetCapability,
+  BlockTransitionConfig,
+} from '@vary/shared/capabilities/types';
 import BlockEditor from '../BlockEditor';
 import BlockPalette from '../BlockPalette';
 import SceneTimeline from '../SceneTimeline';
@@ -10,11 +14,13 @@ type ComposerWorkspaceProps = {
   blocks: ComposerBlock[];
   selectedBlockId: string | null;
   selectedTemplateId: string;
+  animations?: AnimationPresetCapability[];
   onSelectBlock: (instanceId: string) => void;
   onRemoveBlock: (instanceId: string) => void;
   onMoveBlock: (instanceId: string, direction: 'up' | 'down') => void;
   onAddBlock: (blockId: string) => void;
   onUpdateBlock: (block: ComposerBlock) => void;
+  onUpdateTransition: (instanceId: string, transition: BlockTransitionConfig) => void;
 };
 
 /**
@@ -28,11 +34,13 @@ export default function ComposerWorkspace({
   blocks,
   selectedBlockId,
   selectedTemplateId,
+  animations = [],
   onSelectBlock,
   onRemoveBlock,
   onMoveBlock,
   onAddBlock,
   onUpdateBlock,
+  onUpdateTransition,
 }: ComposerWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<ComposerTabId>('scenes');
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -55,6 +63,7 @@ export default function ComposerWorkspace({
             onSelectBlock={onSelectBlock}
             onRemoveBlock={onRemoveBlock}
             onMoveBlock={onMoveBlock}
+            onUpdateTransition={onUpdateTransition}
             onOpenPalette={(event) => openPalette(event.currentTarget)}
           />
 
@@ -84,7 +93,7 @@ export default function ComposerWorkspace({
           )}
         </div>
 
-        <BlockEditor block={selectedBlock} onChange={onUpdateBlock} />
+        <BlockEditor block={selectedBlock} animations={animations} onChange={onUpdateBlock} />
       </div>
 
       {/* Mobile layout */}
@@ -111,6 +120,7 @@ export default function ComposerWorkspace({
               }}
               onRemoveBlock={onRemoveBlock}
               onMoveBlock={onMoveBlock}
+              onUpdateTransition={onUpdateTransition}
               onOpenPalette={(event) => openPalette(event.currentTarget)}
             />
           </div>
@@ -121,7 +131,7 @@ export default function ComposerWorkspace({
             aria-labelledby="composer-tab-content"
             className="composer-mobile-panel"
           >
-            <BlockEditor block={selectedBlock} onChange={onUpdateBlock} />
+            <BlockEditor block={selectedBlock} animations={animations} onChange={onUpdateBlock} />
           </div>
         )}
       </div>

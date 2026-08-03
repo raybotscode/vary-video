@@ -1,8 +1,14 @@
 import type {RenderTemplatePayload} from '../api/client';
+import type {StylePresetCapability} from '@vary/shared/capabilities/types';
+import StylePresetPicker from './StylePresetPicker';
+import {stylePresetToTemplatePatch} from '../utils/stylePresets';
 
 type BrandSettingsProps = {
   template: RenderTemplatePayload;
   onChange: (template: RenderTemplatePayload) => void;
+  styles?: StylePresetCapability[];
+  selectedStylePresetId?: string | null;
+  onSelectStylePreset?: (styleId: string) => void;
 };
 
 const backgroundTypes = ['solid', 'gradient', 'image'];
@@ -12,8 +18,18 @@ const stringValue = (template: RenderTemplatePayload, key: string, fallback = ''
   return typeof value === 'string' ? value : fallback;
 };
 
-export default function BrandSettings({template, onChange}: BrandSettingsProps) {
+export default function BrandSettings({
+  template,
+  onChange,
+  styles = [],
+  selectedStylePresetId = null,
+  onSelectStylePreset,
+}: BrandSettingsProps) {
   const update = (key: string, value: string) => onChange({...template, [key]: value});
+  const applyStylePreset = (style: StylePresetCapability) => {
+    onSelectStylePreset?.(style.id);
+    onChange({...template, ...stylePresetToTemplatePatch(style)});
+  };
   const backgroundType = stringValue(template, 'backgroundType', 'gradient');
   const optionalMediaField = template.productImageUrl !== undefined
     ? {key: 'productImageUrl', label: 'Product image URL'}
@@ -24,6 +40,14 @@ export default function BrandSettings({template, onChange}: BrandSettingsProps) 
   return (
     <div className="settings-grid">
       <div className="form-grid two-columns">
+        <div className="wide-field">
+          <StylePresetPicker
+            styles={styles}
+            selectedStylePresetId={selectedStylePresetId}
+            onSelect={applyStylePreset}
+          />
+        </div>
+
         <label>
           <span>Brand colour</span>
           <div className="color-input-row">

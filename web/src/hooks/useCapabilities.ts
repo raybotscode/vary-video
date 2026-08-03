@@ -1,5 +1,11 @@
 import {useCallback, useEffect, useState} from 'react';
 import {apiClient, type TemplateDefinition} from '../api/client';
+import {animationPresetCapabilities} from '@vary/shared/capabilities/animations';
+import {stylePresetCapabilities} from '@vary/shared/capabilities/styles';
+import type {
+  AnimationPresetCapability,
+  StylePresetCapability,
+} from '@vary/shared/capabilities/types';
 import {frontendTemplates} from '../utils/templates';
 import {
   templateCapabilitiesToFrontend,
@@ -8,6 +14,8 @@ import {
 type CapabilitiesState = {
   /** Resolved template definitions for the UI (from v1, legacy, or local). */
   templates: TemplateDefinition[];
+  styles: StylePresetCapability[];
+  animations: AnimationPresetCapability[];
   /** Registry version hash when fetched from v1, otherwise null. */
   capabilityVersion: string | null;
   loading: boolean;
@@ -23,6 +31,8 @@ type CapabilitiesState = {
 export function useCapabilities(): CapabilitiesState {
   const [state, setState] = useState<CapabilitiesState>({
     templates: frontendTemplates,
+    styles: stylePresetCapabilities.filter((style) => style.status === 'enabled'),
+    animations: animationPresetCapabilities.filter((animation) => animation.status === 'enabled'),
     capabilityVersion: null,
     loading: true,
     error: null,
@@ -33,6 +43,8 @@ export function useCapabilities(): CapabilitiesState {
       const registry = await apiClient.getCapabilities();
       setState({
         templates: templateCapabilitiesToFrontend(registry.templates),
+        styles: registry.styles,
+        animations: registry.animations,
         capabilityVersion: registry.version.hash,
         loading: false,
         error: null,
@@ -60,6 +72,8 @@ export function useCapabilities(): CapabilitiesState {
       });
       setState({
         templates: merged,
+        styles: stylePresetCapabilities.filter((style) => style.status === 'enabled'),
+        animations: animationPresetCapabilities.filter((animation) => animation.status === 'enabled'),
         capabilityVersion: null,
         loading: false,
         error: null,
@@ -68,6 +82,8 @@ export function useCapabilities(): CapabilitiesState {
     } catch (apiError) {
       setState({
         templates: frontendTemplates,
+        styles: stylePresetCapabilities.filter((style) => style.status === 'enabled'),
+        animations: animationPresetCapabilities.filter((animation) => animation.status === 'enabled'),
         capabilityVersion: null,
         loading: false,
         error:

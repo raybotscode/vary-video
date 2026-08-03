@@ -91,6 +91,46 @@ describe('validateTemplateForComposition', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts SceneBlockPlayer with animation and transition config', () => {
+    const result = validateTemplateForComposition(
+      'SceneBlockPlayer',
+      {
+        blocks: [
+          {
+            blockId: 'text-overlay',
+            content: {headline: 'Hello'},
+            animation: {
+              entry: {
+                presetId: 'slide-in-left',
+                durationFrames: 12,
+                intensity: 0.35,
+                easing: 'ease-out',
+              },
+              exit: {
+                presetId: 'fade-out',
+                durationFrames: 8,
+                easing: 'ease-in',
+              },
+            },
+            transition: {
+              type: 'wipe',
+              durationFrames: 12,
+              direction: 'left',
+              easing: 'ease-in-out',
+            },
+          },
+          {blockId: 'brand-frame', content: {ctaText: 'Go'}},
+        ],
+        brandSettings: {},
+        fps: 30,
+        width: 1920,
+        height: 1080,
+      },
+      {},
+    );
+    expect(result.success).toBe(true);
+  });
+
   it('rejects SceneBlockPlayer with an unknown block id before render', () => {
     const result = validateTemplateForComposition(
       'SceneBlockPlayer',

@@ -1,5 +1,9 @@
 import {blockCapabilities} from '@vary/shared/capabilities/blocks';
-import type {SceneBlockCategory as SharedSceneBlockCategory} from '@vary/shared/capabilities/types';
+import type {
+  BlockAnimationSettings,
+  BlockTransitionConfig,
+  SceneBlockCategory as SharedSceneBlockCategory,
+} from '@vary/shared/capabilities/types';
 import {getFrontendTemplate} from './templates';
 
 /**
@@ -55,17 +59,8 @@ export type ComposerBlock = {
   blockId: string;
   content: Record<string, string>;
   durationFrames?: number;
-  animation?: {
-    entry?: {presetId: string; durationFrames?: number; intensity?: number; easing?: string};
-    exit?: {presetId: string; durationFrames?: number; intensity?: number; easing?: string};
-  };
-  transition?: {
-    type: string;
-    durationFrames?: number;
-    direction?: string;
-    easing?: string;
-    intensity?: number;
-  };
+  animation?: BlockAnimationSettings;
+  transition?: BlockTransitionConfig;
   imageTreatment?: Record<string, unknown>;
 };
 

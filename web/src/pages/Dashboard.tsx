@@ -27,6 +27,7 @@ import {
   type ComposerBlock,
 } from '../utils/blocks';
 import {frontendTemplates, getFrontendTemplate, templateIconFor} from '../utils/templates';
+import type {BlockTransitionConfig} from '@vary/shared/capabilities/types';
 
 const templateDefaults = (template: TemplateDefinition): RenderTemplatePayload => {
   const defaults = template.defaults ?? template.defaultProps ?? {};
@@ -85,10 +86,13 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
   const [selectedBlockInstanceId, setSelectedBlockInstanceId] = useState<string | null>(
     initialComposerBlocks[0]?.instanceId ?? null,
   );
+  const [selectedStylePresetId, setSelectedStylePresetId] = useState<string | null>(null);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
   const {
     templates: capabilityTemplates,
+    styles: capabilityStyles,
+    animations: capabilityAnimations,
     capabilityVersion,
     loading: isLoadingCompositions,
     error: capabilityError,
@@ -105,6 +109,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     setCompositions(capabilityTemplates);
     setSelectedCompositionId(nextTemplate.id);
     setTemplate(templateDefaults(nextTemplate));
+    setSelectedStylePresetId(null);
     setVariants(defaultVariantsForTemplate(nextTemplate.id));
     const nextBlocks = composerBlocksForTemplate(nextTemplate.id);
     setComposerBlocks(nextBlocks);
@@ -153,6 +158,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       getFrontendTemplate(templateId);
     setSelectedCompositionId(templateId);
     setTemplate(templateDefaults(nextTemplate));
+    setSelectedStylePresetId(null);
     setVariants(defaultVariantsForTemplate(templateId));
     const nextBlocks = composerBlocksForTemplate(templateId);
     setComposerBlocks(nextBlocks);
@@ -202,10 +208,24 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     );
   };
 
-  const composerBlockSequence: BlockSequence = composerBlocks.map((block) => ({
+  const updateComposerTransition = (
+    instanceId: string,
+    transition: BlockTransitionConfig,
+  ) => {
+    setComposerBlocks((currentBlocks) =>
+      currentBlocks.map((block) =>
+        block.instanceId === instanceId ? {...block, transition} : block,
+      ),
+    );
+  };
+
+  const composerBlockSequence: BlockSequence = composerBlocks.map((block, index) => ({
     blockId: block.blockId,
     content: block.content,
     durationFrames: block.durationFrames,
+    animation: block.animation,
+    transition: index < composerBlocks.length - 1 ? block.transition : undefined,
+    imageTreatment: block.imageTreatment,
   }));
 
   const submitBatch = async () => {
@@ -305,11 +325,13 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
               blocks={composerBlocks}
               selectedBlockId={selectedBlockInstanceId}
               selectedTemplateId={selectedCompositionId}
+              animations={capabilityAnimations}
               onSelectBlock={setSelectedBlockInstanceId}
               onRemoveBlock={removeComposerBlock}
               onMoveBlock={moveComposerBlock}
               onAddBlock={addComposerBlock}
               onUpdateBlock={updateComposerBlock}
+              onUpdateTransition={updateComposerTransition}
             />
           </WorkflowSection>
         </>
@@ -330,7 +352,13 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       </WorkflowSection>
 
       <WorkflowSection step="Step 4" title="Brand Settings">
-        <BrandSettings template={template} onChange={setTemplate} />
+        <BrandSettings
+          template={template}
+          styles={capabilityStyles}
+          selectedStylePresetId={selectedStylePresetId}
+          onSelectStylePreset={setSelectedStylePresetId}
+          onChange={setTemplate}
+        />
       </WorkflowSection>
 
       <WorkflowSection step="Step 5" title="Output Formats" hint="Choose which aspect ratios to render. Each format multiplies the render time.">
