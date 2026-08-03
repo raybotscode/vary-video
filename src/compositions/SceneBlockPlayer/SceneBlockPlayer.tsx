@@ -84,6 +84,7 @@ const renderPositionedBlock = ({
       brand={props.brandSettings}
       data={props.data}
       startFrame={positioned.startFrame}
+      imageTreatment={positioned.block.imageTreatment}
     />
   );
 };

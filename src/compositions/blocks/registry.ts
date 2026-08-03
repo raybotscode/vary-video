@@ -1,6 +1,8 @@
 import type React from 'react';
+import type {ImageTreatment} from '../../shared/capabilities/types';
 import {DataCallout} from './DataCallout';
 import {TextOverlay} from './TextOverlay';
+import {ImageBlock} from './ImageBlock';
 import {blockAdapters} from './adapters';
 import {blockCapabilities} from '../../shared/capabilities/blocks';
 import type {BlockCapability} from '../../shared/capabilities/types';
@@ -26,6 +28,7 @@ export type BlockRenderProps = {
   brand: BrandSettings;
   data: Record<string, string>;
   startFrame?: number;
+  imageTreatment?: ImageTreatment;
 };
 
 export type SceneBlockDefinition = {
@@ -63,6 +66,7 @@ export const blockRenderers: Record<string, React.FC<BlockRenderProps>> = {
   ...blockAdapters,
   'text-overlay': TextOverlay,
   'data-callout': DataCallout,
+  'media-image': ImageBlock,
 };
 
 export function getBlock(id: string): SceneBlockDefinition {

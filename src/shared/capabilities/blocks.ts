@@ -251,7 +251,7 @@ export const blockCapabilities: BlockCapability[] = [
     requiredBrandSettings: ['brandColor', 'secondaryColor', 'accentColor', 'backgroundType', 'backgroundColor'],
     supportedAnimations: ['none'],
     version: '1.0.0',
-    status: 'disabled',
+    status: 'enabled',
     tags: ['image', 'media', 'generic'],
     exampleUses: ['Property photo scene', 'Product showcase scene', 'Speaker headshot scene'],
     mediaFields: ['propertyImage', 'productImage', 'backgroundImage'],
