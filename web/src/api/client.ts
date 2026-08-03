@@ -427,4 +427,28 @@ export const apiClient = {
     });
     return readJson<GenerateTemplateResponse>(response);
   },
+
+  async previewRender(payload: {
+    template: RenderTemplatePayload;
+    compositionId?: string;
+    frame?: number;
+    variant?: Record<string, string>;
+  }): Promise<Blob> {
+    const response = await fetch(apiUrl('/v1/preview'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let message = `Preview failed (${response.status})`;
+      try {
+        const body = await response.json();
+        if (body.error) message = body.error;
+      } catch { /* ignore */ }
+      throw new Error(message);
+    }
+
+    return response.blob();
+  },
 };

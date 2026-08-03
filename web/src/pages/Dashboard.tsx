@@ -18,6 +18,7 @@ import MobileActionBar from '../components/dashboard/MobileActionBar';
 import RenderSummary from '../components/dashboard/RenderSummary';
 import TemplatePicker from '../components/dashboard/TemplatePicker';
 import AiPromptInput from '../components/dashboard/AiPromptInput';
+import PreviewPanel from '../components/PreviewPanel';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
 import {useCapabilities} from '../hooks/useCapabilities';
 import LoadingState from '../components/ui/LoadingState';
@@ -391,6 +392,25 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
           </WorkflowSection>
         </>
       )}
+
+      <WorkflowSection step="Step 2.5" title="Live Preview">
+        <PreviewPanel
+          template={
+            mode === 'composer'
+              ? {
+                  blocks: composerBlockSequence,
+                  brandSettings: brandSettingsFromTemplate(template),
+                  audio: audioFromTemplate(template),
+                  fps: selectedTemplate.fps ?? 30,
+                  width: selectedTemplate.width ?? 1920,
+                  height: selectedTemplate.height ?? 1080,
+                }
+              : template
+          }
+          compositionId={selectedCompositionId}
+          variant={variants[0] ?? {}}
+        />
+      </WorkflowSection>
 
       <WorkflowSection
         step="Step 3"
