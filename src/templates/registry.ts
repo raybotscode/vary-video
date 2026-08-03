@@ -1,4 +1,5 @@
 import {z, type ZodType} from 'zod';
+import {templateCapabilities} from '../shared/capabilities/templates';
 import {
   defaultInsuranceAdProps,
   insuranceAdSchema,
@@ -171,177 +172,62 @@ const dimensions = {
   height: 1080,
 };
 
-export const templateRegistry: Record<string, TemplateDefinition> = {
+/** Runtime-only attachments: Zod schema + Remotion default props per template. */
+const runtimeAttachments: Record<
+  string,
+  {schema: ZodType<any>; defaultProps: Record<string, unknown>}
+> = {
   InsuranceAd: {
-    id: 'InsuranceAd',
-    name: 'Insurance Ad',
-    description: 'Personalized quote ads for local insurance campaigns.',
-    useCase: 'Insurance, Finance',
-    ...dimensions,
     schema: insuranceAdSchema,
     defaultProps: defaultInsuranceAdProps,
-    placeholders: ['age', 'gender', 'location', 'company'],
-    copyFields: [
-      {
-        id: 'headlineTemplate',
-        label: 'Headline',
-        default: defaultInsuranceAdProps.headlineTemplate,
-      },
-      {
-        id: 'subheadlineTemplate',
-        label: 'Subheadline',
-        default: defaultInsuranceAdProps.subheadlineTemplate,
-      },
-      {
-        id: 'ctaText',
-        label: 'Call to Action',
-        default: defaultInsuranceAdProps.ctaText,
-      },
-    ],
-    category: 'ad',
-    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
   },
   ProductLaunch: {
-    id: 'ProductLaunch',
-    name: 'Product Launch',
-    description: 'Showcase a new product with punchy feature highlights.',
-    useCase: 'SaaS, Product, Startup',
-    ...dimensions,
     schema: productLaunchSchema,
     defaultProps: defaultProductLaunchProps,
-    placeholders: [
-      'product_name',
-      'tagline',
-      'feature1',
-      'feature2',
-      'feature3',
-      'company',
-    ],
-    copyFields: [
-      {id: 'headlineTemplate', label: 'Headline', default: 'Introducing {{product_name}}'},
-      {id: 'taglineTemplate', label: 'Tagline', default: '{{tagline}}'},
-      {id: 'feature1Template', label: 'Feature 1', default: '{{feature1}}'},
-      {id: 'feature2Template', label: 'Feature 2', default: '{{feature2}}'},
-      {id: 'feature3Template', label: 'Feature 3', default: '{{feature3}}'},
-      {id: 'ctaText', label: 'Call to Action', default: 'Get Started Today'},
-    ],
-    category: 'product',
-    blockSequence: ['product-intro', 'features-grid', 'pricing-card', 'brand-frame'],
   },
   RealEstate: {
-    id: 'RealEstate',
-    name: 'Real Estate',
-    description: 'Property showcase videos for listings and agents.',
-    useCase: 'Real Estate, Property',
-    ...dimensions,
     schema: realEstateSchema,
     defaultProps: defaultRealEstateProps,
-    placeholders: [
-      'property_name',
-      'tagline',
-      'price',
-      'bedrooms',
-      'bathrooms',
-      'sqft',
-      'location',
-      'agent',
-    ],
-    copyFields: [
-      {id: 'headlineTemplate', label: 'Property Name', default: '{{property_name}}'},
-      {id: 'taglineTemplate', label: 'Tagline', default: '{{tagline}}'},
-      {id: 'priceTemplate', label: 'Price', default: '{{price}}'},
-      {
-        id: 'specsLine',
-        label: 'Specs Line',
-        default: '{{bedrooms}} bed · {{bathrooms}} bath · {{sqft}} sq ft',
-      },
-      {id: 'locationLine', label: 'Location', default: '{{location}}'},
-      {id: 'ctaText', label: 'Call to Action', default: 'Schedule a Viewing'},
-    ],
-    category: 'property',
-    blockSequence: ['property-hero', 'property-details', 'agent-cta', 'brand-frame'],
   },
   SocialClip: {
-    id: 'SocialClip',
-    name: 'Social Clip',
-    description: 'Short-form social ads with bold hooks and fast CTA pacing.',
-    useCase: 'Social, Creator, DTC',
-    ...dimensions,
     schema: socialClipSchema,
     defaultProps: defaultSocialClipProps,
-    placeholders: ['hook', 'body', 'cta', 'brand'],
-    copyFields: [
-      {id: 'hookTemplate', label: 'Hook', default: '{{hook}}'},
-      {id: 'bodyTemplate', label: 'Body', default: '{{body}}'},
-      {id: 'ctaText', label: 'Call to Action', default: '{{cta}}'},
-    ],
-    category: 'social',
-    blockSequence: ['social-hook', 'social-body', 'social-outro', 'brand-frame'],
   },
   WebinarPromo: {
-    id: 'WebinarPromo',
-    name: 'Webinar Promo',
-    description: 'Promote live webinars, product demos, and online workshops.',
-    useCase: 'B2B, Webinars, Events, Thought Leadership',
-    ...dimensions,
     schema: webinarPromoSchema,
     defaultProps: defaultWebinarPromoProps,
-    placeholders: [
-      'eventTitle',
-      'hostName',
-      'eventDate',
-      'eventTime',
-      'audience',
-      'keyTakeaway',
-      'ctaText',
-      'brandName',
-    ],
-    copyFields: [
-      {
-        id: 'eventTitleTemplate',
-        label: 'Event Title',
-        default: 'Build a repeatable content engine',
-      },
-      {
-        id: 'hostNameTemplate',
-        label: 'Host Name',
-        default: 'Hosted by {{hostName}}',
-      },
-      {
-        id: 'eventDateTemplate',
-        label: 'Event Date',
-        default: '{{eventDate}}',
-      },
-      {
-        id: 'eventTimeTemplate',
-        label: 'Event Time',
-        default: '{{eventTime}}',
-      },
-      {
-        id: 'audienceTemplate',
-        label: 'Audience',
-        default: 'For {{audience}}',
-      },
-      {
-        id: 'keyTakeawayTemplate',
-        label: 'Key Takeaway',
-        default: '{{keyTakeaway}}',
-      },
-      {
-        id: 'ctaText',
-        label: 'Call to Action',
-        default: 'Reserve your seat',
-      },
-      {
-        id: 'brandName',
-        label: 'Brand Name',
-        default: '{{brandName}}',
-      },
-    ],
-    category: 'social',
-    blockSequence: ['text-overlay', 'data-callout', 'brand-frame'],
   },
 };
+
+export const templateRegistry: Record<string, TemplateDefinition> =
+  Object.fromEntries(
+    templateCapabilities.map((capability) => {
+      const runtime = runtimeAttachments[capability.id];
+      if (!runtime) {
+        throw new Error(`Missing runtime attachment for template ${capability.id}`);
+      }
+
+      return [
+        capability.id,
+        {
+          id: capability.id,
+          name: capability.name,
+          description: capability.description,
+          useCase: capability.useCase,
+          ...dimensions,
+          schema: runtime.schema,
+          defaultProps: runtime.defaultProps,
+          placeholders: [
+            ...capability.requiredPlaceholders,
+            ...capability.optionalPlaceholders,
+          ],
+          copyFields: capability.copyFields,
+          category: capability.category,
+          blockSequence: capability.defaultBlocks,
+        },
+      ];
+    }),
+  );
 
 export const getTemplate = (id: string): TemplateDefinition => {
   const template = templateRegistry[id];
