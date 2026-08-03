@@ -8,6 +8,8 @@ public/renders/*.webm
 public/renders/*.png
 public/audio/*/
 public/audio/*.tmp
+data/
+*.db
 .DS_Store
 *.log
 

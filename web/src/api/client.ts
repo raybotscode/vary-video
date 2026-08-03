@@ -109,6 +109,44 @@ export type UploadedAudio = {
   mimeType: string;
 };
 
+export type RenderListItem = {
+  id: string;
+  status: 'queued' | 'rendering' | 'completed' | 'failed';
+  progress: number;
+  compositionId: string;
+  totalVariants: number;
+  formats: string[];
+  createdAt: string;
+  updatedAt: string;
+  downloadCount: number;
+};
+
+export type RenderDetail = {
+  id: string;
+  status: 'queued' | 'rendering' | 'completed' | 'failed';
+  progress: number;
+  completedVariants: number;
+  totalVariants: number;
+  compositionId: string;
+  template: RenderTemplatePayload;
+  variants: VariantData[];
+  formats: string[];
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+  downloads: Array<{
+    variantIndex: number;
+    format: string;
+    label: string;
+    downloadUrl: string;
+  }>;
+};
+
+export type RenderListResponse = {
+  renders: RenderListItem[];
+  total: number;
+};
+
 export const FORMAT_LABELS: Record<VideoFormat, string> = {
   '16:9': 'Landscape (1920×1080)',
   '1:1': 'Square (1080×1080)',
@@ -302,5 +340,32 @@ export const apiClient = {
     const response = await fetch(apiUrl('/v1/audio'));
     const data = await readJson<{audio: UploadedAudio[]}>(response);
     return data.audio;
+  },
+
+  async listRenders(params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<RenderListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.offset) searchParams.set('offset', String(params.offset));
+    const qs = searchParams.toString();
+    const response = await fetch(apiUrl(`/v1/renders${qs ? `?${qs}` : ''}`));
+    return readJson<RenderListResponse>(response);
+  },
+
+  async getRenderDetail(jobId: string): Promise<RenderDetail> {
+    const response = await fetch(apiUrl(`/v1/renders/${jobId}`));
+    return readJson<RenderDetail>(response);
+  },
+
+  async deleteRender(jobId: string): Promise<void> {
+    const response = await fetch(apiUrl(`/v1/renders/${jobId}`), {method: 'DELETE'});
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error((body as any).error || `Delete failed with ${response.status}`);
+    }
   },
 };

@@ -24,7 +24,9 @@
     "@remotion/layout-utils": "^4.0.482",
     "@remotion/renderer": "^4.0.482",
     "archiver": "^8.0.0",
+    "better-sqlite3": "^13.0.2",
     "cors": "^2.8.6",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "multer": "^2.2.0",
     "music-metadata": "^11.14.0",
@@ -35,6 +37,7 @@
   },
   "devDependencies": {
     "@types/archiver": "^8.0.0",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.2.0",

@@ -1,10 +1,11 @@
+import type {ReactNode} from 'react';
+
 type EmptyStateProps = {
   title: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 };
 
-/** Friendly empty state for lists and results. */
 export default function EmptyState({title, description, action}: EmptyStateProps) {
   return (
     <div className="empty-state">

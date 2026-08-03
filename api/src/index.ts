@@ -3,6 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {compositionSchemaFor, getAllTemplates} from '../../src/templates/registry';
+import './db/client.js'; // Initialize SQLite DB and create tables on boot
 import {v1Router} from './routes/v1';
 import {renderRouter} from './routes/render';
 

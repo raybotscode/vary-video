@@ -4,6 +4,7 @@ import {audioRouter} from '../audio';
 import {blocksRouter} from './blocks';
 import {capabilitiesRouter} from './capabilities';
 import {mediaRouter} from './media';
+import {rendersRouter} from './renders';
 import {stylesRouter} from './styles';
 import {templatesRouter} from './templates';
 
@@ -21,3 +22,4 @@ v1Router.use('/styles', stylesRouter);
 v1Router.use('/animations', animationsRouter);
 v1Router.use('/media', mediaRouter);
 v1Router.use('/audio', audioRouter);
+v1Router.use('/renders', rendersRouter);

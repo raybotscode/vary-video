@@ -13,6 +13,9 @@ import {
   renderBatch,
   type VariantRenderResult,
 } from '../services/renderer';
+import {db} from '../db/client.js';
+import {jobs as jobsTable, jobDownloads as jobDownloadsTable} from '../db/schema.js';
+import {eq} from 'drizzle-orm';
 
 type JobStatus = 'queued' | 'rendering' | 'completed' | 'failed';
 
@@ -78,7 +81,6 @@ renderRouter.post('/batch', async (req, res) => {
   }
 
   // Validate all variants for media field errors (Phase 3)
-  // Derive media field IDs server-side from composition, not from request body
   const mediaFieldIds = getAllMediaFieldIdsForComposition(parsed.data.compositionId);
   if (mediaFieldIds.length > 0) {
     const variantErrors = await validateBatchVariants(parsed.data.variants, mediaFieldIds);
@@ -98,6 +100,24 @@ renderRouter.post('/batch', async (req, res) => {
   const {formats, ...request} = parsed.data;
   const jobId = createJobId();
   const totalWork = request.variants.length * formats.length;
+
+  // Insert job into DB immediately
+  const now = new Date();
+  db.insert(jobsTable).values({
+    id: jobId,
+    status: 'queued',
+    progress: 0,
+    completedVariants: 0,
+    totalVariants: totalWork,
+    compositionId: request.compositionId,
+    template: JSON.stringify(request.template),
+    variants: JSON.stringify(request.variants),
+    formats: JSON.stringify(formats),
+    createdAt: now,
+    updatedAt: now,
+  }).run();
+
+  // Keep in-memory Map for live progress updates
   const job: RenderJob = {
     id: jobId,
     status: 'queued',
@@ -111,6 +131,23 @@ renderRouter.post('/batch', async (req, res) => {
   jobs.set(jobId, job);
 
   void (async () => {
+    // Periodic DB sync for live progress
+    const syncInterval = setInterval(() => {
+      try {
+        db.update(jobsTable)
+          .set({
+            status: job.status,
+            progress: job.progress,
+            completedVariants: job.completedVariants,
+            updatedAt: new Date(),
+          })
+          .where(eq(jobsTable.id, jobId))
+          .run();
+      } catch {
+        // non-fatal — progress sync failure shouldn't kill the render
+      }
+    }, 5_000);
+
     try {
       job.status = 'rendering';
       const completedWork = new Map<string, number>();
@@ -152,6 +189,8 @@ renderRouter.post('/batch', async (req, res) => {
         }
       }
 
+      clearInterval(syncInterval);
+
       const fmtList = formats;
       jobOutputs.set(jobId, results);
       job.completedVariants = totalWork;
@@ -163,9 +202,40 @@ renderRouter.post('/batch', async (req, res) => {
         const vi = Math.floor(result.index / fmtList.length);
         return `Variant ${vi + 1} — ${fmtList[fi]}`;
       });
+
+      // Final DB write — update job + insert download rows
+      db.update(jobsTable).set({
+        status: 'completed',
+        progress: 100,
+        completedVariants: totalWork,
+        updatedAt: new Date(),
+      }).where(eq(jobsTable.id, jobId)).run();
+
+      for (const result of results) {
+        const fi = result.index % fmtList.length;
+        db.insert(jobDownloadsTable).values({
+          jobId,
+          variantIndex: result.index,
+          format: fmtList[fi],
+          outputPath: result.outputPath,
+          downloadUrl: result.downloadUrl,
+        }).run();
+      }
     } catch (error) {
+      clearInterval(syncInterval);
       job.status = 'failed';
       job.error = error instanceof Error ? error.message : 'Unknown render error';
+
+      // Persist failure to DB
+      try {
+        db.update(jobsTable).set({
+          status: 'failed',
+          error: job.error,
+          updatedAt: new Date(),
+        }).where(eq(jobsTable.id, jobId)).run();
+      } catch {
+        // non-fatal
+      }
     }
   })();
 
@@ -177,42 +247,83 @@ renderRouter.post('/batch', async (req, res) => {
 });
 
 renderRouter.get('/status/:jobId', (req, res) => {
-  const job = jobs.get(req.params.jobId);
-  if (!job) {
+  // Check in-memory first (active jobs with live progress)
+  const liveJob = jobs.get(req.params.jobId);
+  if (liveJob) {
+    res.json(liveJob);
+    return;
+  }
+
+  // Fall back to DB (completed/failed jobs after restart)
+  const dbJob = db.select().from(jobsTable).where(eq(jobsTable.id, req.params.jobId)).get();
+  if (!dbJob) {
     res.status(404).json({error: 'Render job not found'});
     return;
   }
 
-  res.json(job);
+  const downloads = db.select().from(jobDownloadsTable)
+    .where(eq(jobDownloadsTable.jobId, req.params.jobId))
+    .all();
+
+  res.json({
+    id: dbJob.id,
+    status: dbJob.status,
+    progress: dbJob.progress,
+    completedVariants: dbJob.completedVariants,
+    totalVariants: dbJob.totalVariants,
+    downloads: downloads.map((d) => d.downloadUrl),
+    downloadLabels: downloads.map((d) => `Variant ${d.variantIndex + 1} — ${d.format}`),
+    error: dbJob.error,
+    formats: JSON.parse(dbJob.formats),
+  });
 });
 
 renderRouter.get('/download/:jobId/:variantIndex', (req, res) => {
-  const outputs = jobOutputs.get(req.params.jobId);
   const variantIndex = Number.parseInt(req.params.variantIndex, 10);
 
-  if (!outputs || Number.isNaN(variantIndex)) {
+  // In-memory check (active job)
+  const outputs = jobOutputs.get(req.params.jobId);
+  if (outputs) {
+    const output = outputs.find((o) => o.index === variantIndex);
+    if (output) {
+      res.download(path.resolve(output.outputPath));
+      return;
+    }
+  }
+
+  // DB check (persisted job)
+  const download = db.select().from(jobDownloadsTable)
+    .where(eq(jobDownloadsTable.jobId, req.params.jobId))
+    .all()
+    .find((d) => d.variantIndex === variantIndex);
+
+  if (!download) {
     res.status(404).json({error: 'Rendered variant not found'});
     return;
   }
 
-  const output = outputs.find((candidate) => candidate.index === variantIndex);
-  if (!output) {
-    res.status(404).json({error: 'Rendered variant not found'});
-    return;
-  }
-
-  res.download(path.resolve(output.outputPath));
+  res.download(path.resolve(download.outputPath));
 });
 
 renderRouter.get('/download-zip/:jobId', (req, res) => {
   try {
-    const outputs = jobOutputs.get(req.params.jobId);
-    if (!outputs || outputs.length === 0) {
+    // Check in-memory first
+    let outputs = jobOutputs.get(req.params.jobId);
+    let downloadRows: Array<{outputPath: string}> = [];
+
+    if (!outputs) {
+      // Fall back to DB
+      downloadRows = db.select().from(jobDownloadsTable)
+        .where(eq(jobDownloadsTable.jobId, req.params.jobId))
+        .all();
+    }
+
+    const hasFiles = outputs ? outputs.length > 0 : downloadRows.length > 0;
+    if (!hasFiles) {
       res.status(404).json({error: 'Render job not found or no outputs'});
       return;
     }
 
-    const job = jobs.get(req.params.jobId);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="vary-video-${req.params.jobId}.zip"`);
 
@@ -226,11 +337,21 @@ renderRouter.get('/download-zip/:jobId', (req, res) => {
       }
     });
 
-    for (const output of outputs) {
-      const filePath = path.resolve(output.outputPath);
-      if (fs.existsSync(filePath)) {
-        const filename = path.basename(filePath);
-        archive.file(filePath, {name: filename});
+    if (outputs) {
+      for (const output of outputs) {
+        const filePath = path.resolve(output.outputPath);
+        if (fs.existsSync(filePath)) {
+          const filename = path.basename(filePath);
+          archive.file(filePath, {name: filename});
+        }
+      }
+    } else {
+      for (const row of downloadRows) {
+        const filePath = path.resolve(row.outputPath);
+        if (fs.existsSync(filePath)) {
+          const filename = path.basename(filePath);
+          archive.file(filePath, {name: filename});
+        }
       }
     }
 
