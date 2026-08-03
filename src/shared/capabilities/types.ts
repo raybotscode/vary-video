@@ -40,7 +40,7 @@ export type TemplateCapability = {
   version: string;
   status: CapabilityStatus;
   tags: string[];
-  /** Media field IDs this template supports (e.g. ['propertyImage', 'logo']). */
+  /** Media field IDs this template supports (e.g. ['image1', 'logo']). */
   mediaFields?: string[];
   /** Tenant-aware future field — reserved for Phase 5/10, not populated now. */
   owner?: CapabilityOwner;
@@ -104,8 +104,10 @@ export type BlockCapability = {
   status: CapabilityStatus;
   tags: string[];
   exampleUses: string[];
-  /** Media field IDs this block renders (e.g. ['propertyImage', 'productImage']). */
+  /** Media field IDs this block renders (e.g. ['image1', 'image2']). */
   mediaFields?: string[];
+  /** Block exposes image treatment controls outside content fields. */
+  supportsImageTreatment?: boolean;
   /** Default image treatment for media rendered by this block. */
   defaultImageTreatment?: ImageTreatment;
   /** Tenant-aware future field — reserved for Phase 5/10, not populated now. */

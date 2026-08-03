@@ -54,7 +54,7 @@ const createJobId = (): string => {
 
 export const renderRouter = Router();
 
-renderRouter.post('/batch', (req, res) => {
+renderRouter.post('/batch', async (req, res) => {
   const parsed = batchRequestSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -81,7 +81,7 @@ renderRouter.post('/batch', (req, res) => {
   // Derive media field IDs server-side from composition, not from request body
   const mediaFieldIds = getAllMediaFieldIdsForComposition(parsed.data.compositionId);
   if (mediaFieldIds.length > 0) {
-    const variantErrors = validateBatchVariants(parsed.data.variants, mediaFieldIds);
+    const variantErrors = await validateBatchVariants(parsed.data.variants, mediaFieldIds);
     if (variantErrors.size > 0) {
       const details: Record<number, string[]> = {};
       for (const [index, errors] of variantErrors) {

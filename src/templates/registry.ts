@@ -63,6 +63,8 @@ export const productLaunchSchema = z.object({
   ...commonBackgroundFields,
   accentColor: z.string().default('#FF6B5B'),
   productImageUrl: z.string().optional(),
+  image1Url: z.string().optional(),
+  image2Url: z.string().optional(),
 });
 
 export type ProductLaunchProps = z.infer<typeof productLaunchSchema>;
@@ -92,6 +94,8 @@ export const realEstateSchema = z.object({
   ...commonBackgroundFields,
   accentColor: z.string().default('#38A169'),
   propertyImageUrl: z.string().optional(),
+  image1Url: z.string().optional(),
+  person1Url: z.string().optional(),
 });
 
 export type RealEstateProps = z.infer<typeof realEstateSchema>;

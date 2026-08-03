@@ -40,7 +40,7 @@ export const templateCapabilities: TemplateCapability[] = [
     useCase: 'SaaS, Product, Startup',
     supportedFormats: ['16:9', '1:1', '9:16', '4:5'],
     requiredPlaceholders: ['product_name', 'tagline', 'feature1', 'feature2', 'feature3', 'company'],
-    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'product_image_url'],
+    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'image1_url', 'image2_url', 'product_image_url'],
     copyFields: [
       {id: 'headlineTemplate', label: 'Headline', default: 'Introducing {{product_name}}'},
       {id: 'taglineTemplate', label: 'Tagline', default: '{{tagline}}'},
@@ -54,7 +54,7 @@ export const templateCapabilities: TemplateCapability[] = [
     version: '1.0.0',
     status: 'enabled',
     tags: ['saas', 'product', 'startup', 'launch'],
-    mediaFields: ['productImage', 'logo', 'backgroundImage'],
+    mediaFields: ['image1', 'logo', 'backgroundImage'],
   },
   {
     id: 'RealEstate',
@@ -64,7 +64,7 @@ export const templateCapabilities: TemplateCapability[] = [
     useCase: 'Real Estate, Property',
     supportedFormats: ['16:9', '1:1', '9:16', '4:5'],
     requiredPlaceholders: ['property_name', 'tagline', 'price', 'bedrooms', 'bathrooms', 'sqft', 'location', 'agent'],
-    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'property_image_url', 'agent_image_url'],
+    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'image1_url', 'person1_url', 'property_image_url', 'agent_image_url'],
     copyFields: [
       {id: 'headlineTemplate', label: 'Property Name', default: '{{property_name}}'},
       {id: 'taglineTemplate', label: 'Tagline', default: '{{tagline}}'},
@@ -78,7 +78,7 @@ export const templateCapabilities: TemplateCapability[] = [
     version: '1.0.0',
     status: 'enabled',
     tags: ['real-estate', 'property', 'listing', 'agent'],
-    mediaFields: ['propertyImage', 'agentImage', 'logo', 'backgroundImage'],
+    mediaFields: ['image1', 'person1', 'logo', 'backgroundImage'],
   },
   {
     id: 'SocialClip',
@@ -88,7 +88,7 @@ export const templateCapabilities: TemplateCapability[] = [
     useCase: 'Social, Creator, DTC',
     supportedFormats: ['16:9', '1:1', '9:16', '4:5'],
     requiredPlaceholders: ['hook', 'body', 'cta', 'brand'],
-    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'speaker_image_url'],
+    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'person2_url', 'speaker_image_url'],
     copyFields: [
       {id: 'hookTemplate', label: 'Hook', default: '{{hook}}'},
       {id: 'bodyTemplate', label: 'Body', default: '{{body}}'},
@@ -99,7 +99,7 @@ export const templateCapabilities: TemplateCapability[] = [
     version: '1.0.0',
     status: 'enabled',
     tags: ['social', 'creator', 'dtc', 'short-form'],
-    mediaFields: ['speakerImage', 'logo', 'backgroundImage'],
+    mediaFields: ['person2', 'logo', 'backgroundImage'],
   },
   {
     id: 'WebinarPromo',
@@ -109,7 +109,7 @@ export const templateCapabilities: TemplateCapability[] = [
     useCase: 'B2B, Webinars, Events, Thought Leadership',
     supportedFormats: ['16:9', '1:1', '9:16', '4:5'],
     requiredPlaceholders: ['eventTitle', 'hostName', 'eventDate', 'eventTime', 'audience', 'keyTakeaway', 'ctaText', 'brandName'],
-    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'speaker_image_url'],
+    optionalPlaceholders: ['brand_color', 'secondary_color', 'accent_color', 'background_color', 'logo_url', 'background_image_url', 'person2_url', 'speaker_image_url'],
     copyFields: [
       {id: 'eventTitleTemplate', label: 'Event Title', default: 'Build a repeatable content engine'},
       {id: 'hostNameTemplate', label: 'Host Name', default: 'Hosted by {{hostName}}'},
@@ -125,7 +125,7 @@ export const templateCapabilities: TemplateCapability[] = [
     version: '1.0.0',
     status: 'enabled',
     tags: ['webinar', 'b2b', 'event', 'promo'],
-    mediaFields: ['speakerImage', 'logo', 'backgroundImage'],
+    mediaFields: ['person2', 'logo', 'backgroundImage'],
   },
 ];
 

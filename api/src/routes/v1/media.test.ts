@@ -1,4 +1,5 @@
-import {describe, expect, it, beforeAll, afterAll} from 'vitest';
+import dns from 'node:dns/promises';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import {mediaRouter} from './media';
@@ -6,6 +7,15 @@ import {mediaRouter} from './media';
 const app = express();
 app.use(express.json());
 app.use('/api/v1/media', mediaRouter);
+
+beforeEach(() => {
+  vi.spyOn(dns, 'lookup').mockResolvedValue([{address: '93.184.216.34', family: 4}] as any);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('POST /api/v1/media/validate', () => {
   it('rejects invalid URL format', async () => {
@@ -41,6 +51,30 @@ describe('POST /api/v1/media/validate', () => {
     expect(res.status).toBe(200);
     expect(res.body.valid).toBe(false);
     expect(res.body.errors[0]).toContain('Invalid URL scheme');
+  });
+
+  it('ignores caller-provided MIME and size policy', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      new Response(null, {
+        status: 200,
+        headers: {
+          'content-type': 'text/plain',
+          'content-length': '20',
+        },
+      }),
+    ));
+
+    const res = await request(app)
+      .post('/api/v1/media/validate')
+      .send({
+        url: 'https://example.com/readme.txt',
+        acceptedMimeTypes: ['text/plain'],
+        maxBytes: 100,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.valid).toBe(false);
+    expect(res.body.errors[0]).toContain("Unsupported MIME type 'text/plain'");
   });
 });
 

@@ -1,4 +1,5 @@
-import {describe, expect, it} from 'vitest';
+import dns from 'node:dns/promises';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {
   extractVariantBrandSettings,
   resolveBrandSettings,
@@ -6,6 +7,14 @@ import {
   validateVariantMedia,
   validateBatchVariants,
 } from './variantResolution';
+
+beforeEach(() => {
+  vi.spyOn(dns, 'lookup').mockResolvedValue([{address: '93.184.216.34', family: 4}] as any);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('extractVariantBrandSettings', () => {
   it('extracts brand color from variant data', () => {
@@ -31,11 +40,21 @@ describe('extractVariantBrandSettings', () => {
   it('extracts media URLs from variant data', () => {
     const variant = {
       logo_url: 'https://example.com/logo.png',
-      property_image_url: 'https://example.com/property.jpg',
+      image1_url: 'https://example.com/image.jpg',
     };
-    const result = extractVariantBrandSettings(variant);
+    const result = extractVariantBrandSettings(variant, undefined, 'RealEstate');
     expect(result.logoUrl).toBe('https://example.com/logo.png');
-    expect(result.propertyImageUrl).toBe('https://example.com/property.jpg');
+    expect(result.image1Url).toBe('https://example.com/image.jpg');
+  });
+
+  it('extracts legacy media URLs for a composition', () => {
+    const variant = {
+      property_image_url: 'https://example.com/property.jpg',
+      agent_image_url: 'https://example.com/person.jpg',
+    };
+    const result = extractVariantBrandSettings(variant, undefined, 'RealEstate');
+    expect(result.image1Url).toBe('https://example.com/property.jpg');
+    expect(result.person1Url).toBe('https://example.com/person.jpg');
   });
 
   it('preserves existing template brand settings', () => {
@@ -98,7 +117,7 @@ describe('resolveVariantProps', () => {
       brand_color: '#FF0000',
       product_name: 'Test Product',
     };
-    const result = resolveVariantProps(template, variant);
+    const result = resolveVariantProps(template, variant, 'ProductLaunch');
     expect(result.brandSettings).toEqual({brandColor: '#FF0000'});
     expect(result.data).toEqual(variant);
   });
@@ -106,78 +125,84 @@ describe('resolveVariantProps', () => {
   it('handles quick template by resolving to top-level props', () => {
     const template = {compositionId: 'Test', brandColor: '{{brand_color}}'};
     const variant = {brand_color: '#FF0000'};
-    const result = resolveVariantProps(template, variant);
+    const result = resolveVariantProps(template, variant, 'ProductLaunch');
     expect(result.brandColor).toBe('#FF0000');
     expect(result.data).toEqual(variant);
   });
 });
 
 describe('validateVariantMedia', () => {
-  it('passes for valid URLs', () => {
+  it('passes for valid URLs', async () => {
     const variant = {logo_url: 'https://example.com/logo.png'};
-    const errors = validateVariantMedia(variant, ['logo']);
+    const errors = await validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(0);
   });
 
-  it('passes for empty optional fields', () => {
+  it('passes for empty optional fields', async () => {
     const variant = {};
-    const errors = validateVariantMedia(variant, ['logo']);
+    const errors = await validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(0);
   });
 
-  it('fails for missing required fields', () => {
+  it('fails for missing required fields', async () => {
     const variant = {};
-    const errors = validateVariantMedia(variant, ['propertyImage']);
-    // propertyImage is optional by default, so no error
+    const errors = await validateVariantMedia(variant, ['image1']);
+    // image1 is optional by default, so no error
     expect(errors).toHaveLength(0);
   });
 
-  it('fails for invalid URL scheme', () => {
+  it('accepts legacy variant keys', async () => {
+    const variant = {property_image_url: 'https://example.com/property.jpg'};
+    const errors = await validateVariantMedia(variant, ['image1']);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('fails for invalid URL scheme', async () => {
     const variant = {logo_url: 'ftp://example.com/logo.png'};
-    const errors = validateVariantMedia(variant, ['logo']);
+    const errors = await validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('Invalid URL scheme');
   });
 
-  it('fails for localhost URLs', () => {
+  it('fails for localhost URLs', async () => {
     const variant = {logo_url: 'http://localhost:3000/logo.png'};
-    const errors = validateVariantMedia(variant, ['logo']);
+    const errors = await validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('Private/internal');
   });
 
-  it('fails for 127.0.0.1 URLs', () => {
+  it('fails for 127.0.0.1 URLs', async () => {
     const variant = {logo_url: 'http://127.0.0.1:3000/logo.png'};
-    const errors = validateVariantMedia(variant, ['logo']);
+    const errors = await validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('Private/internal');
   });
 
-  it('fails for invalid URLs', () => {
+  it('fails for invalid URLs', async () => {
     const variant = {logo_url: 'not-a-url'};
-    const errors = validateVariantMedia(variant, ['logo']);
+    const errors = await validateVariantMedia(variant, ['logo']);
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('Invalid URL');
   });
 });
 
 describe('validateBatchVariants', () => {
-  it('returns empty map for all valid variants', () => {
+  it('returns empty map for all valid variants', async () => {
     const variants = [
       {logo_url: 'https://example.com/logo1.png'},
       {logo_url: 'https://example.com/logo2.png'},
     ];
-    const errors = validateBatchVariants(variants, ['logo']);
+    const errors = await validateBatchVariants(variants, ['logo']);
     expect(errors.size).toBe(0);
   });
 
-  it('returns errors for invalid variants', () => {
+  it('returns errors for invalid variants', async () => {
     const variants = [
       {logo_url: 'https://example.com/logo.png'},
       {logo_url: 'ftp://invalid.com/logo.png'},
       {logo_url: 'http://localhost:3000/logo.png'},
     ];
-    const errors = validateBatchVariants(variants, ['logo']);
+    const errors = await validateBatchVariants(variants, ['logo']);
     expect(errors.size).toBe(2);
     expect(errors.has(1)).toBe(true);
     expect(errors.has(2)).toBe(true);
@@ -185,9 +210,9 @@ describe('validateBatchVariants', () => {
     expect(errors.get(2)).toHaveLength(1);
   });
 
-  it('returns empty map for empty media field IDs', () => {
+  it('returns empty map for empty media field IDs', async () => {
     const variants = [{logo_url: 'invalid'}];
-    const errors = validateBatchVariants(variants, []);
+    const errors = await validateBatchVariants(variants, []);
     expect(errors.size).toBe(0);
   });
 });

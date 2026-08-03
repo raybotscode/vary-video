@@ -2,7 +2,7 @@
  * Canonical media field definitions for per-variant branding.
  *
  * Media fields describe image assets that can vary per row in a batch render:
- * logos, property images, product images, agent/speaker headshots, backgrounds.
+ * logos, generic images, person photos, backgrounds.
  *
  * This module is JSON-safe metadata ONLY — no Remotion renderer imports,
  * no Node-only modules, no browser globals.
@@ -13,10 +13,10 @@ import type {CapabilityStatus, ImageTreatment} from './types';
 export type MediaFieldKind =
   | 'logo'
   | 'background-image'
-  | 'property-image'
-  | 'product-image'
-  | 'agent-image'
-  | 'speaker-image';
+  | 'image1'
+  | 'image2'
+  | 'person1'
+  | 'person2';
 
 export type MediaFieldCapability = {
   id: string;
@@ -25,6 +25,8 @@ export type MediaFieldCapability = {
   description: string;
   /** CSV column key used in variant data, e.g. "logo_url" */
   variantKey: string;
+  /** Backward-compatible CSV column keys. */
+  legacyVariantKeys?: string[];
   /** Template prop name, e.g. "logoUrl" */
   templateProp: string;
   required: boolean;
@@ -41,10 +43,10 @@ export type MediaFieldCapability = {
 export const MEDIA_FIELD_PROP_MAP: Record<MediaFieldKind, string> = {
   'logo': 'logoUrl',
   'background-image': 'backgroundImageUrl',
-  'property-image': 'propertyImageUrl',
-  'product-image': 'productImageUrl',
-  'agent-image': 'agentImageUrl',
-  'speaker-image': 'speakerImageUrl',
+  'image1': 'image1Url',
+  'image2': 'image2Url',
+  'person1': 'person1Url',
+  'person2': 'person2Url',
 };
 
 /**
@@ -106,12 +108,13 @@ export const mediaFieldCapabilities: MediaFieldCapability[] = [
     status: 'enabled',
   },
   {
-    id: 'propertyImage',
-    kind: 'property-image',
-    label: 'Property Image',
-    description: 'Primary property photo for real estate templates.',
-    variantKey: 'property_image_url',
-    templateProp: MEDIA_FIELD_PROP_MAP['property-image'],
+    id: 'image1',
+    kind: 'image1',
+    label: 'Image 1',
+    description: 'Primary image for the template — maps to whatever visual the template needs.',
+    variantKey: 'image1_url',
+    legacyVariantKeys: ['property_image_url', 'product_image_url'],
+    templateProp: MEDIA_FIELD_PROP_MAP['image1'],
     required: false,
     acceptedMimeTypes: ACCEPTED_IMAGE_MIME_TYPES,
     maxBytes: MAX_IMAGE_BYTES,
@@ -119,12 +122,13 @@ export const mediaFieldCapabilities: MediaFieldCapability[] = [
     status: 'enabled',
   },
   {
-    id: 'productImage',
-    kind: 'product-image',
-    label: 'Product Image',
-    description: 'Primary product visual for launch templates.',
-    variantKey: 'product_image_url',
-    templateProp: MEDIA_FIELD_PROP_MAP['product-image'],
+    id: 'image2',
+    kind: 'image2',
+    label: 'Image 2',
+    description: 'Secondary image for the template — maps to whatever supporting visual the template needs.',
+    variantKey: 'image2_url',
+    legacyVariantKeys: ['product_image_url'],
+    templateProp: MEDIA_FIELD_PROP_MAP['image2'],
     required: false,
     acceptedMimeTypes: ACCEPTED_IMAGE_MIME_TYPES,
     maxBytes: MAX_IMAGE_BYTES,
@@ -132,12 +136,13 @@ export const mediaFieldCapabilities: MediaFieldCapability[] = [
     status: 'enabled',
   },
   {
-    id: 'agentImage',
-    kind: 'agent-image',
-    label: 'Agent Photo',
-    description: 'Real estate agent headshot.',
-    variantKey: 'agent_image_url',
-    templateProp: MEDIA_FIELD_PROP_MAP['agent-image'],
+    id: 'person1',
+    kind: 'person1',
+    label: 'Person Photo',
+    description: 'Primary person photo for the template.',
+    variantKey: 'person1_url',
+    legacyVariantKeys: ['agent_image_url'],
+    templateProp: MEDIA_FIELD_PROP_MAP['person1'],
     required: false,
     acceptedMimeTypes: ACCEPTED_IMAGE_MIME_TYPES,
     maxBytes: MAX_IMAGE_BYTES,
@@ -148,12 +153,13 @@ export const mediaFieldCapabilities: MediaFieldCapability[] = [
     status: 'enabled',
   },
   {
-    id: 'speakerImage',
-    kind: 'speaker-image',
-    label: 'Speaker Photo',
-    description: 'Host or speaker headshot for webinar/social templates.',
-    variantKey: 'speaker_image_url',
-    templateProp: MEDIA_FIELD_PROP_MAP['speaker-image'],
+    id: 'person2',
+    kind: 'person2',
+    label: 'Person Photo',
+    description: 'Secondary person photo for webinar, social, or presenter templates.',
+    variantKey: 'person2_url',
+    legacyVariantKeys: ['speaker_image_url'],
+    templateProp: MEDIA_FIELD_PROP_MAP['person2'],
     required: false,
     acceptedMimeTypes: ACCEPTED_IMAGE_MIME_TYPES,
     maxBytes: MAX_IMAGE_BYTES,

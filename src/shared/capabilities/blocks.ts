@@ -245,8 +245,8 @@ export const blockCapabilities: BlockCapability[] = [
     contentFields: [
       {key: 'imageUrl', label: 'Image URL', type: 'image', placeholder: '{{primary_image_url}}'},
       {key: 'altText', label: 'Alt Text', type: 'text', placeholder: 'Descriptive text'},
-      {key: 'treatment', label: 'Image Treatment', type: 'image-treatment'},
     ],
+    supportsImageTreatment: true,
     defaultDurationFrames: 120,
     requiredBrandSettings: ['brandColor', 'secondaryColor', 'accentColor', 'backgroundType', 'backgroundColor'],
     supportedAnimations: ['none'],
@@ -254,7 +254,7 @@ export const blockCapabilities: BlockCapability[] = [
     status: 'enabled',
     tags: ['image', 'media', 'generic'],
     exampleUses: ['Property photo scene', 'Product showcase scene', 'Speaker headshot scene'],
-    mediaFields: ['propertyImage', 'productImage', 'backgroundImage'],
+    mediaFields: ['image1', 'image2', 'backgroundImage'],
     defaultImageTreatment: {
       fit: 'cover',
       horizontalPosition: 'center',

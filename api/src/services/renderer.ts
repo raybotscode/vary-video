@@ -53,7 +53,7 @@ export const makeInputProps = (
   variant: RenderVariant,
 ): Record<string, unknown> => {
   // Resolve per-variant brand/media placeholders before schema parsing
-  const resolvedTemplate = resolveVariantProps(template, variant);
+  const resolvedTemplate = resolveVariantProps(template, variant, compositionId);
   return getSchemaForTemplate(compositionId).parse(resolvedTemplate);
 };
 

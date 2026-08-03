@@ -20,6 +20,7 @@ const webinarMediaPlaceholders = [
   'background_color',
   'logo_url',
   'background_image_url',
+  'person2_url',
   'speaker_image_url',
 ];
 

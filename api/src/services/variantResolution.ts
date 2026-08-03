@@ -7,25 +7,38 @@
  */
 
 import type {RenderTemplate, RenderVariant} from './renderer';
-import {mediaFieldById, MEDIA_FIELD_PROP_MAP} from '../../../src/shared/capabilities/media';
+import {mediaFieldById, mediaFieldCapabilities} from '../../../src/shared/capabilities/media';
+import {getAllMediaFieldIdsForComposition} from '../../../src/shared/capabilities/registry';
 import {resolvePlaceholders} from '../../../src/shared/placeholders';
 import {validateUrlLocally} from './mediaValidation';
 
 /**
- * Map of variant data keys to their resolved template prop names.
- * Used to extract brand/media values from variant CSV data.
+ * Build variant key → template prop map for a specific composition.
+ * Includes generic media keys, legacy media keys, and brand colour keys.
  */
-const VARIANT_KEY_TO_TEMPLATE_PROP: Record<string, string> = {
-  brand_color: 'brandColor',
-  secondary_color: 'secondaryColor',
-  accent_color: 'accentColor',
-  background_color: 'backgroundColor',
-  logo_url: MEDIA_FIELD_PROP_MAP['logo'],
-  background_image_url: MEDIA_FIELD_PROP_MAP['background-image'],
-  property_image_url: MEDIA_FIELD_PROP_MAP['property-image'],
-  product_image_url: MEDIA_FIELD_PROP_MAP['product-image'],
-  agent_image_url: MEDIA_FIELD_PROP_MAP['agent-image'],
-  speaker_image_url: MEDIA_FIELD_PROP_MAP['speaker-image'],
+const buildVariantKeyMap = (compositionId: string): Record<string, string> => {
+  const map: Record<string, string> = {
+    brand_color: 'brandColor',
+    secondary_color: 'secondaryColor',
+    accent_color: 'accentColor',
+    background_color: 'backgroundColor',
+  };
+
+  const mediaFieldIds = getAllMediaFieldIdsForComposition(compositionId);
+  for (const fieldId of mediaFieldIds) {
+    const field = mediaFieldCapabilities.find((candidate) => candidate.id === fieldId);
+    if (!field) continue;
+
+    map[field.variantKey] = field.templateProp;
+
+    if (field.legacyVariantKeys) {
+      for (const legacyKey of field.legacyVariantKeys) {
+        map[legacyKey] = field.templateProp;
+      }
+    }
+  }
+
+  return map;
 };
 
 /**
@@ -36,10 +49,19 @@ const VARIANT_KEY_TO_TEMPLATE_PROP: Record<string, string> = {
 export const extractVariantBrandSettings = (
   variant: RenderVariant,
   templateBrandSettings?: Record<string, unknown>,
+  compositionId?: string,
 ): Record<string, unknown> => {
+  const variantKeyMap = compositionId
+    ? buildVariantKeyMap(compositionId)
+    : {
+        brand_color: 'brandColor',
+        secondary_color: 'secondaryColor',
+        accent_color: 'accentColor',
+        background_color: 'backgroundColor',
+      };
   const result: Record<string, unknown> = {...(templateBrandSettings ?? {})};
 
-  for (const [variantKey, templateProp] of Object.entries(VARIANT_KEY_TO_TEMPLATE_PROP)) {
+  for (const [variantKey, templateProp] of Object.entries(variantKeyMap)) {
     const value = variant[variantKey];
     if (value !== undefined && value !== '') {
       result[templateProp] = value;
@@ -86,9 +108,10 @@ export const resolveBrandSettings = (
 export const resolveVariantProps = (
   template: RenderTemplate,
   variant: RenderVariant,
+  compositionId?: string,
 ): RenderTemplate => {
   // Extract per-variant brand/media values from CSV data
-  const variantValues = extractVariantBrandSettings(variant);
+  const variantValues = extractVariantBrandSettings(variant, undefined, compositionId);
 
   // Check if this template uses brandSettings (SceneBlockPlayer) or top-level props (quick templates)
   const hasBrandSettings = template.brandSettings !== undefined;
@@ -129,10 +152,10 @@ export const resolveVariantProps = (
  * Returns an array of error strings (empty if valid).
  * Uses the comprehensive URL validation from mediaValidation.ts.
  */
-export const validateVariantMedia = (
+export const validateVariantMedia = async (
   variant: RenderVariant,
   templateMediaFieldIds: string[] = [],
-): string[] => {
+): Promise<string[]> => {
   const errors: string[] = [];
 
   for (const fieldId of templateMediaFieldIds) {
@@ -140,7 +163,11 @@ export const validateVariantMedia = (
     if (!field) continue;
 
     const variantKey = field.variantKey;
-    const value = variant[variantKey];
+    const value = variant[field.variantKey]
+      ?? field.legacyVariantKeys?.reduce<string | undefined>(
+        (found, key) => found ?? variant[key],
+        undefined,
+      );
 
     if (!value || value === '') {
       if (field.required) {
@@ -150,7 +177,7 @@ export const validateVariantMedia = (
     }
 
     // Use comprehensive URL validation from mediaValidation.ts
-    const urlErrors = validateUrlLocally(value);
+    const urlErrors = await validateUrlLocally(value);
     for (const err of urlErrors) {
       errors.push(`${field.label}: ${err}`);
     }
@@ -163,14 +190,14 @@ export const validateVariantMedia = (
  * Validate all variants in a batch request.
  * Returns a map of variant index → error array.
  */
-export const validateBatchVariants = (
+export const validateBatchVariants = async (
   variants: RenderVariant[],
   templateMediaFieldIds: string[] = [],
-): Map<number, string[]> => {
+): Promise<Map<number, string[]>> => {
   const errors = new Map<number, string[]>();
 
   for (let i = 0; i < variants.length; i++) {
-    const variantErrors = validateVariantMedia(variants[i], templateMediaFieldIds);
+    const variantErrors = await validateVariantMedia(variants[i], templateMediaFieldIds);
     if (variantErrors.length > 0) {
       errors.set(i, variantErrors);
     }

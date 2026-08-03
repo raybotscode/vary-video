@@ -1,19 +1,16 @@
 import {Router} from 'express';
 import {z} from 'zod';
 import {validateUrlLocally, validateMediaUrlRemote} from '../../services/mediaValidation';
+import {ACCEPTED_IMAGE_MIME_TYPES, MAX_IMAGE_BYTES} from '../../../../src/shared/capabilities/media';
 
 export const mediaRouter = Router();
 
 const validateRequestSchema = z.object({
   url: z.string().url(),
-  acceptedMimeTypes: z.array(z.string()).optional(),
-  maxBytes: z.number().int().positive().optional(),
 });
 
 const batchValidateRequestSchema = z.object({
   urls: z.array(z.string().url()).min(1).max(50),
-  acceptedMimeTypes: z.array(z.string()).optional(),
-  maxBytes: z.number().int().positive().optional(),
 });
 
 /**
@@ -30,10 +27,10 @@ mediaRouter.post('/validate', async (req, res) => {
     return;
   }
 
-  const {url, acceptedMimeTypes, maxBytes} = parsed.data;
+  const {url} = parsed.data;
 
   // Local validation (fast, no network)
-  const localErrors = validateUrlLocally(url);
+  const localErrors = await validateUrlLocally(url);
   if (localErrors.length > 0) {
     res.json({
       valid: false,
@@ -45,8 +42,8 @@ mediaRouter.post('/validate', async (req, res) => {
 
   // Remote validation (HEAD request)
   const result = await validateMediaUrlRemote(url, {
-    acceptedMimeTypes,
-    maxBytes,
+    acceptedMimeTypes: ACCEPTED_IMAGE_MIME_TYPES,
+    maxBytes: MAX_IMAGE_BYTES,
   });
 
   res.json(result);
@@ -66,11 +63,14 @@ mediaRouter.post('/validate-batch', async (req, res) => {
     return;
   }
 
-  const {urls, acceptedMimeTypes, maxBytes} = parsed.data;
+  const {urls} = parsed.data;
 
   const results = await Promise.all(
     urls.map((url) =>
-      validateMediaUrlRemote(url, {acceptedMimeTypes, maxBytes}).then((r) => ({
+      validateMediaUrlRemote(url, {
+        acceptedMimeTypes: ACCEPTED_IMAGE_MIME_TYPES,
+        maxBytes: MAX_IMAGE_BYTES,
+      }).then((r) => ({
         url: r.url,
         valid: r.valid,
         errors: r.errors,
@@ -95,13 +95,8 @@ mediaRouter.post('/validate-batch', async (req, res) => {
  */
 mediaRouter.get('/accepted-types', (_req, res) => {
   res.json({
-    mimeTypes: [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-    ],
-    maxBytes: 10 * 1024 * 1024,
-    maxMB: 10,
+    mimeTypes: ACCEPTED_IMAGE_MIME_TYPES,
+    maxBytes: MAX_IMAGE_BYTES,
+    maxMB: MAX_IMAGE_BYTES / (1024 * 1024),
   });
 });

@@ -46,10 +46,11 @@ export const imageTreatmentSchema = z
 export const mediaFieldCapabilitySchema = z
   .object({
     id: z.string().min(1),
-    kind: z.enum(['logo', 'background-image', 'property-image', 'product-image', 'agent-image', 'speaker-image']),
+    kind: z.enum(['logo', 'background-image', 'image1', 'image2', 'person1', 'person2']),
     label: z.string().min(1),
     description: z.string().min(1),
     variantKey: z.string().min(1),
+    legacyVariantKeys: z.array(z.string().min(1)).optional(),
     templateProp: z.string().min(1),
     required: z.boolean(),
     acceptedMimeTypes: z.array(z.string().min(1)).min(1),
@@ -121,6 +122,7 @@ export const blockCapabilitySchema = z
     tags: z.array(z.string()),
     exampleUses: z.array(z.string()),
     mediaFields: z.array(z.string()).optional(),
+    supportsImageTreatment: z.boolean().optional(),
     defaultImageTreatment: imageTreatmentSchema.optional(),
     owner: z
       .discriminatedUnion('ownerType', [

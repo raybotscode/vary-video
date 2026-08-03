@@ -12,12 +12,12 @@ describe('media field capabilities', () => {
   it('has all 6 expected media fields', () => {
     const ids = mediaFieldCapabilities.map((f) => f.id).sort();
     expect(ids).toEqual([
-      'agentImage',
       'backgroundImage',
+      'image1',
+      'image2',
       'logo',
-      'productImage',
-      'propertyImage',
-      'speakerImage',
+      'person1',
+      'person2',
     ]);
   });
 
@@ -55,10 +55,10 @@ describe('MEDIA_FIELD_PROP_MAP', () => {
   it('maps all field kinds to template props', () => {
     expect(MEDIA_FIELD_PROP_MAP['logo']).toBe('logoUrl');
     expect(MEDIA_FIELD_PROP_MAP['background-image']).toBe('backgroundImageUrl');
-    expect(MEDIA_FIELD_PROP_MAP['property-image']).toBe('propertyImageUrl');
-    expect(MEDIA_FIELD_PROP_MAP['product-image']).toBe('productImageUrl');
-    expect(MEDIA_FIELD_PROP_MAP['agent-image']).toBe('agentImageUrl');
-    expect(MEDIA_FIELD_PROP_MAP['speaker-image']).toBe('speakerImageUrl');
+    expect(MEDIA_FIELD_PROP_MAP['image1']).toBe('image1Url');
+    expect(MEDIA_FIELD_PROP_MAP['image2']).toBe('image2Url');
+    expect(MEDIA_FIELD_PROP_MAP['person1']).toBe('person1Url');
+    expect(MEDIA_FIELD_PROP_MAP['person2']).toBe('person2Url');
   });
 });
 
@@ -72,9 +72,9 @@ describe('DEFAULT_IMAGE_TREATMENT', () => {
 
 describe('mediaFieldsForTemplate', () => {
   it('returns media fields for a template with media', () => {
-    const fields = mediaFieldsForTemplate(['propertyImage', 'logo']);
+    const fields = mediaFieldsForTemplate(['image1', 'logo']);
     expect(fields).toHaveLength(2);
-    expect(fields.map((f) => f.id).sort()).toEqual(['logo', 'propertyImage']);
+    expect(fields.map((f) => f.id).sort()).toEqual(['image1', 'logo']);
   });
 
   it('returns empty array for unknown field IDs', () => {
