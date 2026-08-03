@@ -3,6 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {compositionSchemaFor, getAllTemplates} from '../../src/templates/registry';
+import {v1Router} from './routes/v1';
 import {renderRouter} from './routes/render';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -29,6 +30,7 @@ app.use(
 );
 app.use(express.json({limit: '2mb'}));
 app.use('/renders', express.static(path.join(projectRoot, 'public/renders')));
+app.use('/api/v1', v1Router);
 app.use('/api/render', renderRouter);
 
 app.get('/api/health', (_req, res) => {
