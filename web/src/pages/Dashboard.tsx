@@ -250,9 +250,12 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     };
 
     if (!spec.blocks || !Array.isArray(spec.blocks) || spec.blocks.length === 0) {
+      console.log('[handleAiGenerated] no blocks, bailing');
       setError('AI generated a template with no blocks. Try a different prompt.');
       return;
     }
+
+    console.log('[handleAiGenerated] got', spec.blocks.length, 'blocks:', spec.blocks.map(b => b.blockId));
 
     setMode('composer');
 
@@ -273,7 +276,12 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     }
 
     if (spec.data && Object.keys(spec.data).length > 0) {
-      setVariants([{...spec.data}]);
+      // Merge AI data into existing variants — don't replace them entirely,
+      // which would blank out variant editor fields and lose user data.
+      setVariants((prev) => {
+        if (prev.length === 0) return [{...spec.data}];
+        return prev.map((v) => ({...spec.data, ...v}));
+      });
     }
 
     setError(null);
@@ -407,7 +415,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
                 }
               : template
           }
-          compositionId={selectedCompositionId}
+          compositionId={mode === 'composer' ? 'SceneBlockPlayer' : selectedCompositionId}
           variant={variants[0] ?? {}}
         />
       </WorkflowSection>

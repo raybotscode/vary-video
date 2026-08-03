@@ -56,10 +56,11 @@ export function useDebouncedPreview({
       setState({imageUrl: url, loading: false, error: null});
     } catch (err) {
       if (controller.signal.aborted) return;
+      const message = err instanceof Error ? err.message : 'Preview failed';
       setState({
         imageUrl: prevUrlRef.current,
         loading: false,
-        error: err instanceof Error ? err.message : 'Preview failed',
+        error: message,
       });
     }
   }, [template, compositionId, variant, enabled]);

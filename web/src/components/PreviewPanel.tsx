@@ -45,9 +45,10 @@ export default function PreviewPanel({
           </div>
         )}
 
-        {error && !imageUrl && (
+        {error && (
           <div className="preview-placeholder preview-error">
             <span>Preview unavailable</span>
+            <span className="preview-error-detail">{error}</span>
             <button type="button" onClick={refresh}>Retry</button>
           </div>
         )}
@@ -56,7 +57,7 @@ export default function PreviewPanel({
           <img
             src={imageUrl}
             alt="Video preview — frame 0"
-            className={`preview-image ${loading ? 'preview-image-loading' : ''}`}
+            className={`preview-image ${loading ? 'preview-image-loading' : ''} ${error ? 'preview-image-stale' : ''}`}
           />
         )}
       </div>
