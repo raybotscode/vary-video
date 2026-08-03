@@ -2,6 +2,7 @@ import {loadFont} from '@remotion/google-fonts/Inter';
 import {AbsoluteFill, Img, useCurrentFrame} from 'remotion';
 import {safeHexColor} from '../../components/util';
 import {blockRenderers, getBlock} from '../blocks/registry';
+import {getAnimationStyle, mergeMotionStyles} from '../animations';
 import {
   getBlockDuration,
   sceneBlockPlayerSchema,
@@ -116,6 +117,59 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
       ? (localFrame - transitionStart) / transitionFrames
       : 0;
 
+  // Animation styles for current block
+  const entryAnimation = current.block.animation?.entry;
+  const exitAnimation = current.block.animation?.exit;
+  const entryDuration = entryAnimation?.durationFrames ?? 12;
+  const exitDuration = exitAnimation?.durationFrames ?? 12;
+
+  const entryStyle = entryAnimation
+    ? getAnimationStyle({
+        presetId: entryAnimation.presetId,
+        frame: localFrame,
+        fps: props.fps,
+        width: props.width,
+        height: props.height,
+        durationFrames: entryDuration,
+        intensity: entryAnimation.intensity,
+        easing: entryAnimation.easing,
+      })
+    : {};
+
+  const framesRemaining = current.duration - localFrame;
+  const exitStyle = exitAnimation && framesRemaining <= exitDuration
+    ? getAnimationStyle({
+        presetId: exitAnimation.presetId,
+        frame: exitDuration - framesRemaining,
+        fps: props.fps,
+        width: props.width,
+        height: props.height,
+        durationFrames: exitDuration,
+        intensity: exitAnimation.intensity,
+        easing: exitAnimation.easing,
+      })
+    : {};
+
+  // Animation style for next block during transition (entry animation starts at overlap)
+  const nextEntryAnimation = next?.block.animation?.entry;
+  const nextEntryDuration = nextEntryAnimation?.durationFrames ?? 12;
+  const nextEntryStyle = next && nextEntryAnimation && transitionProgress > 0
+    ? getAnimationStyle({
+        presetId: nextEntryAnimation.presetId,
+        frame: transitionProgress * transitionFrames,
+        fps: props.fps,
+        width: props.width,
+        height: props.height,
+        durationFrames: nextEntryDuration,
+        intensity: nextEntryAnimation.intensity,
+        easing: nextEntryAnimation.easing,
+      })
+    : {};
+
+  // Transition style (existing crossfade logic)
+  const transitionOpacityIn = transitionProgress;
+  const transitionOpacityOut = next ? 1 - transitionProgress : 1;
+
   return (
     <AbsoluteFill
       style={{
@@ -140,7 +194,14 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
       ) : null}
 
       {next && transitionProgress > 0 ? (
-        <div style={{position: 'absolute', inset: 0, opacity: transitionProgress}}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          ...mergeMotionStyles(
+            {opacity: transitionOpacityIn},
+            nextEntryStyle,
+          ),
+        }}>
           {renderPositionedBlock({
             positioned: {
               ...next,
@@ -156,7 +217,11 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
         style={{
           position: 'absolute',
           inset: 0,
-          opacity: next ? 1 - transitionProgress : 1,
+          ...mergeMotionStyles(
+            {opacity: transitionOpacityOut},
+            entryStyle,
+            exitStyle,
+          ),
         }}
       >
         {renderPositionedBlock({positioned: current, localFrame, props})}
