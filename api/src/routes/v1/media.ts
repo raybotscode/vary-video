@@ -100,3 +100,50 @@ mediaRouter.get('/accepted-types', (_req, res) => {
     maxMB: MAX_IMAGE_BYTES / (1024 * 1024),
   });
 });
+
+/**
+ * GET /api/v1/media/search
+ * Proxy to Pixabay API for stock media search.
+ */
+const searchRequestSchema = z.object({
+  q: z.string().min(1).max(200),
+  type: z.enum(['images', 'video']).default('images'),
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(3).max(100).default(20),
+});
+
+mediaRouter.get('/search', async (req, res) => {
+  const parsed = searchRequestSchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: 'Invalid search parameters',
+      details: z.flattenError(parsed.error),
+    });
+    return;
+  }
+
+  const {getCached, setCache, buildCacheKey} = await import('../../services/pixabayCache');
+  const {searchPixabay} = await import('../../services/pixabay');
+
+  const params = parsed.data;
+  const cacheKey = buildCacheKey(params);
+
+  const cached = getCached(cacheKey);
+  if (cached) {
+    res.json(cached);
+    return;
+  }
+
+  try {
+    const result = await searchPixabay(params);
+    setCache(cacheKey, result);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Pixabay search failed';
+    if (message.includes('PIXABAY_API_KEY')) {
+      res.status(500).json({error: message});
+    } else {
+      res.status(502).json({error: `Pixabay API error: ${message}`});
+    }
+  }
+});

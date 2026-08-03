@@ -2,6 +2,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {
   apiClient,
   type BlockSequence,
+  type GenerateTemplateResponse,
   type OutputFormat,
   type RenderStatus,
   type RenderTemplatePayload,
@@ -16,6 +17,7 @@ import ComposerWorkspace from '../components/composer/ComposerWorkspace';
 import MobileActionBar from '../components/dashboard/MobileActionBar';
 import RenderSummary from '../components/dashboard/RenderSummary';
 import TemplatePicker from '../components/dashboard/TemplatePicker';
+import AiPromptInput from '../components/dashboard/AiPromptInput';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
 import {useCapabilities} from '../hooks/useCapabilities';
 import LoadingState from '../components/ui/LoadingState';
@@ -233,6 +235,49 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     return undefined;
   };
 
+  const handleAiGenerated = (response: GenerateTemplateResponse) => {
+    const spec = response.spec as {
+      blocks?: Array<{
+        blockId: string;
+        content?: Record<string, string>;
+        durationFrames?: number;
+        animation?: Record<string, unknown>;
+        transition?: Record<string, unknown>;
+      }>;
+      brandSettings?: Record<string, unknown>;
+      data?: Record<string, string>;
+    };
+
+    if (!spec.blocks || !Array.isArray(spec.blocks) || spec.blocks.length === 0) {
+      setError('AI generated a template with no blocks. Try a different prompt.');
+      return;
+    }
+
+    setMode('composer');
+
+    const aiBlocks: ComposerBlock[] = spec.blocks.map((block) => ({
+      instanceId: `${block.blockId}-ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      blockId: block.blockId,
+      content: block.content ?? {},
+      durationFrames: block.durationFrames,
+      animation: block.animation as ComposerBlock['animation'],
+      transition: block.transition as ComposerBlock['transition'],
+    }));
+
+    setComposerBlocks(aiBlocks);
+    setSelectedBlockInstanceId(aiBlocks[0]?.instanceId ?? null);
+
+    if (spec.brandSettings) {
+      setTemplate((prev) => ({...prev, ...spec.brandSettings}));
+    }
+
+    if (spec.data && Object.keys(spec.data).length > 0) {
+      setVariants([{...spec.data}]);
+    }
+
+    setError(null);
+  };
+
   const submitBatch = async () => {
     setError(null);
     setIsSubmitting(true);
@@ -302,6 +347,10 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       </div>
       {mode === 'composer' && (
         <p className="mode-description">Build a custom scene-by-scene sequence by picking, reordering, and editing individual video blocks.</p>
+      )}
+
+      {mode === 'composer' && (
+        <AiPromptInput onGenerated={handleAiGenerated} disabled={isSubmitting} />
       )}
 
       {error && <div className="inline-error">{error}</div>}

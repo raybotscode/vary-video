@@ -147,6 +147,41 @@ export type RenderListResponse = {
   total: number;
 };
 
+export type PixabayImageHit = {
+  id: number;
+  previewURL: string;
+  fullURL: string;
+  user: string;
+  tags: string;
+  width: number;
+  height: number;
+};
+
+export type PixabayVideoHit = {
+  id: number;
+  user: string;
+  tags: string;
+  videos: {
+    small: {url: string; width: number; height: number};
+    medium: {url: string; width: number; height: number};
+    large: {url: string; width: number; height: number};
+  };
+};
+
+export type PixabaySearchResult = {
+  total: number;
+  totalHits: number;
+  page: number;
+  perPage: number;
+  hits: PixabayImageHit[] | PixabayVideoHit[];
+};
+
+export type GenerateTemplateResponse = {
+  spec: Record<string, unknown>;
+  model: string;
+  tokensUsed: {input: number; output: number};
+};
+
 export const FORMAT_LABELS: Record<VideoFormat, string> = {
   '16:9': 'Landscape (1920×1080)',
   '1:1': 'Square (1080×1080)',
@@ -367,5 +402,29 @@ export const apiClient = {
       const body = await response.json().catch(() => ({}));
       throw new Error((body as any).error || `Delete failed with ${response.status}`);
     }
+  },
+
+  async searchPixabay(params: {
+    q: string;
+    type?: 'images' | 'video';
+    page?: number;
+    per_page?: number;
+  }): Promise<PixabaySearchResult> {
+    const searchParams = new URLSearchParams();
+    searchParams.set('q', params.q);
+    if (params.type) searchParams.set('type', params.type);
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.per_page) searchParams.set('per_page', String(params.per_page));
+    const response = await fetch(apiUrl(`/v1/media/search?${searchParams}`));
+    return readJson<PixabaySearchResult>(response);
+  },
+
+  async generateTemplate(prompt: string): Promise<GenerateTemplateResponse> {
+    const response = await fetch(apiUrl('/v1/generate-template'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt}),
+    });
+    return readJson<GenerateTemplateResponse>(response);
   },
 };
