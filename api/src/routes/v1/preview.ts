@@ -52,7 +52,7 @@ previewRouter.post('/', async (req, res) => {
       (composition.height as number) || 1080,
     );
 
-    const buffer = await renderStill({
+    const result = await renderStill({
       serveUrl,
       composition: {
         ...composition,
@@ -66,6 +66,11 @@ previewRouter.post('/', async (req, res) => {
       jpegQuality: 60,
       logLevel: 'warn',
     });
+
+    const buffer = Buffer.isBuffer(result) ? result
+      : result && typeof result === 'object' && 'buffer' in result
+        ? (result as {buffer: Buffer}).buffer
+        : result;
 
     res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'no-store');
