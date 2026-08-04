@@ -14,13 +14,16 @@ import {
 } from './schema';
 
 describe('template capabilities', () => {
-  it('has the five hand-coded templates', () => {
+  it('has all hand-coded templates', () => {
     expect(templateCapabilities.map((t) => t.id).sort()).toEqual([
+      'EventPromo',
       'InsuranceAd',
       'ProductLaunch',
       'RealEstate',
       'SocialClip',
+      'Testimonial',
       'WebinarPromo',
+      'YouTubeIntro',
     ]);
   });
 

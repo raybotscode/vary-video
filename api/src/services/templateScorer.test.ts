@@ -35,8 +35,8 @@ describe('templateScorer', () => {
   });
 
   it('returns all templates when prompt is empty', () => {
-    const results = scoreTemplates('');
-    expect(results.length).toBe(5); // all 5 enabled templates
+    const results = scoreTemplates('', 20);
+    expect(results.length).toBe(8); // all 8 enabled templates
   });
 
   it('includes matched keywords in results', () => {

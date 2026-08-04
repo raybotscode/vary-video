@@ -18,6 +18,9 @@ const FRONTEND_DEFAULTS: Record<string, {durationInFrames: number; fps: number; 
   RealEstate: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
   SocialClip: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
   WebinarPromo: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+  Testimonial: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+  EventPromo: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
+  YouTubeIntro: {durationInFrames: 450, fps: 30, width: 1920, height: 1080},
 };
 
 const toFrontendDefinition = (template: (typeof templateCapabilities)[number]): TemplateDefinition => {
@@ -65,6 +68,9 @@ const TEMPLATE_ICONS: Record<string, string> = {
   RealEstate: 'RE',
   SocialClip: 'SC',
   WebinarPromo: 'WB',
+  Testimonial: 'TM',
+  EventPromo: 'EV',
+  YouTubeIntro: 'YT',
 };
 
 export const templateIconFor = (id: string): string => TEMPLATE_ICONS[id] ?? id.slice(0, 2).toUpperCase();

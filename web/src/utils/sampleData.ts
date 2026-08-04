@@ -8,6 +8,9 @@ export const sampleDataMap: Record<string, {filename: string; label: string}> = 
   RealEstate: {filename: 'real-estate.csv', label: 'Sample Properties'},
   SocialClip: {filename: 'social-clip.csv', label: 'Sample Social Clips'},
   WebinarPromo: {filename: 'webinar-promo.csv', label: 'Sample Webinars'},
+  Testimonial: {filename: 'testimonial.csv', label: 'Sample Testimonials'},
+  EventPromo: {filename: 'event-promo.csv', label: 'Sample Events'},
+  YouTubeIntro: {filename: 'youtube-intro.csv', label: 'Sample YouTube Intros'},
 };
 
 export function getSampleDataUrl(templateId: string): string | null {

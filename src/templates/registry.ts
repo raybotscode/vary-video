@@ -151,6 +151,77 @@ export type WebinarPromoProps = z.infer<typeof webinarPromoSchema>;
 export const defaultWebinarPromoProps: WebinarPromoProps =
   webinarPromoSchema.parse({});
 
+// ── Testimonial ──────────────────────────────────────────────────
+
+export const testimonialSchema = z.object({
+  quoteTemplate: z.string().default('{{quote}}'),
+  customerNameTemplate: z.string().default('{{customer_name}}'),
+  customerTitleTemplate: z.string().default('{{customer_title}}'),
+  ctaText: z.string().default('See More Reviews'),
+  data: z.record(z.string(), z.string()).default({
+    quote: 'This product changed how we work. Absolutely recommend it.',
+    customer_name: 'Sarah Johnson',
+    customer_title: 'Head of Marketing, Acme Corp',
+    company: 'Acme Corp',
+  }),
+  ...commonBackgroundFields,
+  accentColor: z.string().default('#10B981'),
+  person1Url: z.string().optional(),
+});
+
+export type TestimonialProps = z.infer<typeof testimonialSchema>;
+
+export const defaultTestimonialProps: TestimonialProps = testimonialSchema.parse({});
+
+// ── Event Promo ──────────────────────────────────────────────────
+
+export const eventPromoSchema = z.object({
+  eventNameTemplate: z.string().default('{{event_name}}'),
+  eventDateTemplate: z.string().default('{{event_date}}'),
+  eventLocationTemplate: z.string().default('{{event_location}}'),
+  highlightTemplate: z.string().default('{{highlight}}'),
+  ctaText: z.string().default('Get Tickets'),
+  data: z.record(z.string(), z.string()).default({
+    event_name: 'Design Summit 2026',
+    event_date: 'September 15-16',
+    event_location: 'Dublin, Ireland',
+    highlight: '50+ speakers, 2 days of workshops',
+    cta: 'Get Tickets',
+  }),
+  ...commonBackgroundFields,
+  accentColor: z.string().default('#F59E0B'),
+  image1Url: z.string().optional(),
+});
+
+export type EventPromoProps = z.infer<typeof eventPromoSchema>;
+
+export const defaultEventPromoProps: EventPromoProps = eventPromoSchema.parse({});
+
+// ── YouTube Intro ────────────────────────────────────────────────
+
+export const youTubeIntroSchema = z.object({
+  channelNameTemplate: z.string().default('{{channel_name}}'),
+  seriesNameTemplate: z.string().default('{{series_name}}'),
+  episodeTitleTemplate: z.string().default('{{episode_title}}'),
+  hookTemplate: z.string().default('{{hook}}'),
+  ctaText: z.string().default('Subscribe'),
+  data: z.record(z.string(), z.string()).default({
+    channel_name: 'Tech Insights',
+    series_name: 'Build Log',
+    episode_title: 'Episode 1: Getting Started',
+    hook: 'Building something amazing from scratch',
+  }),
+  ...commonBackgroundFields,
+  accentColor: z.string().default('#EF4444'),
+  image1Url: z.string().optional(),
+});
+
+export type YouTubeIntroProps = z.infer<typeof youTubeIntroSchema>;
+
+export const defaultYouTubeIntroProps: YouTubeIntroProps = youTubeIntroSchema.parse({});
+
+// ── Dimensions & Registry ────────────────────────────────────────
+
 const dimensions = {
   durationInFrames: 450,
   fps: 30,
@@ -182,6 +253,18 @@ const runtimeAttachments: Record<
   WebinarPromo: {
     schema: webinarPromoSchema,
     defaultProps: defaultWebinarPromoProps,
+  },
+  Testimonial: {
+    schema: testimonialSchema,
+    defaultProps: defaultTestimonialProps,
+  },
+  EventPromo: {
+    schema: eventPromoSchema,
+    defaultProps: defaultEventPromoProps,
+  },
+  YouTubeIntro: {
+    schema: youTubeIntroSchema,
+    defaultProps: defaultYouTubeIntroProps,
   },
 };
 

@@ -13,7 +13,6 @@ const CATEGORY_COLORS: Record<string, {bg: string; text: string; border: string}
   product: {bg: '#DBEAFE', text: '#1E40AF', border: '#3B82F6'},
   property: {bg: '#D1FAE5', text: '#065F46', border: '#10B981'},
   social: {bg: '#EDE9FE', text: '#5B21B6', border: '#8B5CF6'},
-  webinar: {bg: '#FCE7F3', text: '#9D174D', border: '#EC4899'},
 };
 
 const categoryColor = (category: string) =>

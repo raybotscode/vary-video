@@ -9,7 +9,7 @@ import {templateCapabilities} from '@vary/shared/capabilities/templates';
 describe('capabilityAdapters', () => {
   it('maps templates to the existing dashboard shape', () => {
     const mapped = templateCapabilitiesToFrontend(templateCapabilities);
-    expect(mapped).toHaveLength(5);
+    expect(mapped).toHaveLength(8);
     const realEstate = mapped.find((template) => template.id === 'RealEstate');
     expect(realEstate).toBeDefined();
     if (!realEstate) {
