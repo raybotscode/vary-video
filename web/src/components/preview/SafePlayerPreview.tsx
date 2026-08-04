@@ -25,6 +25,13 @@ class PlayerErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
     console.error(`[${this.props.label}] Stack:`, info.componentStack);
   }
 
+  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+    // Auto-reset when children reference changes (new props = fresh render)
+    if (prevProps.children !== this.props.children && this.state.hasError) {
+      this.setState({hasError: false, error: null});
+    }
+  }
+
   render() {
     if (this.state.hasError) {
       return this.props.fallback(this.state.error);
