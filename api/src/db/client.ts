@@ -62,6 +62,27 @@ sqlite.exec(`
   CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
   CREATE INDEX IF NOT EXISTS idx_job_downloads_job_id ON job_downloads(job_id);
   CREATE INDEX IF NOT EXISTS idx_ai_generations_created_at ON ai_generations(created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS user_templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    category TEXT DEFAULT 'product' CHECK(category IN ('ad','social','property','product')),
+    spec TEXT NOT NULL,
+    source_prompt TEXT DEFAULT '',
+    source_mode TEXT DEFAULT 'manual' CHECK(source_mode IN ('reused','composed','manual')),
+    base_template_id TEXT,
+    is_public INTEGER NOT NULL DEFAULT 0,
+    use_count INTEGER NOT NULL DEFAULT 0,
+    tags TEXT DEFAULT '[]',
+    user_id TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_user_templates_created_at ON user_templates(created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_user_templates_is_public ON user_templates(is_public);
+  CREATE INDEX IF NOT EXISTS idx_user_templates_user_id ON user_templates(user_id);
 `);
 
 export const db = drizzle(sqlite, {schema});

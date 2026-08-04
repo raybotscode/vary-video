@@ -3,7 +3,7 @@ import {apiClient, type GenerateTemplateResponse} from '../../api/client';
 import {frontendTemplates} from '../../utils/templates';
 
 type AiWizardProps = {
-  onGenerated: (response: GenerateTemplateResponse) => void;
+  onGenerated: (response: GenerateTemplateResponse, prompt: string) => void;
   disabled?: boolean;
 };
 
@@ -93,7 +93,7 @@ export default function AiWizard({onGenerated, disabled}: AiWizardProps) {
 
     try {
       const response = await apiClient.generateTemplate(prompt);
-      onGenerated(response);
+      onGenerated(response, prompt);
 
       if (response.selectionMode === 'existing-template' && response.reusedTemplateId) {
         setSuccess(`Using "${response.reusedTemplateId}" template — customized for your request.`);

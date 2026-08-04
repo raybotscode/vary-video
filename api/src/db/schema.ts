@@ -46,3 +46,28 @@ export const aiGenerations = sqliteTable('ai_generations', {
   userId: text('user_id'),
   createdAt: integer('created_at', {mode: 'timestamp'}).notNull().$defaultFn(() => new Date()),
 });
+
+export const userTemplates = sqliteTable('user_templates', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').default(''),
+  category: text('category', {enum: ['ad', 'social', 'property', 'product']}).default('product'),
+  /** Full SceneBlockPlayerProps JSON (stringified) */
+  spec: text('spec').notNull(),
+  /** The AI prompt that generated this template */
+  sourcePrompt: text('source_prompt').default(''),
+  /** Whether AI reused an existing template or composed from blocks */
+  sourceMode: text('source_mode', {enum: ['reused', 'composed', 'manual']}).default('manual'),
+  /** If reused, the original template ID */
+  baseTemplateId: text('base_template_id'),
+  /** Whether this template is visible to all users */
+  isPublic: integer('is_public', {mode: 'boolean'}).notNull().default(false),
+  /** How many times this template has been used for rendering */
+  useCount: integer('use_count').notNull().default(0),
+  /** JSON array of tag strings */
+  tags: text('tags').default('[]'),
+  /** Forward-compat — nullable until auth is added */
+  userId: text('user_id'),
+  createdAt: integer('created_at', {mode: 'timestamp'}).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', {mode: 'timestamp'}).notNull().$defaultFn(() => new Date()),
+});

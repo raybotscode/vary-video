@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {apiClient, type GenerateTemplateResponse} from '../../api/client';
 
 type AiPromptInputProps = {
-  onGenerated: (response: GenerateTemplateResponse) => void;
+  onGenerated: (response: GenerateTemplateResponse, prompt: string) => void;
   disabled?: boolean;
 };
 
@@ -20,8 +20,9 @@ export default function AiPromptInput({onGenerated, disabled}: AiPromptInputProp
     setSuccess(null);
 
     try {
-      const response = await apiClient.generateTemplate(prompt.trim());
-      onGenerated(response);
+      const trimmedPrompt = prompt.trim();
+      const response = await apiClient.generateTemplate(trimmedPrompt);
+      onGenerated(response, trimmedPrompt);
 
       if (response.selectionMode === 'existing-template' && response.reusedTemplateId) {
         setSuccess(`Using "${response.reusedTemplateId}" template — customized for your request.`);

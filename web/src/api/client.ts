@@ -184,6 +184,23 @@ export type GenerateTemplateResponse = {
   reusedTemplateId?: string;
 };
 
+export type UserTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  spec: Record<string, unknown>;
+  sourcePrompt: string;
+  sourceMode: 'reused' | 'composed' | 'manual';
+  baseTemplateId: string | null;
+  isPublic: boolean;
+  useCount: number;
+  tags: string[];
+  userId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export const FORMAT_LABELS: Record<VideoFormat, string> = {
   '16:9': 'Landscape (1920×1080)',
   '1:1': 'Square (1080×1080)',
@@ -462,5 +479,86 @@ export const apiClient = {
     }
 
     return response.blob();
+  },
+
+  // ─── User Templates ────────────────────────────────────────────
+
+  async saveUserTemplate(data: {
+    name: string;
+    description?: string;
+    category?: string;
+    spec: Record<string, unknown>;
+    sourcePrompt?: string;
+    sourceMode?: 'reused' | 'composed' | 'manual';
+    baseTemplateId?: string | null;
+    isPublic?: boolean;
+    tags?: string[];
+  }): Promise<{template: UserTemplate}> {
+    const response = await fetch(apiUrl('/v1/user-templates'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    return readJson(response);
+  },
+
+  async getUserTemplates(params?: {
+    scope?: 'mine' | 'public' | 'all';
+    category?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{templates: UserTemplate[]; total: number}> {
+    const searchParams = new URLSearchParams();
+    if (params?.scope) searchParams.set('scope', params.scope);
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.offset) searchParams.set('offset', String(params.offset));
+    const qs = searchParams.toString();
+    const response = await fetch(apiUrl(`/v1/user-templates${qs ? `?${qs}` : ''}`));
+    return readJson(response);
+  },
+
+  async getUserTemplate(id: string): Promise<{template: UserTemplate}> {
+    const response = await fetch(apiUrl(`/v1/user-templates/${id}`));
+    return readJson(response);
+  },
+
+  async updateUserTemplate(id: string, data: {
+    name?: string;
+    description?: string;
+    category?: string;
+    spec?: Record<string, unknown>;
+    isPublic?: boolean;
+    tags?: string[];
+  }): Promise<{template: UserTemplate}> {
+    const response = await fetch(apiUrl(`/v1/user-templates/${id}`), {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    return readJson(response);
+  },
+
+  async publishUserTemplate(id: string): Promise<{id: string; isPublic: boolean; message: string}> {
+    const response = await fetch(apiUrl(`/v1/user-templates/${id}/publish`), {
+      method: 'PATCH',
+    });
+    return readJson(response);
+  },
+
+  async incrementTemplateUse(id: string): Promise<{id: string; useCount: number}> {
+    const response = await fetch(apiUrl(`/v1/user-templates/${id}/use`), {
+      method: 'PATCH',
+    });
+    return readJson(response);
+  },
+
+  async deleteUserTemplate(id: string): Promise<void> {
+    const response = await fetch(apiUrl(`/v1/user-templates/${id}`), {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error(`Delete failed (${response.status})`);
+    }
   },
 };

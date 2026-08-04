@@ -7,6 +7,7 @@ import {
   type RenderStatus,
   type RenderTemplatePayload,
   type TemplateDefinition,
+  type UserTemplate,
 } from '../api/client';
 import BrandSettings from '../components/BrandSettings';
 import FormatSelector from '../components/FormatSelector';
@@ -19,6 +20,8 @@ import RenderSummary from '../components/dashboard/RenderSummary';
 import TemplateGallery from '../components/dashboard/TemplateGallery';
 import AiPromptInput from '../components/dashboard/AiPromptInput';
 import AiWizard from '../components/dashboard/AiWizard';
+import SaveTemplateDialog from '../components/dashboard/SaveTemplateDialog';
+import UserTemplateGallery from '../components/dashboard/UserTemplateGallery';
 import PreviewPanel from '../components/PreviewPanel';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
 import {useCapabilities} from '../hooks/useCapabilities';
@@ -81,6 +84,14 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiMode, setAiMode] = useState<'quick' | 'wizard'>('wizard');
+  const [lastAiGeneration, setLastAiGeneration] = useState<{
+    spec: Record<string, unknown>;
+    sourcePrompt: string;
+    sourceMode: 'reused' | 'composed';
+    baseTemplateId: string | null;
+  } | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [estimatedTimeSeconds, setEstimatedTimeSeconds] = useState<number | null>(null);
   const [renderStatus, setRenderStatus] = useState<RenderStatus | null>(null);
@@ -238,7 +249,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     return undefined;
   };
 
-  const handleAiGenerated = (response: GenerateTemplateResponse) => {
+  const handleAiGenerated = (response: GenerateTemplateResponse, aiPrompt: string) => {
     const spec = response.spec as {
       blocks?: Array<{
         blockId: string;
@@ -285,6 +296,14 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
         return prev.map((v) => ({...spec.data, ...v}));
       });
     }
+
+    // Store generation metadata for "Save as Template" feature
+    setLastAiGeneration({
+      spec: response.spec as Record<string, unknown>,
+      sourcePrompt: aiPrompt,
+      sourceMode: (response.selectionMode === 'existing-template' ? 'reused' : 'composed') as 'reused' | 'composed',
+      baseTemplateId: response.reusedTemplateId ?? null,
+    });
 
     setError(null);
   };
@@ -406,6 +425,51 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
           ) : (
             <AiPromptInput onGenerated={handleAiGenerated} disabled={isSubmitting} />
           )}
+
+          {/* Save as Template button — shown after AI generation */}
+          {lastAiGeneration && (
+            <div style={{display: 'flex', gap: 10, alignItems: 'center', marginTop: 12}}>
+              <button
+                type="button"
+                onClick={() => setShowSaveDialog(true)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: '#10B981',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  transition: 'background 0.15s',
+                }}
+              >
+                💾 Save as Template
+              </button>
+              <span style={{fontSize: 13, color: '#6B7280'}}>
+                {lastAiGeneration.sourceMode === 'reused'
+                  ? `Based on "${lastAiGeneration.baseTemplateId}"`
+                  : 'Custom composition — save it for reuse'}
+              </span>
+            </div>
+          )}
+
+          {savedMessage && (
+            <div style={{
+              padding: '8px 14px',
+              borderRadius: 10,
+              background: '#ECFDF5',
+              color: '#065F46',
+              fontSize: 13,
+              border: '1px solid #A7F3D0',
+              marginTop: 8,
+            }}>
+              ✅ {savedMessage}
+            </div>
+          )}
         </div>
       )}
 
@@ -429,6 +493,56 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
               selectedCompositionId={selectedCompositionId}
               onSelect={selectTemplate}
             />
+            <div style={{marginTop: 20}}>
+              <UserTemplateGallery
+                selectedId={selectedCompositionId}
+                onSelect={(spec, templateId) => {
+                  // Load user template into composer
+                  setMode('composer');
+                  setLastAiGeneration(null);
+
+                  // Parse the spec and apply blocks
+                  const parsed = spec as {
+                    blocks?: Array<{
+                      blockId: string;
+                      content?: Record<string, string>;
+                      durationFrames?: number;
+                      animation?: Record<string, unknown>;
+                      transition?: Record<string, unknown>;
+                    }>;
+                    brandSettings?: Record<string, unknown>;
+                    data?: Record<string, string>;
+                  };
+
+                  if (parsed.blocks && Array.isArray(parsed.blocks)) {
+                    const userBlocks: ComposerBlock[] = parsed.blocks.map((block) => ({
+                      instanceId: `${block.blockId}-user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                      blockId: block.blockId,
+                      content: block.content ?? {},
+                      durationFrames: block.durationFrames,
+                      animation: block.animation as ComposerBlock['animation'],
+                      transition: block.transition as ComposerBlock['transition'],
+                    }));
+                    setComposerBlocks(userBlocks);
+                    setSelectedBlockInstanceId(userBlocks[0]?.instanceId ?? null);
+                  }
+
+                  if (parsed.brandSettings) {
+                    setTemplate((prev) => ({...prev, ...parsed.brandSettings}));
+                  }
+
+                  if (parsed.data && Object.keys(parsed.data).length > 0) {
+                    setVariants((prev) => {
+                      if (prev.length === 0) return [{...parsed.data}];
+                      return prev.map((v) => ({...parsed.data, ...v}));
+                    });
+                  }
+
+                  // Track use
+                  apiClient.incrementTemplateUse(templateId).catch(() => {});
+                }}
+              />
+            </div>
           </WorkflowSection>
 
           <WorkflowSection step="Step 2" title="Compose Scenes">
@@ -527,6 +641,22 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
         disabled={isRenderDisabled}
         onSubmit={submitBatch}
       />
+
+      {/* Save Template Dialog */}
+      {showSaveDialog && lastAiGeneration && (
+        <SaveTemplateDialog
+          spec={lastAiGeneration.spec}
+          sourcePrompt={lastAiGeneration.sourcePrompt}
+          sourceMode={lastAiGeneration.sourceMode}
+          baseTemplateId={lastAiGeneration.baseTemplateId}
+          onSave={(template) => {
+            setShowSaveDialog(false);
+            setSavedMessage(`Template "${template.name}" saved! Find it in your template gallery.`);
+            setTimeout(() => setSavedMessage(null), 5000);
+          }}
+          onCancel={() => setShowSaveDialog(false)}
+        />
+      )}
     </section>
   );
 }

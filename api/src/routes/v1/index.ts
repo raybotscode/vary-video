@@ -7,8 +7,9 @@ import {generateTemplateRouter} from './generate-template';
 import {mediaRouter} from './media';
 import {rendersRouter} from './renders';
 import {stylesRouter} from './styles';
-import {templatesRouter} from './templates';
-import {previewRouter} from './preview';
+import {templatesRouter} from './templates.js';
+import {userTemplatesRouter} from './user-templates.js';
+import {previewRouter} from './preview.js';
 import {getUsageSummary} from '../../services/aiCostTracker';
 
 /**
@@ -20,6 +21,7 @@ export const v1Router = Router();
 
 v1Router.use('/capabilities', capabilitiesRouter);
 v1Router.use('/templates', templatesRouter);
+v1Router.use('/user-templates', userTemplatesRouter);
 v1Router.use('/blocks', blocksRouter);
 v1Router.use('/styles', stylesRouter);
 v1Router.use('/animations', animationsRouter);
