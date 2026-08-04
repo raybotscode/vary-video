@@ -440,6 +440,7 @@ export const apiClient = {
     compositionId?: string;
     frame?: number;
     variant?: Record<string, string>;
+    scale?: 'full' | 'medium' | 'fast';
   }): Promise<Blob> {
     const response = await fetch(apiUrl('/v1/preview'), {
       method: 'POST',
@@ -449,11 +450,15 @@ export const apiClient = {
 
     if (!response.ok) {
       let message = `Preview failed (${response.status})`;
+      let retryable = true;
       try {
         const body = await response.json();
         if (body.error) message = body.error;
+        if (body.retryable === false) retryable = false;
       } catch { /* ignore */ }
-      throw new Error(message);
+      const err = new Error(message) as Error & {retryable?: boolean};
+      err.retryable = retryable;
+      throw err;
     }
 
     return response.blob();

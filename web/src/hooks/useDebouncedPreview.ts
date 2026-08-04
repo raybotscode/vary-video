@@ -14,6 +14,7 @@ type UseDebouncedPreviewOptions = {
   variant?: Record<string, string>;
   enabled?: boolean;
   debounceMs?: number;
+  scale?: 'full' | 'medium' | 'fast';
 };
 
 export function useDebouncedPreview({
@@ -22,6 +23,7 @@ export function useDebouncedPreview({
   variant,
   enabled = true,
   debounceMs = 500,
+  scale = 'medium',
 }: UseDebouncedPreviewOptions) {
   const [state, setState] = useState<PreviewState>({
     imageUrl: null,
@@ -45,6 +47,7 @@ export function useDebouncedPreview({
         template,
         compositionId,
         variant,
+        scale,
       });
 
       if (controller.signal.aborted) return;
@@ -63,16 +66,20 @@ export function useDebouncedPreview({
         error: message,
       });
     }
-  }, [template, compositionId, variant, enabled]);
+  }, [template, compositionId, variant, enabled, scale]);
 
+  // Debounced auto-preview
   useEffect(() => {
     if (!enabled) return;
+
     const timer = setTimeout(refresh, debounceMs);
     return () => clearTimeout(timer);
-  }, [refresh, debounceMs, enabled]);
+  }, [refresh, enabled, debounceMs]);
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
+      abortRef.current?.abort();
       if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current);
     };
   }, []);
