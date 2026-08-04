@@ -29,7 +29,6 @@ import type {ElementLayout} from '@vary/shared/capabilities/types';
 import {getBlock} from '@vary/compositions/blocks/registry';
 import {blockCapabilities} from '@vary/shared/capabilities/blocks';
 import EditPanel from './EditPanel';
-import EditOverlay from './EditOverlay';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -337,24 +336,6 @@ export default function RemotionPlayerPreview({
           }}
           acknowledgeRemotionLicense
         />
-        {/* Clickable overlay for inline editing */}
-        {blocks[activeBlockIndex] && (
-          <EditOverlay
-            block={blocks[activeBlockIndex]}
-            variant={variant}
-            selectedFieldKey={selectedFieldKey}
-            onSelectField={(key) => {
-              setSelectedFieldKey(key);
-              // If selecting a field, scroll the edit panel into view
-              if (key) {
-                setTimeout(() => {
-                  const el = document.querySelector(`[data-field-key="${key}"]`);
-                  el?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
-                }, 100);
-              }
-            }}
-          />
-        )}
       </div>
 
       {/* Progress bar */}
