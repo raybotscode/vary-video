@@ -11,6 +11,14 @@ export default defineConfig({
       '@vary/compositions': fileURLToPath(new URL('../src/compositions', import.meta.url)),
     },
   },
+  optimizeDeps: {
+    include: [
+      '@remotion/player',
+      'remotion',
+      'remotion/no-react',
+      '@remotion/google-fonts/Inter',
+    ],
+  },
   build: {
     outDir: 'dist',
     minify: true,
