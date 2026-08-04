@@ -1,7 +1,11 @@
 /**
  * EditableElement — a single draggable, resizable, inline-editable text element
- * positioned on the EditCanvas. Handles click-to-select, drag-to-move,
- * corner-handle resize, and double-click-to-edit.
+ * positioned on the EditCanvas.
+ *
+ * Uses a FULLY UNCONTROLLED approach for contentEditable:
+ * - Text content is managed via ref (not React children)
+ * - React never re-renders the div's content during editing
+ * - This prevents the "React overwrites user input" bug
  */
 
 import {useCallback, useRef, useState, useEffect} from 'react';
@@ -48,27 +52,32 @@ export default function EditableElement({
   onContentChange,
 }: EditableElementProps) {
   const elementRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [editText, setEditText] = useState(rawValue);
 
   // Scale font size for display
   const displayFontSize = Math.max(12, Math.round(fontSize * scaleFactor));
-  // Estimate element dimensions based on font size and text length
-  const estWidth = Math.max(120, displayValue.length * displayFontSize * 0.5);
-  const estHeight = Math.max(36, displayFontSize * 1.6);
 
-  // Sync editText when rawValue changes externally
+  // ─── Text content management (uncontrolled) ────────────────────
+
+  // Sync display text when NOT editing (normal React updates)
   useEffect(() => {
-    if (!isEditing) setEditText(rawValue);
-  }, [rawValue, isEditing]);
+    if (!isEditing && elementRef.current) {
+      const text = displayValue || label;
+      if (elementRef.current.textContent !== text) {
+        elementRef.current.textContent = text;
+      }
+    }
+  }, [displayValue, label, isEditing]);
 
-  // Focus contentEditable when entering edit mode
+  // When entering edit mode: set text, focus, select all
   useEffect(() => {
     if (isEditing && elementRef.current) {
+      const el = elementRef.current;
+      // Set the resolved display value (not raw {{placeholders}})
+      el.textContent = displayValue;
+      // Focus and select all text
       requestAnimationFrame(() => {
-        const el = elementRef.current;
-        if (!el) return;
         el.focus();
         const range = document.createRange();
         range.selectNodeContents(el);
@@ -77,14 +86,14 @@ export default function EditableElement({
         sel?.addRange(range);
       });
     }
-  }, [isEditing]);
+  }, [isEditing]); // Only run when isEditing changes
 
   // ─── Drag ────────────────────────────────────────────────────────
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (isEditing) return;
-      if ((e.target as HTMLElement).dataset.handle) return; // Don't drag on resize handles
+      if ((e.target as HTMLElement).dataset.handle) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -95,8 +104,7 @@ export default function EditableElement({
       const startLeft = x;
       const startTop = y;
 
-      // Get canvas dimensions from parent
-      const canvas = (e.currentTarget as HTMLElement).parentElement;
+      const canvas = (e.currentTarget as HTMLElement).closest('[data-edit-canvas]');
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
 
@@ -160,28 +168,30 @@ export default function EditableElement({
   }, [isEditing, onStartEdit]);
 
   const handleBlur = useCallback(() => {
-    onContentChange(editText);
+    // Read text directly from DOM — no React state involved
+    const text = elementRef.current?.textContent ?? displayValue;
+    onContentChange(text);
     onStopEdit();
-  }, [editText, onContentChange, onStopEdit]);
+  }, [displayValue, onContentChange, onStopEdit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        onContentChange(editText);
+        const text = elementRef.current?.textContent ?? displayValue;
+        onContentChange(text);
         onStopEdit();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        setEditText(rawValue); // Revert
+        // Revert to original display value
+        if (elementRef.current) {
+          elementRef.current.textContent = displayValue;
+        }
         onStopEdit();
       }
     },
-    [editText, rawValue, onContentChange, onStopEdit],
+    [displayValue, onContentChange, onStopEdit],
   );
-
-  const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
-    setEditText((e.currentTarget as HTMLDivElement).textContent ?? '');
-  }, []);
 
   // ─── Styles ──────────────────────────────────────────────────────
 
@@ -201,7 +211,7 @@ export default function EditableElement({
 
   return (
     <div
-      ref={canvasRef}
+      ref={wrapperRef}
       style={{
         position: 'absolute',
         left: `${x}%`,
@@ -210,7 +220,7 @@ export default function EditableElement({
         zIndex: isSelected ? 20 : 10,
       }}
     >
-      {/* Main element */}
+      {/* Main element — fully uncontrolled contentEditable */}
       <div
         ref={elementRef}
         contentEditable={isEditing}
@@ -221,7 +231,6 @@ export default function EditableElement({
         onDoubleClick={handleDoubleClick}
         onBlur={isEditing ? handleBlur : undefined}
         onKeyDown={isEditing ? handleKeyDown : undefined}
-        onInput={isEditing ? handleInput : undefined}
         style={{
           minWidth: 80,
           minHeight: 28,
@@ -243,77 +252,16 @@ export default function EditableElement({
           maxWidth: '90%',
           textShadow: '0 1px 3px rgba(0,0,0,0.2)',
         }}
-      >
-        {isEditing ? undefined : displayValue || label}
-      </div>
+      />
+      {/* Note: NO children. Text is managed via ref.textContent */}
 
       {/* Resize handles — only when selected and not editing */}
       {isSelected && !isEditing && (
         <>
-          {/* Bottom-right */}
-          <div
-            data-handle="br"
-            onMouseDown={handleResizeStart}
-            style={{
-              position: 'absolute',
-              right: -HANDLE_SIZE / 2,
-              bottom: -HANDLE_SIZE / 2,
-              width: HANDLE_SIZE,
-              height: HANDLE_SIZE,
-              background: '#3B82F6',
-              borderRadius: 2,
-              cursor: 'nwse-resize',
-              border: '1px solid #fff',
-            }}
-          />
-          {/* Bottom-left */}
-          <div
-            data-handle="bl"
-            onMouseDown={handleResizeStart}
-            style={{
-              position: 'absolute',
-              left: -HANDLE_SIZE / 2,
-              bottom: -HANDLE_SIZE / 2,
-              width: HANDLE_SIZE,
-              height: HANDLE_SIZE,
-              background: '#3B82F6',
-              borderRadius: 2,
-              cursor: 'nesw-resize',
-              border: '1px solid #fff',
-            }}
-          />
-          {/* Top-right */}
-          <div
-            data-handle="tr"
-            onMouseDown={handleResizeStart}
-            style={{
-              position: 'absolute',
-              right: -HANDLE_SIZE / 2,
-              top: -HANDLE_SIZE / 2,
-              width: HANDLE_SIZE,
-              height: HANDLE_SIZE,
-              background: '#3B82F6',
-              borderRadius: 2,
-              cursor: 'nesw-resize',
-              border: '1px solid #fff',
-            }}
-          />
-          {/* Top-left */}
-          <div
-            data-handle="tl"
-            onMouseDown={handleResizeStart}
-            style={{
-              position: 'absolute',
-              left: -HANDLE_SIZE / 2,
-              top: -HANDLE_SIZE / 2,
-              width: HANDLE_SIZE,
-              height: HANDLE_SIZE,
-              background: '#3B82F6',
-              borderRadius: 2,
-              cursor: 'nwse-resize',
-              border: '1px solid #fff',
-            }}
-          />
+          <div data-handle="br" onMouseDown={handleResizeStart} style={{position: 'absolute', right: -HANDLE_SIZE / 2, bottom: -HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, background: '#3B82F6', borderRadius: 2, cursor: 'nwse-resize', border: '1px solid #fff'}} />
+          <div data-handle="bl" onMouseDown={handleResizeStart} style={{position: 'absolute', left: -HANDLE_SIZE / 2, bottom: -HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, background: '#3B82F6', borderRadius: 2, cursor: 'nesw-resize', border: '1px solid #fff'}} />
+          <div data-handle="tr" onMouseDown={handleResizeStart} style={{position: 'absolute', right: -HANDLE_SIZE / 2, top: -HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, background: '#3B82F6', borderRadius: 2, cursor: 'nesw-resize', border: '1px solid #fff'}} />
+          <div data-handle="tl" onMouseDown={handleResizeStart} style={{position: 'absolute', left: -HANDLE_SIZE / 2, top: -HANDLE_SIZE / 2, width: HANDLE_SIZE, height: HANDLE_SIZE, background: '#3B82F6', borderRadius: 2, cursor: 'nwse-resize', border: '1px solid #fff'}} />
         </>
       )}
     </div>
