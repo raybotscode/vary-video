@@ -154,7 +154,7 @@ export type ElementAnimationConfig = {
 export type ElementLayout = {
   x: number;          // 0–100, percentage of canvas width
   y: number;          // 0–100, percentage of canvas height
-  fontSize?: number;  // 12–120, px
+  fontSize?: number;  // 12–200, px
   color?: string;     // hex color, e.g. "#1A365D"
   animation?: {
     entry?: ElementAnimationConfig;

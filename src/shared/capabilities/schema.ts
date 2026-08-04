@@ -112,7 +112,7 @@ export const elementLayoutSchema = z
   .object({
     x: z.number().min(0).max(100),
     y: z.number().min(0).max(100),
-    fontSize: z.number().min(12).max(120).optional(),
+    fontSize: z.number().min(12).max(200).optional(),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     animation: z
       .object({

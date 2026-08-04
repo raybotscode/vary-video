@@ -292,7 +292,7 @@ function FieldSection({
             label="Font Size"
             value={fontSize}
             min={12}
-            max={120}
+            max={200}
             unit="px"
             onChange={(v) => updateLayout({fontSize: v})}
           />
