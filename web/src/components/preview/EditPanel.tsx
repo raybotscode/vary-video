@@ -14,11 +14,13 @@ import type {ElementLayout} from '@vary/shared/capabilities/types';
 import type {ComposerBlock} from '../../utils/blocks';
 import {blockCapabilities} from '@vary/shared/capabilities/blocks';
 import {animationPresetCapabilities} from '@vary/shared/capabilities/animations';
+import {resolvePlaceholders} from '../../utils/placeholder';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
 type EditPanelProps = {
   block: ComposerBlock;
+  variant: Record<string, string>;
   onContentChange: (fieldKey: string, value: string) => void;
   onLayoutChange: (fieldKey: string, layout: ElementLayout) => void;
   selectedFieldKey?: string | null;
@@ -165,7 +167,8 @@ function AnimationSelect({
 function FieldSection({
   fieldKey,
   label,
-  value,
+  rawValue,
+  displayValue,
   layout,
   isSelected,
   onContentChange,
@@ -174,7 +177,8 @@ function FieldSection({
 }: {
   fieldKey: string;
   label: string;
-  value: string;
+  rawValue: string;
+  displayValue: string;
   layout: ElementLayout | undefined;
   isSelected: boolean;
   onContentChange: (value: string) => void;
@@ -244,7 +248,7 @@ function FieldSection({
       {/* Always show text input */}
       <input
         type="text"
-        value={value}
+        value={displayValue}
         onChange={(e) => onContentChange(e.target.value)}
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -341,6 +345,7 @@ function FieldSection({
 
 export default function EditPanel({
   block,
+  variant,
   onContentChange,
   onLayoutChange,
   selectedFieldKey,
@@ -372,21 +377,26 @@ export default function EditPanel({
       </div>
 
       <div style={{display: 'flex', flexDirection: 'column', gap: 8}}>
-        {definition.contentFields.map((field) => (
-          <FieldSection
-            key={field.key}
-            fieldKey={field.key}
-            label={field.label}
-            value={block.content[field.key] ?? field.placeholder ?? ''}
-            layout={block.layout?.[field.key]}
-            isSelected={selectedFieldKey === field.key}
-            onContentChange={(val) => onContentChange(field.key, val)}
-            onLayoutChange={(layout) => onLayoutChange(field.key, layout)}
-            onSelect={() =>
-              onSelectField?.(selectedFieldKey === field.key ? null : field.key)
-            }
-          />
-        ))}
+        {definition.contentFields.map((field) => {
+          const rawValue = block.content[field.key] ?? field.placeholder ?? '';
+          const displayValue = resolvePlaceholders(rawValue, variant);
+          return (
+            <FieldSection
+              key={field.key}
+              fieldKey={field.key}
+              label={field.label}
+              rawValue={rawValue}
+              displayValue={displayValue}
+              layout={block.layout?.[field.key]}
+              isSelected={selectedFieldKey === field.key}
+              onContentChange={(val) => onContentChange(field.key, val)}
+              onLayoutChange={(layout) => onLayoutChange(field.key, layout)}
+              onSelect={() =>
+                onSelectField?.(selectedFieldKey === field.key ? null : field.key)
+              }
+            />
+          );
+        })}
       </div>
     </div>
   );

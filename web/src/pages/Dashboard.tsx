@@ -22,6 +22,7 @@ import AiPromptInput from '../components/dashboard/AiPromptInput';
 import AiWizard from '../components/dashboard/AiWizard';
 import SaveTemplateDialog from '../components/dashboard/SaveTemplateDialog';
 import UserTemplateGallery from '../components/dashboard/UserTemplateGallery';
+import CollapsibleSection from '../components/CollapsibleSection';
 import PreviewPanel from '../components/PreviewPanel';
 import SafePlayerPreview from '../components/preview/SafePlayerPreview';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
@@ -515,25 +516,26 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
               onSelect={selectTemplate}
             />
             <div style={{marginTop: 20}}>
-              <UserTemplateGallery
-                selectedId={selectedCompositionId}
-                onSelect={(spec, templateId) => {
-                  // Load user template into composer
-                  setMode('composer');
-                  setLastAiGeneration(null);
+              <CollapsibleSection title="My Templates" defaultOpen={false}>
+                <UserTemplateGallery
+                  selectedId={selectedCompositionId}
+                  onSelect={(spec, templateId) => {
+                    // Load user template into composer
+                    setMode('composer');
+                    setLastAiGeneration(null);
 
-                  // Parse the spec and apply blocks
-                  const parsed = spec as {
-                    blocks?: Array<{
-                      blockId: string;
-                      content?: Record<string, string>;
-                      durationFrames?: number;
-                      animation?: Record<string, unknown>;
-                      transition?: Record<string, unknown>;
-                    }>;
-                    brandSettings?: Record<string, unknown>;
-                    data?: Record<string, string>;
-                  };
+                    // Parse the spec and apply blocks
+                    const parsed = spec as {
+                      blocks?: Array<{
+                        blockId: string;
+                        content?: Record<string, string>;
+                        durationFrames?: number;
+                        animation?: Record<string, unknown>;
+                        transition?: Record<string, unknown>;
+                      }>;
+                      brandSettings?: Record<string, unknown>;
+                      data?: Record<string, string>;
+                    };
 
                   if (parsed.blocks && Array.isArray(parsed.blocks)) {
                     const userBlocks: ComposerBlock[] = parsed.blocks.map((block) => ({
@@ -563,6 +565,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
                   apiClient.incrementTemplateUse(templateId).catch(() => {});
                 }}
               />
+              </CollapsibleSection>
             </div>
           </WorkflowSection>
 

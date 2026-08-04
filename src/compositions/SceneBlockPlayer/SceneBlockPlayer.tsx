@@ -330,7 +330,8 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
           ...mergeMotionStyles(
             currentTransitionStyle,
             entryStyle,
-            exitStyle,
+            // Skip exit animation when a transition is active to avoid doubling
+            transitionProgress > 0 ? {} : exitStyle,
           ),
         }}
       >

@@ -445,6 +445,7 @@ export default function RemotionPlayerPreview({
       {blocks.length > 0 && blocks[activeBlockIndex] && (
         <EditPanel
           block={blocks[activeBlockIndex]}
+          variant={variant}
           onContentChange={handleFieldChange}
           onLayoutChange={handleLayoutChange}
           selectedFieldKey={selectedFieldKey}
