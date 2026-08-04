@@ -20,3 +20,5 @@ CODEX_REVIEW.md
 CODEX_SPEC_*.md
 BUILD_PROMPT*.md
 .wrangler/
+.hermes-tmp.*
+CODEX_PLAN_*.md

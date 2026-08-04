@@ -21,6 +21,11 @@ describe('animationControls', () => {
     expect(animationOptionsForDirection(animationPresetCapabilities, 'out').map((preset) => preset.id)).toEqual([
       'none',
       'fade-out',
+      'slide-out-left',
+      'slide-out-right',
+      'slide-out-up',
+      'slide-out-down',
+      'zoom-out',
     ]);
   });
 

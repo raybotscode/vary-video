@@ -148,6 +148,71 @@ export const getAnimationStyle = (args: AnimationArgs): AnimationStyle => {
       };
     }
 
+    case 'slide-out-left': {
+      const progress = interpolate(frame, [0, duration], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+        easing: easingFn,
+      });
+      const translateX = -progress * width * intensity;
+      return {
+        opacity: 1 - progress,
+        transform: `translateX(${translateX}px)`,
+      };
+    }
+
+    case 'slide-out-right': {
+      const progress = interpolate(frame, [0, duration], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+        easing: easingFn,
+      });
+      const translateX = progress * width * intensity;
+      return {
+        opacity: 1 - progress,
+        transform: `translateX(${translateX}px)`,
+      };
+    }
+
+    case 'slide-out-up': {
+      const progress = interpolate(frame, [0, duration], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+        easing: easingFn,
+      });
+      const translateY = -progress * height * intensity;
+      return {
+        opacity: 1 - progress,
+        transform: `translateY(${translateY}px)`,
+      };
+    }
+
+    case 'slide-out-down': {
+      const progress = interpolate(frame, [0, duration], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+        easing: easingFn,
+      });
+      const translateY = progress * height * intensity;
+      return {
+        opacity: 1 - progress,
+        transform: `translateY(${translateY}px)`,
+      };
+    }
+
+    case 'zoom-out': {
+      const progress = interpolate(frame, [0, duration], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+        easing: easingFn,
+      });
+      const scale = 1 - progress * intensity * 0.35;
+      return {
+        opacity: 1 - progress,
+        transform: `scale(${scale})`,
+      };
+    }
+
     default:
       return {};
   }
