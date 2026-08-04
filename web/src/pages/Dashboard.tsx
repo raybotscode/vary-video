@@ -23,6 +23,7 @@ import AiWizard from '../components/dashboard/AiWizard';
 import SaveTemplateDialog from '../components/dashboard/SaveTemplateDialog';
 import UserTemplateGallery from '../components/dashboard/UserTemplateGallery';
 import PreviewPanel from '../components/PreviewPanel';
+import LivePreview from '../components/preview/LivePreview';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
 import {useCapabilities} from '../hooks/useCapabilities';
 import LoadingState from '../components/ui/LoadingState';
@@ -563,21 +564,18 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       )}
 
       <WorkflowSection step="Step 2.5" title="Live Preview">
-        <PreviewPanel
-          template={
-            mode === 'composer'
-              ? {
-                  blocks: composerBlockSequence,
-                  brandSettings: brandSettingsFromTemplate(template),
-                  audio: audioFromTemplate(template),
-                  fps: selectedTemplate.fps ?? 30,
-                  width: selectedTemplate.width ?? 1920,
-                  height: selectedTemplate.height ?? 1080,
-                }
-              : template
-          }
-          compositionId={mode === 'composer' ? 'SceneBlockPlayer' : selectedCompositionId}
+        <LivePreview
+          blocks={composerBlocks}
+          template={template}
           variant={variants[0] ?? {}}
+          onVariantChange={(updated) => {
+            setVariants((prev) => {
+              if (prev.length === 0) return [updated];
+              const next = [...prev];
+              next[0] = updated;
+              return next;
+            });
+          }}
         />
       </WorkflowSection>
 
