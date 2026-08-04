@@ -16,7 +16,7 @@ import VariantEditor from '../components/VariantEditor';
 import ComposerWorkspace from '../components/composer/ComposerWorkspace';
 import MobileActionBar from '../components/dashboard/MobileActionBar';
 import RenderSummary from '../components/dashboard/RenderSummary';
-import TemplatePicker from '../components/dashboard/TemplatePicker';
+import TemplateGallery from '../components/dashboard/TemplateGallery';
 import AiPromptInput from '../components/dashboard/AiPromptInput';
 import PreviewPanel from '../components/PreviewPanel';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
@@ -377,7 +377,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       ) : (
         <>
           <WorkflowSection step="Step 1" title="Pick Base Template">
-            <TemplatePicker
+            <TemplateGallery
               compositions={compositions}
               selectedCompositionId={selectedCompositionId}
               onSelect={selectTemplate}
