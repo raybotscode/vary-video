@@ -6,6 +6,7 @@ import {
   type RenderDetail,
 } from '../api/client';
 import EmptyState from '../components/ui/EmptyState';
+import {useToast} from '../components/ui/useToast';
 
 type FilterStatus = 'all' | 'completed' | 'rendering' | 'failed';
 
@@ -48,6 +49,8 @@ export default function RenderHistory() {
   const [detail, setDetail] = useState<RenderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState<string | null>(null);
+  const {toast} = useToast();
 
   const fetchRenders = useCallback(async () => {
     setLoading(true);
@@ -105,6 +108,21 @@ export default function RenderHistory() {
       setError(err instanceof Error ? err.message : 'Failed to delete render');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleRetry = async (jobId: string) => {
+    setRetrying(jobId);
+    setError(null);
+    try {
+      const result = await apiClient.retryRender(jobId);
+      // Refresh the list to show the new queued job
+      fetchRenders();
+      toast(`Retry started — new job ${result.jobId}`, 'success');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to retry render');
+    } finally {
+      setRetrying(null);
     }
   };
 
@@ -197,6 +215,17 @@ export default function RenderHistory() {
                   </div>
                 </button>
                 <div className="render-card-actions">
+                  {render.status === 'failed' && (
+                    <button
+                      type="button"
+                      className="ghost-button small"
+                      onClick={() => handleRetry(render.id)}
+                      disabled={retrying === render.id}
+                      aria-label={`Retry render ${render.id}`}
+                    >
+                      {retrying === render.id ? 'Retrying…' : 'Retry'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="ghost-button small"
@@ -276,6 +305,16 @@ export default function RenderHistory() {
               )}
 
               <div className="render-detail-actions">
+                {detail.status === 'failed' && (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={() => handleRetry(detail.id)}
+                    disabled={retrying === detail.id}
+                  >
+                    {retrying === detail.id ? 'Retrying…' : '🔄 Retry Render'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="ghost-button danger"

@@ -82,6 +82,44 @@ rendersRouter.get('/:id', (req, res) => {
   });
 });
 
+rendersRouter.post('/:id/retry', async (req, res) => {
+  const row = db.select().from(jobsTable).where(eq(jobsTable.id, req.params.id)).get();
+  if (!row) {
+    res.status(404).json({error: 'Render job not found'});
+    return;
+  }
+
+  if (row.status !== 'failed') {
+    res.status(400).json({error: 'Only failed renders can be retried'});
+    return;
+  }
+
+  const template = JSON.parse(row.template);
+  const variants = JSON.parse(row.variants);
+  const formats = JSON.parse(row.formats);
+  const compositionId = row.compositionId;
+
+  // Forward to the batch render endpoint internally
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  try {
+    const batchResponse = await fetch(`${baseUrl}/api/render/batch`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({compositionId, template, variants, formats}),
+    });
+
+    const data = await batchResponse.json();
+    if (!batchResponse.ok) {
+      res.status(batchResponse.status).json(data);
+      return;
+    }
+
+    res.status(202).json(data);
+  } catch (error) {
+    res.status(500).json({error: error instanceof Error ? error.message : 'Retry failed'});
+  }
+});
+
 rendersRouter.delete('/:id', (req, res) => {
   const row = db.select().from(jobsTable).where(eq(jobsTable.id, req.params.id)).get();
   if (!row) {

@@ -404,6 +404,11 @@ export const apiClient = {
     }
   },
 
+  async retryRender(jobId: string): Promise<{jobId: string; estimatedTimeSeconds: number; statusUrl: string}> {
+    const response = await fetch(apiUrl(`/v1/renders/${jobId}/retry`), {method: 'POST'});
+    return readJson<{jobId: string; estimatedTimeSeconds: number; statusUrl: string}>(response);
+  },
+
   async searchPixabay(params: {
     q: string;
     type?: 'images' | 'video';
