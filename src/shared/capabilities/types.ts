@@ -78,6 +78,8 @@ export type BlockContentField = {
   label: string;
   type: 'text' | 'url' | 'color' | 'number' | 'image' | 'image-treatment';
   placeholder?: string;
+  /** When true, the block is hidden if this field resolves to an empty string. */
+  essential?: boolean;
 };
 
 export type SceneBlockCategory =

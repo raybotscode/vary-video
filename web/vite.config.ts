@@ -15,6 +15,7 @@ export default defineConfig({
     minify: true,
   },
   server: {
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

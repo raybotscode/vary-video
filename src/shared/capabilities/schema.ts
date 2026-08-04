@@ -141,6 +141,7 @@ export const blockContentFieldSchema = z
     label: z.string().min(1),
     type: z.enum(['text', 'url', 'color', 'number', 'image', 'image-treatment']),
     placeholder: z.string().optional(),
+    essential: z.boolean().optional(),
   })
   .strict();
 

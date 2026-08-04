@@ -2,6 +2,7 @@ import {loadFont} from '@remotion/google-fonts/Inter';
 import {AbsoluteFill, Audio, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {safeHexColor} from '../../components/util';
 import {blockRenderers, getBlock} from '../blocks/registry';
+import {isBlockContentEmpty} from '../blocks/emptyCheck';
 import {getAnimationStyle, mergeMotionStyles} from '../animations';
 import {getTransitionStyle} from '../transitions';
 import {
@@ -64,12 +65,28 @@ type PositionedBlock = {
   duration: number;
 };
 
+/**
+ * Build positioned blocks, filtering out blocks whose essential content is
+ * empty (graceful CSV defaults) and redistributing their duration to the
+ * remaining blocks proportionally.
+ */
 const getPositionedBlocks = (
   blocks: SceneBlockSequenceItem[],
+  data: Record<string, string>,
 ): PositionedBlock[] => {
+  // Filter out blocks with empty essential content
+  const visibleBlocks = blocks.filter((block) => {
+    const definition = getBlock(block.blockId);
+    const mergedContent = {...definition.defaultContent, ...block.content};
+    return !isBlockContentEmpty(block.blockId, mergedContent, data);
+  });
+
+  // If all blocks are hidden, fall back to showing everything
+  const effectiveBlocks = visibleBlocks.length > 0 ? visibleBlocks : blocks;
+
   let accumulated = 0;
 
-  return blocks.map((block) => {
+  return effectiveBlocks.map((block) => {
     const duration = getBlockDuration(block);
     const positioned = {block, startFrame: accumulated, duration};
     accumulated += duration;
@@ -136,7 +153,7 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
   const props = sceneBlockPlayerSchema.parse(rawProps);
   const currentFrame = useCurrentFrame();
   const {durationInFrames, fps} = useVideoConfig();
-  const positionedBlocks = getPositionedBlocks(props.blocks);
+  const positionedBlocks = getPositionedBlocks(props.blocks, props.data);
   const currentIndex = positionedBlocks.findIndex(
     ({startFrame, duration}) =>
       currentFrame >= startFrame && currentFrame < startFrame + duration,

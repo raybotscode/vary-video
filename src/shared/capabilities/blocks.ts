@@ -18,7 +18,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'intro',
     compatibleSchemas: ['ProductLaunch'],
     contentFields: [
-      {key: 'headlineTemplate', label: 'Headline', type: 'text', placeholder: 'Introducing {{product_name}}'},
+      {key: 'headlineTemplate', label: 'Headline', type: 'text', placeholder: 'Introducing {{product_name}}', essential: true},
       {key: 'taglineTemplate', label: 'Tagline', type: 'text', placeholder: '{{tagline}}'},
     ],
     defaultDurationFrames: 120,
@@ -37,7 +37,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'feature',
     compatibleSchemas: ['ProductLaunch'],
     contentFields: [
-      {key: 'feature1Template', label: 'Feature 1', type: 'text', placeholder: '{{feature1}}'},
+      {key: 'feature1Template', label: 'Feature 1', type: 'text', placeholder: '{{feature1}}', essential: true},
       {key: 'feature2Template', label: 'Feature 2', type: 'text', placeholder: '{{feature2}}'},
       {key: 'feature3Template', label: 'Feature 3', type: 'text', placeholder: '{{feature3}}'},
     ],
@@ -57,7 +57,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'cta',
     compatibleSchemas: ['ProductLaunch'],
     contentFields: [
-      {key: 'taglineTemplate', label: 'Tagline', type: 'text', placeholder: '{{tagline}}'},
+      {key: 'taglineTemplate', label: 'Tagline', type: 'text', placeholder: '{{tagline}}', essential: true},
       {key: 'ctaText', label: 'Call to Action', type: 'text', placeholder: 'Get Started Today'},
     ],
     defaultDurationFrames: 80,
@@ -76,7 +76,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'intro',
     compatibleSchemas: ['RealEstate'],
     contentFields: [
-      {key: 'headlineTemplate', label: 'Property Name', type: 'text', placeholder: '{{property_name}}'},
+      {key: 'headlineTemplate', label: 'Property Name', type: 'text', placeholder: '{{property_name}}', essential: true},
       {key: 'taglineTemplate', label: 'Tagline', type: 'text', placeholder: '{{tagline}}'},
       {key: 'priceTemplate', label: 'Price', type: 'text', placeholder: '{{price}}'},
     ],
@@ -96,7 +96,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'detail',
     compatibleSchemas: ['RealEstate'],
     contentFields: [
-      {key: 'specsLine', label: 'Specs Line', type: 'text', placeholder: '{{bedrooms}} bed · {{bathrooms}} bath · {{sqft}} sq ft'},
+      {key: 'specsLine', label: 'Specs Line', type: 'text', placeholder: '{{bedrooms}} bed · {{bathrooms}} bath · {{sqft}} sq ft', essential: true},
       {key: 'locationLine', label: 'Location', type: 'text', placeholder: '{{location}}'},
     ],
     defaultDurationFrames: 140,
@@ -115,7 +115,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'cta',
     compatibleSchemas: ['RealEstate'],
     contentFields: [
-      {key: 'ctaText', label: 'Call to Action', type: 'text', placeholder: 'Schedule a Viewing'},
+      {key: 'ctaText', label: 'Call to Action', type: 'text', placeholder: 'Schedule a Viewing', essential: true},
     ],
     defaultDurationFrames: 50,
     requiredBrandSettings: ['brandColor', 'secondaryColor', 'accentColor', 'backgroundType', 'backgroundColor'],
@@ -133,7 +133,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'hook',
     compatibleSchemas: ['SocialClip'],
     contentFields: [
-      {key: 'hookTemplate', label: 'Hook', type: 'text', placeholder: '{{hook}}'},
+      {key: 'hookTemplate', label: 'Hook', type: 'text', placeholder: '{{hook}}', essential: true},
     ],
     defaultDurationFrames: 100,
     requiredBrandSettings: ['brandColor', 'secondaryColor', 'accentColor', 'backgroundType', 'backgroundColor'],
@@ -151,7 +151,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'body',
     compatibleSchemas: ['SocialClip'],
     contentFields: [
-      {key: 'bodyTemplate', label: 'Body', type: 'text', placeholder: '{{body}}'},
+      {key: 'bodyTemplate', label: 'Body', type: 'text', placeholder: '{{body}}', essential: true},
     ],
     defaultDurationFrames: 150,
     requiredBrandSettings: ['brandColor', 'secondaryColor', 'accentColor', 'backgroundType', 'backgroundColor'],
@@ -169,7 +169,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'outro',
     compatibleSchemas: ['SocialClip'],
     contentFields: [
-      {key: 'ctaText', label: 'Call to Action', type: 'text', placeholder: '{{cta}}'},
+      {key: 'ctaText', label: 'Call to Action', type: 'text', placeholder: '{{cta}}', essential: true},
     ],
     defaultDurationFrames: 90,
     requiredBrandSettings: ['brandColor', 'secondaryColor', 'accentColor', 'backgroundType', 'backgroundColor'],
@@ -205,7 +205,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'body',
     compatibleSchemas: ['any'],
     contentFields: [
-      {key: 'headline', label: 'Headline', type: 'text', placeholder: '{{headline}}'},
+      {key: 'headline', label: 'Headline', type: 'text', placeholder: '{{headline}}', essential: true},
       {key: 'backgroundColor', label: 'Background Color', type: 'color', placeholder: '#F7FAFC'},
     ],
     defaultDurationFrames: 120,
@@ -224,7 +224,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'feature',
     compatibleSchemas: ['any'],
     contentFields: [
-      {key: 'value', label: 'Value', type: 'text', placeholder: '{{value}}'},
+      {key: 'value', label: 'Value', type: 'text', placeholder: '{{value}}', essential: true},
       {key: 'label', label: 'Label', type: 'text', placeholder: '{{label}}'},
     ],
     defaultDurationFrames: 120,
@@ -243,7 +243,7 @@ export const blockCapabilities: BlockCapability[] = [
     category: 'feature',
     compatibleSchemas: ['any'],
     contentFields: [
-      {key: 'imageUrl', label: 'Image URL', type: 'image', placeholder: '{{primary_image_url}}'},
+      {key: 'imageUrl', label: 'Image URL', type: 'image', placeholder: '{{primary_image_url}}', essential: true},
       {key: 'altText', label: 'Alt Text', type: 'text', placeholder: 'Descriptive text'},
     ],
     supportsImageTreatment: true,

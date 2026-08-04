@@ -18,6 +18,7 @@
     "api"
   ],
   "dependencies": {
+    "@playwright/test": "^1.62.1",
     "@remotion/bundler": "^4.0.482",
     "@remotion/cli": "^4.0.482",
     "@remotion/google-fonts": "^4.0.482",
