@@ -130,6 +130,7 @@ type SafePlayerPreviewProps = {
   variant: import('../../utils/placeholder').VariantData;
   onVariantChange?: (updated: import('../../utils/placeholder').VariantData) => void;
   onBlockLayoutChange?: (blockInstanceId: string, fieldKey: string, layout: import('@vary/shared/capabilities/types').ElementLayout) => void;
+  onBlockContentChange?: (blockInstanceId: string, fieldKey: string, value: string) => void;
   onFrameChange?: (frame: number) => void;
 };
 

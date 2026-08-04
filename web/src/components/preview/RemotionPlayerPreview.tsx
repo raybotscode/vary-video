@@ -29,6 +29,7 @@ import type {ElementLayout} from '@vary/shared/capabilities/types';
 import {getBlock} from '@vary/compositions/blocks/registry';
 import {blockCapabilities} from '@vary/shared/capabilities/blocks';
 import EditPanel from './EditPanel';
+import EditOverlay from './EditOverlay';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ type RemotionPlayerPreviewProps = {
   variant: VariantData;
   onVariantChange?: (updated: VariantData) => void;
   onBlockLayoutChange?: (blockInstanceId: string, fieldKey: string, layout: ElementLayout) => void;
+  onBlockContentChange?: (blockInstanceId: string, fieldKey: string, value: string) => void;
   onFrameChange?: (frame: number) => void;
 };
 
@@ -152,6 +154,7 @@ export default function RemotionPlayerPreview({
   variant,
   onVariantChange,
   onBlockLayoutChange,
+  onBlockContentChange,
   onFrameChange,
 }: RemotionPlayerPreviewProps) {
   const playerRef = useRef<PlayerRef>(null);
@@ -218,11 +221,9 @@ export default function RemotionPlayerPreview({
     };
   }, [blockBoundaries, onFrameChange]);
 
-  // Handle content edits — update variant data
+  // Handle content edits — update variant data or block content directly
   const handleFieldChange = useCallback(
     (fieldKey: string, newValue: string) => {
-      if (!onVariantChange) return;
-
       const activeBlock = blocks[activeBlockIndex];
       if (!activeBlock) return;
 
@@ -230,17 +231,16 @@ export default function RemotionPlayerPreview({
       const originalVal = activeBlock.content[fieldKey] ?? '';
       const placeholderMatch = originalVal.match(/\{\{(\w+)\}\}/);
 
-      if (placeholderMatch) {
+      if (placeholderMatch && onVariantChange) {
+        // Field uses a placeholder — update the variant (CSV data)
         const variantKey = placeholderMatch[1];
         onVariantChange({...variant, [variantKey]: newValue});
-      } else {
-        onVariantChange({
-          ...variant,
-          [`${activeBlock.blockId}_${fieldKey}`]: newValue,
-        });
+      } else if (onBlockContentChange) {
+        // Field has no placeholder — update block content directly
+        onBlockContentChange(activeBlock.instanceId, fieldKey, newValue);
       }
     },
-    [blocks, activeBlockIndex, variant, onVariantChange],
+    [blocks, activeBlockIndex, variant, onVariantChange, onBlockContentChange],
   );
 
   // Handle layout changes from EditPanel
@@ -337,6 +337,24 @@ export default function RemotionPlayerPreview({
           }}
           acknowledgeRemotionLicense
         />
+        {/* Clickable overlay for inline editing */}
+        {blocks[activeBlockIndex] && (
+          <EditOverlay
+            block={blocks[activeBlockIndex]}
+            variant={variant}
+            selectedFieldKey={selectedFieldKey}
+            onSelectField={(key) => {
+              setSelectedFieldKey(key);
+              // If selecting a field, scroll the edit panel into view
+              if (key) {
+                setTimeout(() => {
+                  const el = document.querySelector(`[data-field-key="${key}"]`);
+                  el?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+                }, 100);
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Progress bar */}

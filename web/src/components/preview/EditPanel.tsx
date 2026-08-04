@@ -263,9 +263,12 @@ function FieldSection({
         }}
       />
 
-      {/* Expanded controls */}
+      {/* Expanded controls — stopPropagation prevents the outer onClick from collapsing */}
       {isSelected && (
-        <div style={{display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10}}>
+        <div
+          style={{display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10}}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10}}>
             <Slider
               label="Position X"

@@ -256,6 +256,25 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     );
   };
 
+  const handleBlockContentChange = (
+    blockInstanceId: string,
+    fieldKey: string,
+    value: string,
+  ) => {
+    setComposerBlocks((currentBlocks) =>
+      currentBlocks.map((block) => {
+        if (block.instanceId !== blockInstanceId) return block;
+        return {
+          ...block,
+          content: {
+            ...block.content,
+            [fieldKey]: value,
+          },
+        };
+      }),
+    );
+  };
+
   const composerBlockSequence: BlockSequence = composerBlocks.map((block, index) => ({
     blockId: block.blockId,
     content: block.content,
@@ -600,6 +619,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
             });
           }}
           onBlockLayoutChange={handleBlockLayoutChange}
+          onBlockContentChange={handleBlockContentChange}
         />
       </WorkflowSection>
 

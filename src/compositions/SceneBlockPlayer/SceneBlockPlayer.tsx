@@ -219,21 +219,12 @@ export const SceneBlockPlayer: React.FC<SceneBlockPlayerProps> = (rawProps) => {
       })
     : {};
 
-  // Animation style for next block during transition (entry animation starts at overlap)
-  const nextEntryAnimation = next?.block.animation?.entry;
-  const nextEntryDuration = nextEntryAnimation?.durationFrames ?? 12;
-  const nextEntryStyle = next && nextEntryAnimation && transitionProgress > 0
-    ? getAnimationStyle({
-        presetId: nextEntryAnimation.presetId,
-        frame: transitionProgress * transitionDuration,
-        fps: props.fps,
-        width: props.width,
-        height: props.height,
-        durationFrames: nextEntryDuration,
-        intensity: nextEntryAnimation.intensity,
-        easing: nextEntryAnimation.easing,
-      })
-    : {};
+  // Next block's entry animation: skip during transition to avoid doubling.
+  // The transition itself IS the visual effect — compounding it with an entry
+  // animation causes the next scene to animate twice (once during overlap, once
+  // when it becomes current). Entry animation plays naturally when the next
+  // block becomes the current block and localFrame resets to 0.
+  const nextEntryStyle = {};
 
   // Transition styles using the transition utility
   const currentTransitionStyle = transitionProgress > 0
