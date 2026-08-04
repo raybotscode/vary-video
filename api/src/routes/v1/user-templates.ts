@@ -33,15 +33,6 @@ const updateTemplateSchema = z.object({
 
 const createId = () => `utpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const serializeRow = (row: ReturnType<typeof db.select> extends never ? never : never) => {
-  // Type gymnastics — we just need to handle the raw row
-  return {
-    ...row,
-    spec: JSON.parse((row as {spec: string}).spec),
-    tags: JSON.parse((row as {tags: string}).tags ?? '[]'),
-  };
-};
-
 // ─── Routes ─────────────────────────────────────────────────────────
 
 /**
@@ -188,7 +179,7 @@ userTemplatesRouter.put('/:id', (req, res) => {
   if (data.description !== undefined) updates.description = data.description;
   if (data.category !== undefined) updates.category = data.category;
   if (data.spec !== undefined) updates.spec = JSON.stringify(data.spec);
-  if (data.isPublic !== undefined) updates.isPublic = data.isPublic ? 1 : 0;
+  if (data.isPublic !== undefined) updates.isPublic = data.isPublic;
   if (data.tags !== undefined) updates.tags = JSON.stringify(data.tags);
 
   db.update(userTemplates).set(updates).where(eq(userTemplates.id, req.params.id)).run();
@@ -217,7 +208,7 @@ userTemplatesRouter.patch('/:id/publish', (req, res) => {
 
   const newPublic = !existing.isPublic;
   db.update(userTemplates).set({
-    isPublic: newPublic ? 1 : 0,
+    isPublic: newPublic,
     updatedAt: new Date(),
   }).where(eq(userTemplates.id, req.params.id)).run();
 
