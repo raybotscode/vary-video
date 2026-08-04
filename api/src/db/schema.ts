@@ -32,7 +32,17 @@ export const jobDownloads = sqliteTable('job_downloads', {
   downloadUrl: text('download_url').notNull(),
 });
 
-export type JobRow = typeof jobs.$inferSelect;
-export type NewJobRow = typeof jobs.$inferInsert;
-export type JobDownloadRow = typeof jobDownloads.$inferSelect;
-export type NewJobDownloadRow = typeof jobDownloads.$inferInsert;
+export const aiGenerations = sqliteTable('ai_generations', {
+  id: integer('id').primaryKey({autoIncrement: true}),
+  model: text('model').notNull(),
+  inputTokens: integer('input_tokens').notNull(),
+  outputTokens: integer('output_tokens').notNull(),
+  estimatedCostUsd: real('estimated_cost_usd').notNull(),
+  selectionMode: text('selection_mode', {enum: ['existing-template', 'block-composition']}).notNull(),
+  reusedTemplateId: text('reused_template_id'),
+  promptLength: integer('prompt_length').notNull(),
+  success: integer('success', {mode: 'boolean'}).notNull().default(true),
+  errorMessage: text('error_message'),
+  userId: text('user_id'),
+  createdAt: integer('created_at', {mode: 'timestamp'}).notNull().$defaultFn(() => new Date()),
+});

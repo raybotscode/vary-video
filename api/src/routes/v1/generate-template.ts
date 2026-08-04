@@ -1,5 +1,6 @@
 import {Router} from 'express';
 import {generateTemplate} from '../../services/aiTemplateGenerator';
+import {logGeneration} from '../../services/aiCostTracker';
 
 export const generateTemplateRouter = Router();
 
@@ -21,8 +22,21 @@ generateTemplateRouter.post('/', async (req, res) => {
     return;
   }
 
+  const promptLength = prompt.trim().length;
+
   try {
     const result = await generateTemplate(prompt.trim());
+
+    logGeneration({
+      model: result.model,
+      inputTokens: result.tokensUsed.input,
+      outputTokens: result.tokensUsed.output,
+      selectionMode: result.selectionMode,
+      reusedTemplateId: result.reusedTemplateId,
+      promptLength,
+      success: true,
+    });
+
     res.json({
       spec: result.spec,
       model: result.model,
@@ -33,6 +47,17 @@ generateTemplateRouter.post('/', async (req, res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Template generation failed';
     console.error('[generate-template] Error:', message);
+
+    logGeneration({
+      model: 'unknown',
+      inputTokens: 0,
+      outputTokens: 0,
+      selectionMode: 'block-composition',
+      promptLength,
+      success: false,
+      errorMessage: message,
+    });
+
     res.status(500).json({error: message});
   }
 });

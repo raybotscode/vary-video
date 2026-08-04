@@ -9,6 +9,7 @@ import {rendersRouter} from './renders';
 import {stylesRouter} from './styles';
 import {templatesRouter} from './templates';
 import {previewRouter} from './preview';
+import {getUsageSummary} from '../../services/aiCostTracker';
 
 /**
  * /api/v1 — versioned commercial API surface.
@@ -27,3 +28,14 @@ v1Router.use('/audio', audioRouter);
 v1Router.use('/renders', rendersRouter);
 v1Router.use('/preview', previewRouter);
 v1Router.use('/generate-template', generateTemplateRouter);
+
+/** GET /api/v1/ai-usage — AI generation cost tracking summary */
+v1Router.get('/ai-usage', (_req, res) => {
+  try {
+    const summary = getUsageSummary();
+    res.json(summary);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch usage';
+    res.status(500).json({error: message});
+  }
+});

@@ -43,9 +43,25 @@ sqlite.exec(`
     download_url TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS ai_generations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    model TEXT NOT NULL,
+    input_tokens INTEGER NOT NULL,
+    output_tokens INTEGER NOT NULL,
+    estimated_cost_usd REAL NOT NULL,
+    selection_mode TEXT NOT NULL CHECK(selection_mode IN ('existing-template', 'block-composition')),
+    reused_template_id TEXT,
+    prompt_length INTEGER NOT NULL,
+    success INTEGER NOT NULL DEFAULT 1,
+    error_message TEXT,
+    user_id TEXT,
+    created_at INTEGER NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
   CREATE INDEX IF NOT EXISTS idx_job_downloads_job_id ON job_downloads(job_id);
+  CREATE INDEX IF NOT EXISTS idx_ai_generations_created_at ON ai_generations(created_at DESC);
 `);
 
 export const db = drizzle(sqlite, {schema});
