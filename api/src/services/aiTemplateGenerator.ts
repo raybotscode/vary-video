@@ -1,5 +1,6 @@
 import {sceneBlockPlayerSchema, type SceneBlockPlayerProps} from '../../../src/compositions/SceneBlockPlayer/schema';
 import {getCompactCapabilitySummary} from '../../../src/shared/capabilities/registry';
+import {scoreTemplates, type ScoredTemplate} from './templateScorer';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'meta-llama/llama-4-scout';
@@ -11,12 +12,38 @@ type GenerateResult = {
   tokensUsed: {input: number; output: number};
 };
 
-const buildSystemPrompt = (): string => {
+const buildSystemPrompt = (userPrompt?: string): string => {
   const summary = getCompactCapabilitySummary();
 
-  const blockList = summary.blocks
-    .map((b) => `- ${b.id} (${b.name}, ${b.category}): fields=[${b.contentFields.join(', ')}], compatible=[${b.compatibleSchemas.join(', ')}]`)
-    .join('\n');
+  // If we have a user prompt, score templates and send only top matches
+  let blockList: string;
+  let templateContext = '';
+
+  if (userPrompt) {
+    const scored = scoreTemplates(userPrompt, 5);
+    const topBlockIds = new Set<string>();
+
+    for (const {template, score, matchedKeywords} of scored) {
+      for (const blockId of template.defaultBlocks) {
+        topBlockIds.add(blockId);
+      }
+      templateContext += `\n- ${template.id} (score: ${score}, matched: ${matchedKeywords.join(', ')}) — ${template.description}`;
+    }
+
+    // Include all blocks (for flexibility) but highlight the relevant ones
+    const allBlocks = summary.blocks;
+    const relevantBlocks = allBlocks.filter((b) => topBlockIds.has(b.id));
+    const otherBlocks = allBlocks.filter((b) => !topBlockIds.has(b.id));
+
+    blockList = [
+      ...relevantBlocks.map((b) => `- ${b.id} (${b.name}, ${b.category}): fields=[${b.contentFields.join(', ')}], compatible=[${b.compatibleSchemas.join(', ')}] ★ RECOMMENDED`),
+      ...otherBlocks.map((b) => `- ${b.id} (${b.name}, ${b.category}): fields=[${b.contentFields.join(', ')}], compatible=[${b.compatibleSchemas.join(', ')}]`),
+    ].join('\n');
+  } else {
+    blockList = summary.blocks
+      .map((b) => `- ${b.id} (${b.name}, ${b.category}): fields=[${b.contentFields.join(', ')}], compatible=[${b.compatibleSchemas.join(', ')}]`)
+      .join('\n');
+  }
 
   const animationList = summary.animations.join(', ');
 
@@ -24,6 +51,7 @@ const buildSystemPrompt = (): string => {
 
 AVAILABLE BLOCKS:
 ${blockList}
+${templateContext ? `\nRELEVANT TEMPLATES (matched to user intent):${templateContext}` : ''}
 
 AVAILABLE ANIMATIONS: ${animationList}
 
@@ -135,7 +163,7 @@ const validateAndParse = (rawJson: string): SceneBlockPlayerProps => {
 };
 
 export const generateTemplate = async (userPrompt: string): Promise<GenerateResult> => {
-  const systemPrompt = buildSystemPrompt();
+  const systemPrompt = buildSystemPrompt(userPrompt);
 
   // First attempt
   const {content, model, tokens} = await callOpenRouter(systemPrompt, userPrompt);
