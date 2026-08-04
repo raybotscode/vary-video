@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@vary/shared': fileURLToPath(new URL('../src/shared', import.meta.url)),
+      '@vary/compositions': fileURLToPath(new URL('../src/compositions', import.meta.url)),
     },
   },
   build: {

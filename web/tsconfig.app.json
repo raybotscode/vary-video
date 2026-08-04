@@ -17,7 +17,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@vary/shared/*": ["../src/shared/*"]
+      "@vary/shared/*": ["../src/shared/*"],
+      "@vary/compositions/*": ["../src/compositions/*"]
     }
   },
   "include": ["src"],

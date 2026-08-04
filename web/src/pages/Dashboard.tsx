@@ -23,7 +23,7 @@ import AiWizard from '../components/dashboard/AiWizard';
 import SaveTemplateDialog from '../components/dashboard/SaveTemplateDialog';
 import UserTemplateGallery from '../components/dashboard/UserTemplateGallery';
 import PreviewPanel from '../components/PreviewPanel';
-import LivePreview from '../components/preview/LivePreview';
+import RemotionPlayerPreview from '../components/preview/RemotionPlayerPreview';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
 import {useCapabilities} from '../hooks/useCapabilities';
 import LoadingState from '../components/ui/LoadingState';
@@ -564,7 +564,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       )}
 
       <WorkflowSection step="Step 2.5" title="Live Preview">
-        <LivePreview
+        <RemotionPlayerPreview
           blocks={composerBlocks}
           template={template}
           variant={variants[0] ?? {}}
