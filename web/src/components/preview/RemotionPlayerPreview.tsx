@@ -6,7 +6,7 @@
  *
  * Features:
  * - Real-time animation playback at 30fps
- * - Click-to-edit text overlays
+ * - Interactive edit mode (drag, resize, inline edit)
  * - Timeline scrubbing with frame-level control
  * - Play/pause/restart
  * - Scene indicator dots
@@ -28,7 +28,9 @@ import type {VariantData} from '../../utils/placeholder';
 import type {ElementLayout} from '@vary/shared/capabilities/types';
 import {getBlock} from '@vary/compositions/blocks/registry';
 import {blockCapabilities} from '@vary/shared/capabilities/blocks';
+import {safeHexColor} from '@vary/components/util';
 import EditPanel from './EditPanel';
+import EditCanvas from './EditCanvas';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -157,16 +159,30 @@ export default function RemotionPlayerPreview({
   onFrameChange,
 }: RemotionPlayerPreviewProps) {
   const playerRef = useRef<PlayerRef>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeBlockIndex, setActiveBlockIndex] = useState(0);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [containerDims, setContainerDims] = useState({width: 0, height: 0});
 
   // Build input props from current state
   const inputProps = buildInputProps(blocks, template, variant);
   const durationInFrames = getSequenceDuration(inputProps.blocks);
+
+  // Track container dimensions for EditCanvas scaling
+  useEffect(() => {
+    const el = playerContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const rect = entries[0].contentRect;
+      setContainerDims({width: rect.width, height: rect.height});
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Get block boundaries for scene dots
   const blockBoundaries: {start: number; end: number; index: number}[] = [];
@@ -220,7 +236,73 @@ export default function RemotionPlayerPreview({
     };
   }, [blockBoundaries, onFrameChange]);
 
-  // Handle content edits — update variant data or block content directly
+  // ─── Edit mode ───────────────────────────────────────────────────
+
+  const enterEditMode = useCallback(() => {
+    playerRef.current?.pause();
+    setIsEditing(true);
+  }, []);
+
+  const exitEditMode = useCallback(() => {
+    setIsEditing(false);
+    setEditingField(null);
+    setSelectedFieldKey(null);
+  }, []);
+
+  // ─── Canvas interaction handlers ─────────────────────────────────
+
+  const handleCanvasMove = useCallback(
+    (fieldKey: string, x: number, y: number) => {
+      const activeBlock = blocks[activeBlockIndex];
+      if (!activeBlock || !onBlockLayoutChange) return;
+      const existing = activeBlock.layout?.[fieldKey] ?? {x: 50, y: 50};
+      onBlockLayoutChange(activeBlock.instanceId, fieldKey, {...existing, x, y});
+    },
+    [blocks, activeBlockIndex, onBlockLayoutChange],
+  );
+
+  const handleCanvasResize = useCallback(
+    (fieldKey: string, fontSize: number) => {
+      const activeBlock = blocks[activeBlockIndex];
+      if (!activeBlock || !onBlockLayoutChange) return;
+      const existing = activeBlock.layout?.[fieldKey] ?? {x: 50, y: 50};
+      onBlockLayoutChange(activeBlock.instanceId, fieldKey, {...existing, fontSize});
+    },
+    [blocks, activeBlockIndex, onBlockLayoutChange],
+  );
+
+  const handleCanvasColorChange = useCallback(
+    (fieldKey: string, color: string) => {
+      const activeBlock = blocks[activeBlockIndex];
+      if (!activeBlock || !onBlockLayoutChange) return;
+      const existing = activeBlock.layout?.[fieldKey] ?? {x: 50, y: 50};
+      onBlockLayoutChange(activeBlock.instanceId, fieldKey, {...existing, color});
+    },
+    [blocks, activeBlockIndex, onBlockLayoutChange],
+  );
+
+  const handleCanvasContentChange = useCallback(
+    (fieldKey: string, value: string) => {
+      const activeBlock = blocks[activeBlockIndex];
+      if (!activeBlock) return;
+
+      // Check if this field references a {{placeholder}}
+      const originalVal = activeBlock.content[fieldKey] ?? '';
+      const placeholderMatch = originalVal.match(/\{\{(\w+)\}\}/);
+
+      if (placeholderMatch && onVariantChange) {
+        const variantKey = placeholderMatch[1];
+        onVariantChange({...variant, [variantKey]: value});
+      } else if (onBlockContentChange) {
+        onBlockContentChange(activeBlock.instanceId, fieldKey, value);
+      }
+    },
+    [blocks, activeBlockIndex, variant, onVariantChange, onBlockContentChange],
+  );
+
+  // ─── Standard handlers ───────────────────────────────────────────
+
+  // Handle content edits from EditPanel — update variant data or block content directly
   const handleFieldChange = useCallback(
     (fieldKey: string, newValue: string) => {
       const activeBlock = blocks[activeBlockIndex];
@@ -269,22 +351,27 @@ export default function RemotionPlayerPreview({
     const player = playerRef.current;
     if (!player) return;
 
+    if (isEditing) {
+      exitEditMode();
+    }
+
     if (isPlaying) {
       player.pause();
     } else {
       player.play();
     }
-  }, [isPlaying]);
+  }, [isPlaying, isEditing, exitEditMode]);
 
   // Restart
   const restart = useCallback(() => {
+    if (isEditing) exitEditMode();
     const player = playerRef.current;
     if (!player) return;
     player.seekTo(0);
     setCurrentFrame(0);
     setActiveBlockIndex(0);
     player.play();
-  }, []);
+  }, [isEditing, exitEditMode]);
 
   if (blocks.length === 0) {
     return (
@@ -306,12 +393,10 @@ export default function RemotionPlayerPreview({
   }
 
   return (
-    <div
-      ref={containerRef}
-      style={{display: 'flex', flexDirection: 'column', gap: 16}}
-    >
+    <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
       {/* Player container */}
       <div
+        ref={playerContainerRef}
         style={{
           position: 'relative',
           width: '100%',
@@ -319,8 +404,12 @@ export default function RemotionPlayerPreview({
           overflow: 'hidden',
           boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
           background: '#000',
+          aspectRatio: '16/9',
+          cursor: isEditing ? 'default' : 'pointer',
         }}
+        onClick={isEditing ? undefined : enterEditMode}
       >
+        {/* Remotion Player */}
         <Player
           ref={playerRef}
           component={SceneBlockPlayer}
@@ -331,11 +420,35 @@ export default function RemotionPlayerPreview({
           compositionHeight={1080}
           style={{
             width: '100%',
-            height: 'auto',
-            aspectRatio: '16/9',
+            height: '100%',
+            opacity: isEditing ? 0 : 1,
+            pointerEvents: isEditing ? 'none' : 'auto',
+            transition: 'opacity 0.15s',
           }}
           acknowledgeRemotionLicense
         />
+
+        {/* Edit Canvas overlay */}
+        {isEditing && containerDims.width > 0 && (
+          <EditCanvas
+            blocks={blocks}
+            activeBlockIndex={activeBlockIndex}
+            variant={variant}
+            brandSettings={inputProps.brandSettings}
+            containerWidth={containerDims.width}
+            containerHeight={containerDims.height}
+            selectedFieldKey={selectedFieldKey}
+            editingFieldKey={editingField}
+            onSelectField={setSelectedFieldKey}
+            onStartEditField={setEditingField}
+            onStopEditField={() => setEditingField(null)}
+            onMoveField={handleCanvasMove}
+            onResizeField={handleCanvasResize}
+            onContentChange={handleCanvasContentChange}
+            onColorChange={handleCanvasColorChange}
+            onExitEdit={exitEditMode}
+          />
+        )}
       </div>
 
       {/* Progress bar */}
@@ -377,37 +490,58 @@ export default function RemotionPlayerPreview({
         }}
       >
         <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-          <button
-            type="button"
-            onClick={togglePlayback}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#3B82F6',
-              color: '#fff',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {isPlaying ? '⏸ Pause' : '▶ Play'}
-          </button>
-          <button
-            type="button"
-            onClick={restart}
-            style={{
-              padding: '8px 16px',
-              borderRadius: 8,
-              border: '1px solid #E5E7EB',
-              background: '#fff',
-              color: '#374151',
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            ↻ Restart
-          </button>
+          {!isEditing ? (
+            <>
+              <button
+                type="button"
+                onClick={togglePlayback}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: '#3B82F6',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {isPlaying ? '⏸ Pause' : '▶ Play'}
+              </button>
+              <button
+                type="button"
+                onClick={restart}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #E5E7EB',
+                  background: '#fff',
+                  color: '#374151',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                ↻ Restart
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={exitEditMode}
+              style={{
+                padding: '8px 20px',
+                borderRadius: 8,
+                border: 'none',
+                background: '#10B981',
+                color: '#fff',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              ✓ Done Editing
+            </button>
+          )}
           <span style={{fontSize: 12, color: '#9CA3AF', fontVariantNumeric: 'tabular-nums'}}>
             {currentFrame} / {durationInFrames} frames
           </span>

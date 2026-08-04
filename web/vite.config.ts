@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@vary/shared': fileURLToPath(new URL('../src/shared', import.meta.url)),
       '@vary/compositions': fileURLToPath(new URL('../src/compositions', import.meta.url)),
+      '@vary/components': fileURLToPath(new URL('../src/components', import.meta.url)),
     },
     // Force all packages to use the same React instance
     dedupe: ['react', 'react-dom'],
