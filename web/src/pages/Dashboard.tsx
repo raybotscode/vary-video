@@ -18,6 +18,7 @@ import MobileActionBar from '../components/dashboard/MobileActionBar';
 import RenderSummary from '../components/dashboard/RenderSummary';
 import TemplateGallery from '../components/dashboard/TemplateGallery';
 import AiPromptInput from '../components/dashboard/AiPromptInput';
+import AiWizard from '../components/dashboard/AiWizard';
 import PreviewPanel from '../components/PreviewPanel';
 import WorkflowSection from '../components/dashboard/WorkflowSection';
 import {useCapabilities} from '../hooks/useCapabilities';
@@ -79,6 +80,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiMode, setAiMode] = useState<'quick' | 'wizard'>('wizard');
   const [jobId, setJobId] = useState<string | null>(null);
   const [estimatedTimeSeconds, setEstimatedTimeSeconds] = useState<number | null>(null);
   const [renderStatus, setRenderStatus] = useState<RenderStatus | null>(null);
@@ -359,7 +361,52 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
       )}
 
       {mode === 'composer' && (
-        <AiPromptInput onGenerated={handleAiGenerated} disabled={isSubmitting} />
+        <div style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+          <div style={{display: 'flex', gap: 4, background: '#F3F4F6', borderRadius: 8, padding: 3, alignSelf: 'flex-start'}}>
+            <button
+              type="button"
+              onClick={() => setAiMode('wizard')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 6,
+                border: 'none',
+                background: aiMode === 'wizard' ? '#fff' : 'transparent',
+                color: aiMode === 'wizard' ? '#111827' : '#6B7280',
+                fontSize: 13,
+                fontWeight: aiMode === 'wizard' ? 600 : 400,
+                cursor: 'pointer',
+                boxShadow: aiMode === 'wizard' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              ✨ Wizard
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiMode('quick')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 6,
+                border: 'none',
+                background: aiMode === 'quick' ? '#fff' : 'transparent',
+                color: aiMode === 'quick' ? '#111827' : '#6B7280',
+                fontSize: 13,
+                fontWeight: aiMode === 'quick' ? 600 : 400,
+                cursor: 'pointer',
+                boxShadow: aiMode === 'quick' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              💬 Quick Prompt
+            </button>
+          </div>
+
+          {aiMode === 'wizard' ? (
+            <AiWizard onGenerated={handleAiGenerated} disabled={isSubmitting} />
+          ) : (
+            <AiPromptInput onGenerated={handleAiGenerated} disabled={isSubmitting} />
+          )}
+        </div>
       )}
 
       {error && <div className="inline-error">{error}</div>}
