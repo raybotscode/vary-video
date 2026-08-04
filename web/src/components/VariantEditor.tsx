@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {createEmptyVariant, parseCsv, type VariantData} from '../utils/placeholder';
+import {getSampleDataUrl, getSampleDataLabel} from '../utils/sampleData';
 import {useToast} from './ui/useToast';
 import VariantTable from './VariantTable';
 
@@ -14,7 +15,11 @@ type VariantEditorProps = {
 export default function VariantEditor({variants, columns, templateId, onChange, onError}: VariantEditorProps) {
   const [importMode, setImportMode] = useState<'json' | 'csv' | null>(null);
   const [importText, setImportText] = useState('');
+  const [isLoadingSample, setIsLoadingSample] = useState(false);
   const {toast} = useToast();
+
+  const sampleDataUrl = getSampleDataUrl(templateId);
+  const sampleDataLabel = getSampleDataLabel(templateId);
 
   const updateVariant = (index: number, key: string, value: string) => {
     onChange(
@@ -26,6 +31,40 @@ export default function VariantEditor({variants, columns, templateId, onChange, 
 
   const deleteVariant = (index: number) => {
     onChange(variants.filter((_, variantIndex) => variantIndex !== index));
+  };
+
+  const loadSample = async () => {
+    if (!sampleDataUrl) return;
+
+    setIsLoadingSample(true);
+    try {
+      const response = await fetch(sampleDataUrl);
+      if (!response.ok) {
+        throw new Error(`Could not load sample data (${response.status})`);
+      }
+
+      const text = await response.text();
+      const rows = parseCsv(text, columns);
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        throw new Error('Sample data is empty or could not be parsed.');
+      }
+
+      const normalized = rows.map((row) =>
+        Object.fromEntries(
+          columns.map((column) => [column, String(row[column] ?? '')]),
+        ),
+      );
+
+      onChange(normalized);
+      toast(`Loaded ${normalized.length} sample rows`, 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not load sample data.';
+      onError(message);
+      toast(message, 'error');
+    } finally {
+      setIsLoadingSample(false);
+    }
   };
 
   const importRows = () => {
@@ -61,6 +100,17 @@ export default function VariantEditor({variants, columns, templateId, onChange, 
         <button type="button" className="secondary-button" onClick={() => onChange([...variants, createEmptyVariant(templateId)])}>
           Add Row
         </button>
+        {sampleDataUrl && variants.length === 0 && (
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={loadSample}
+            disabled={isLoadingSample}
+            title={`Load ${sampleDataLabel}`}
+          >
+            {isLoadingSample ? 'Loading…' : `📊 Load Sample Data`}
+          </button>
+        )}
         <button type="button" className="ghost-button" onClick={() => setImportMode('json')}>
           Import JSON
         </button>
