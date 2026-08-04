@@ -2,6 +2,7 @@ import {blockCapabilities} from '@vary/shared/capabilities/blocks';
 import type {
   BlockAnimationSettings,
   BlockTransitionConfig,
+  ElementLayout,
   SceneBlockCategory as SharedSceneBlockCategory,
 } from '@vary/shared/capabilities/types';
 import {getFrontendTemplate} from './templates';
@@ -58,6 +59,7 @@ export type ComposerBlock = {
   instanceId: string;
   blockId: string;
   content: Record<string, string>;
+  layout?: Record<string, ElementLayout>;
   durationFrames?: number;
   animation?: BlockAnimationSettings;
   transition?: BlockTransitionConfig;

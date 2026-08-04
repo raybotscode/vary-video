@@ -99,6 +99,31 @@ export const blockTransitionConfigSchema = z
   })
   .strict();
 
+// --- Per-element layout schemas ---
+
+export const elementAnimationConfigSchema = z
+  .object({
+    presetId: z.string().min(1),
+    durationFrames: z.number().int().min(6).max(60),
+  })
+  .strict();
+
+export const elementLayoutSchema = z
+  .object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+    fontSize: z.number().min(12).max(120).optional(),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    animation: z
+      .object({
+        entry: elementAnimationConfigSchema.optional(),
+        exit: elementAnimationConfigSchema.optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
 // --- Template / block / animation / style schemas ---
 
 export const templateCopyFieldSchema = z

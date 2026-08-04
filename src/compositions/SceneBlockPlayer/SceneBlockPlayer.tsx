@@ -141,6 +141,7 @@ const renderPositionedBlock = ({
         ...definition.defaultContent,
         ...positioned.block.content,
       }}
+      layout={positioned.block.layout}
       brand={props.brandSettings}
       data={props.data}
       startFrame={positioned.startFrame}

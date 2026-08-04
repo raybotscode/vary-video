@@ -25,8 +25,10 @@ import {
 import type {ComposerBlock} from '../../utils/blocks';
 import type {RenderTemplatePayload} from '../../api/client';
 import type {VariantData} from '../../utils/placeholder';
+import type {ElementLayout} from '@vary/shared/capabilities/types';
 import {getBlock} from '@vary/compositions/blocks/registry';
 import {blockCapabilities} from '@vary/shared/capabilities/blocks';
+import EditPanel from './EditPanel';
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -35,6 +37,7 @@ type RemotionPlayerPreviewProps = {
   template: RenderTemplatePayload;
   variant: VariantData;
   onVariantChange?: (updated: VariantData) => void;
+  onBlockLayoutChange?: (blockInstanceId: string, fieldKey: string, layout: ElementLayout) => void;
   onFrameChange?: (frame: number) => void;
 };
 
@@ -79,6 +82,7 @@ function buildInputProps(
     return {
       blockId: block.blockId,
       content: resolvedContent,
+      layout: block.layout as SceneBlockSequenceItem['layout'],
       durationFrames: block.durationFrames,
       animation: block.animation as SceneBlockSequenceItem['animation'],
       transition: block.transition as SceneBlockSequenceItem['transition'],
@@ -147,6 +151,7 @@ export default function RemotionPlayerPreview({
   template,
   variant,
   onVariantChange,
+  onBlockLayoutChange,
   onFrameChange,
 }: RemotionPlayerPreviewProps) {
   const playerRef = useRef<PlayerRef>(null);
@@ -155,6 +160,7 @@ export default function RemotionPlayerPreview({
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeBlockIndex, setActiveBlockIndex] = useState(0);
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [selectedFieldKey, setSelectedFieldKey] = useState<string | null>(null);
 
   // Build input props from current state
   const inputProps = buildInputProps(blocks, template, variant);
@@ -214,27 +220,37 @@ export default function RemotionPlayerPreview({
 
   // Handle content edits — update variant data
   const handleFieldChange = useCallback(
-    (field: EditableField, newValue: string) => {
+    (fieldKey: string, newValue: string) => {
       if (!onVariantChange) return;
 
+      const activeBlock = blocks[activeBlockIndex];
+      if (!activeBlock) return;
+
       // Check if this field references a {{placeholder}}
-      const originalVal = field.value;
+      const originalVal = activeBlock.content[fieldKey] ?? '';
       const placeholderMatch = originalVal.match(/\{\{(\w+)\}\}/);
 
       if (placeholderMatch) {
-        // Update the variant key
         const variantKey = placeholderMatch[1];
         onVariantChange({...variant, [variantKey]: newValue});
       } else {
-        // Direct content — update the block content in the variant
-        // We use a synthetic key: blockId_fieldKey
         onVariantChange({
           ...variant,
-          [`${field.blockId}_${field.key}`]: newValue,
+          [`${activeBlock.blockId}_${fieldKey}`]: newValue,
         });
       }
     },
-    [variant, onVariantChange],
+    [blocks, activeBlockIndex, variant, onVariantChange],
+  );
+
+  // Handle layout changes from EditPanel
+  const handleLayoutChange = useCallback(
+    (fieldKey: string, layout: ElementLayout) => {
+      const activeBlock = blocks[activeBlockIndex];
+      if (!activeBlock || !onBlockLayoutChange) return;
+      onBlockLayoutChange(activeBlock.instanceId, fieldKey, layout);
+    },
+    [blocks, activeBlockIndex, onBlockLayoutChange],
   );
 
   // Jump to scene
@@ -425,74 +441,15 @@ export default function RemotionPlayerPreview({
         </div>
       </div>
 
-      {/* Inline editing — show content fields for active block */}
-      {editableFields.length > 0 && onVariantChange && (
-        <div
-          style={{
-            background: '#F9FAFB',
-            borderRadius: 12,
-            padding: 16,
-            border: '1px solid #E5E7EB',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#374151',
-              }}
-            >
-              ✏️ Edit Scene {activeBlockIndex + 1} —{' '}
-              {getBlock(blocks[activeBlockIndex]?.blockId ?? '').name}
-            </span>
-          </div>
-
-          <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
-            {editableFields.map((field) => (
-              <div key={field.key}>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: '#6B7280',
-                    marginBottom: 4,
-                  }}
-                >
-                  {field.label}
-                </label>
-                <input
-                  type="text"
-                  value={field.value}
-                  onChange={(e) => handleFieldChange(field, e.target.value)}
-                  onFocus={() => setEditingField(field.key)}
-                  onBlur={() => setEditingField(null)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    border:
-                      editingField === field.key
-                        ? '2px solid #3B82F6'
-                        : '1px solid #E5E7EB',
-                    fontSize: 14,
-                    outline: 'none',
-                    transition: 'border-color 0.15s',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Enhanced edit panel for active block */}
+      {blocks.length > 0 && blocks[activeBlockIndex] && (
+        <EditPanel
+          block={blocks[activeBlockIndex]}
+          onContentChange={handleFieldChange}
+          onLayoutChange={handleLayoutChange}
+          selectedFieldKey={selectedFieldKey}
+          onSelectField={setSelectedFieldKey}
+        />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import type React from 'react';
-import type {ImageTreatment} from '../../shared/capabilities/types';
+import type {ElementLayout, ImageTreatment} from '../../shared/capabilities/types';
 import {DataCallout} from './DataCallout';
 import {TextOverlay} from './TextOverlay';
 import {ImageBlock} from './ImageBlock';
@@ -25,6 +25,7 @@ export type BlockRenderProps = {
   width: number;
   height: number;
   content: Record<string, string>;
+  layout?: Record<string, ElementLayout>;
   brand: BrandSettings;
   data: Record<string, string>;
   startFrame?: number;

@@ -1,10 +1,11 @@
 import {Component, type ReactNode, Suspense, lazy} from 'react';
 
-// ─── Error Boundary ────────────────────────────────────────────────
+// ─── Error Boundary that passes error to fallback ─────────────────
 
 type ErrorBoundaryProps = {
   children: ReactNode;
-  fallback: ReactNode;
+  fallback: (error: Error | null) => ReactNode;
+  label: string;
 };
 
 type ErrorBoundaryState = {
@@ -19,17 +20,23 @@ class PlayerErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySta
     return {hasError: true, error};
   }
 
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error(`[${this.props.label}] Caught:`, error.message);
+    console.error(`[${this.props.label}] Stack:`, info.componentStack);
+  }
+
   render() {
     if (this.state.hasError) {
-      return this.props.fallback;
+      return this.props.fallback(this.state.error);
     }
     return this.props.children;
   }
 }
 
-// ─── Lazy-loaded Player ────────────────────────────────────────────
+// ─── Lazy-loaded components ────────────────────────────────────────
 
 const RemotionPlayerInner = lazy(() => import('./RemotionPlayerPreview'));
+const MinimalPlayerInner = lazy(() => import('./MinimalPlayerTest'));
 
 // ─── Loading state ─────────────────────────────────────────────────
 
@@ -64,47 +71,90 @@ function PlayerLoading() {
   );
 }
 
-// ─── Error fallback ────────────────────────────────────────────────
+// ─── Error card with actual error details ──────────────────────────
 
-function PlayerError() {
+function ErrorCard({title, error}: {title: string; error: Error | null}) {
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        height: 300,
+        minHeight: 200,
         background: '#FEF2F2',
         borderRadius: 12,
         border: '1px solid #FECACA',
-        gap: 12,
+        gap: 8,
+        padding: 20,
       }}
     >
-      <span style={{fontSize: 24}}>⚠️</span>
+      <span style={{fontSize: 18}}>⚠️</span>
       <span style={{fontSize: 14, color: '#991B1B', fontWeight: 600}}>
-        Video preview failed to load
+        {title}
       </span>
-      <span style={{fontSize: 13, color: '#6B7280'}}>
-        The video renderer is unavailable. You can still batch render normally.
+      {error && (
+        <pre
+          style={{
+            fontSize: 11,
+            color: '#7F1D1D',
+            background: '#FEE2E2',
+            padding: 12,
+            borderRadius: 8,
+            overflow: 'auto',
+            maxHeight: 200,
+            width: '100%',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            margin: 0,
+            fontFamily: 'monospace',
+            boxSizing: 'border-box',
+          }}
+        >
+          {error.message}
+          {error.stack ? '\n\n' + error.stack : ''}
+        </pre>
+      )}
+      <span style={{fontSize: 12, color: '#6B7280'}}>
+        Batch rendering will still work normally.
       </span>
     </div>
   );
 }
 
-// ─── Exported wrapper ──────────────────────────────────────────────
+// ─── Main wrapper: try full → try minimal → show error ─────────────
 
 type SafePlayerPreviewProps = {
   blocks: import('../../utils/blocks').ComposerBlock[];
   template: import('../../api/client').RenderTemplatePayload;
   variant: import('../../utils/placeholder').VariantData;
   onVariantChange?: (updated: import('../../utils/placeholder').VariantData) => void;
+  onBlockLayoutChange?: (blockInstanceId: string, fieldKey: string, layout: import('@vary/shared/capabilities/types').ElementLayout) => void;
   onFrameChange?: (frame: number) => void;
 };
 
 export default function SafePlayerPreview(props: SafePlayerPreviewProps) {
   return (
-    <PlayerErrorBoundary fallback={<PlayerError />}>
+    <PlayerErrorBoundary
+      label="FullPlayer"
+      fallback={(fullError) => (
+        // Full Player failed — try minimal test
+        <PlayerErrorBoundary
+          label="MinimalTest"
+          fallback={(minimalError) => (
+            // Both failed — show the actual error from whichever we prefer
+            <ErrorCard
+              title="Video preview failed"
+              error={fullError ?? minimalError}
+            />
+          )}
+        >
+          <Suspense fallback={<PlayerLoading />}>
+            <MinimalPlayerInner />
+          </Suspense>
+        </PlayerErrorBoundary>
+      )}
+    >
       <Suspense fallback={<PlayerLoading />}>
         <RemotionPlayerInner {...props} />
       </Suspense>

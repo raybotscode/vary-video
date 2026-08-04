@@ -236,9 +236,29 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
     );
   };
 
+  const handleBlockLayoutChange = (
+    blockInstanceId: string,
+    fieldKey: string,
+    layout: import('@vary/shared/capabilities/types').ElementLayout,
+  ) => {
+    setComposerBlocks((currentBlocks) =>
+      currentBlocks.map((block) => {
+        if (block.instanceId !== blockInstanceId) return block;
+        return {
+          ...block,
+          layout: {
+            ...block.layout,
+            [fieldKey]: layout,
+          },
+        };
+      }),
+    );
+  };
+
   const composerBlockSequence: BlockSequence = composerBlocks.map((block, index) => ({
     blockId: block.blockId,
     content: block.content,
+    layout: block.layout,
     durationFrames: block.durationFrames,
     animation: block.animation,
     transition: index < composerBlocks.length - 1 ? block.transition : undefined,
@@ -576,6 +596,7 @@ export default function Dashboard({initialMode = 'quick'}: DashboardProps) {
               return next;
             });
           }}
+          onBlockLayoutChange={handleBlockLayoutChange}
         />
       </WorkflowSection>
 

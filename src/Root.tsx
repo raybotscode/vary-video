@@ -9,9 +9,9 @@ import {
   defaultInsuranceAdProps,
   defaultProductLaunchProps,
   defaultRealEstateProps,
-  defaultSceneBlockPlayerProps,
   defaultSocialClipProps,
   defaultWebinarPromoProps,
+  getDefaultSceneBlockPlayerProps,
   getSequenceDuration,
   sceneBlockPlayerSchema,
 } from './compositions';
@@ -67,11 +67,11 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="SceneBlockPlayer"
         component={SceneBlockPlayer}
-        durationInFrames={getSequenceDuration(defaultSceneBlockPlayerProps.blocks)}
+        durationInFrames={getSequenceDuration(getDefaultSceneBlockPlayerProps().blocks)}
         fps={30}
         width={1920}
         height={1080}
-        defaultProps={defaultSceneBlockPlayerProps}
+        defaultProps={getDefaultSceneBlockPlayerProps()}
         calculateMetadata={({props}) => {
           const parsed = sceneBlockPlayerSchema.parse(props);
 

@@ -28,7 +28,7 @@ export {
 export type {SocialClipProps} from './SocialClip/schema';
 export {SceneBlockPlayer} from './SceneBlockPlayer/SceneBlockPlayer';
 export {
-  defaultSceneBlockPlayerProps,
+  getDefaultSceneBlockPlayerProps,
   getSequenceDuration,
   sceneBlockPlayerSchema,
 } from './SceneBlockPlayer/schema';

@@ -141,6 +141,27 @@ export type BlockTransitionConfig = {
   intensity?: number;
 };
 
+/**
+ * Per-element layout overrides for block content fields.
+ * Positions use percentages (0–100) of canvas width/height.
+ * When absent for a field, the block renderer's hardcoded position is used.
+ */
+export type ElementAnimationConfig = {
+  presetId: string;
+  durationFrames: number; // 6–60
+};
+
+export type ElementLayout = {
+  x: number;          // 0–100, percentage of canvas width
+  y: number;          // 0–100, percentage of canvas height
+  fontSize?: number;  // 12–120, px
+  color?: string;     // hex color, e.g. "#1A365D"
+  animation?: {
+    entry?: ElementAnimationConfig;
+    exit?: ElementAnimationConfig;
+  };
+};
+
 export type AnimationPresetCapability = {
   id: string;
   name: string;

@@ -10,9 +10,14 @@ export default defineConfig({
       '@vary/shared': fileURLToPath(new URL('../src/shared', import.meta.url)),
       '@vary/compositions': fileURLToPath(new URL('../src/compositions', import.meta.url)),
     },
+    // Force all packages to use the same React instance
+    dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
     include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
       '@remotion/player',
       'remotion',
       'remotion/no-react',

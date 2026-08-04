@@ -12,6 +12,27 @@
   </head>
   <body>
     <div id="root"></div>
+    <div id="debug-error-overlay" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#fee;color:#900;padding:16px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:60vh;overflow:auto;border-bottom:3px solid red;"></div>
+    <script>
+      // Global error capture — displays errors on screen for debugging
+      (function() {
+        var overlay = document.getElementById('debug-error-overlay');
+        var errors = [];
+        function showError(msg) {
+          errors.push(msg);
+          overlay.style.display = 'block';
+          overlay.textContent = errors.join('\n\n');
+        }
+        window.addEventListener('error', function(e) {
+          showError('ERROR: ' + e.message + '\n  at ' + (e.filename || '?') + ':' + e.lineno + ':' + e.colno);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+          var reason = e.reason;
+          var msg = reason instanceof Error ? reason.message + '\n' + reason.stack : String(reason);
+          showError('PROMISE REJECTION: ' + msg);
+        });
+      })();
+    </script>
     <script>
       // Runtime API base override for tunnel demos:
       //   https://vary-video.pages.dev/?api=https://<tunnel-host>/api

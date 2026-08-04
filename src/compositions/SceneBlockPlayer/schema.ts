@@ -5,6 +5,7 @@ import {
   imageTreatmentSchema,
   blockAnimationSettingsSchema,
   blockTransitionConfigSchema,
+  elementLayoutSchema,
 } from '../../shared/capabilities/schema';
 
 /**
@@ -30,6 +31,7 @@ const blockIdSchema = z
 const blockSequenceItemSchema = z.object({
   blockId: blockIdSchema,
   content: z.record(z.string(), z.string()).default({}),
+  layout: z.record(z.string(), elementLayoutSchema).optional(),
   imageTreatment: imageTreatmentSchema.optional(),
   animation: blockAnimationSettingsSchema.optional(),
   transition: blockTransitionConfigSchema.optional(),
@@ -69,7 +71,7 @@ export const sceneBlockPlayerSchema = z.object({
 export type SceneBlockPlayerProps = z.infer<typeof sceneBlockPlayerSchema>;
 export type SceneBlockSequenceItem = z.infer<typeof blockSequenceItemSchema>;
 
-export const defaultSceneBlockPlayerProps: SceneBlockPlayerProps =
+export const getDefaultSceneBlockPlayerProps = (): SceneBlockPlayerProps =>
   sceneBlockPlayerSchema.parse({
     blocks: [
       {blockId: 'product-intro', content: getBlock('product-intro').defaultContent},
