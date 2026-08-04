@@ -501,6 +501,19 @@ img{max-width:100%;height:auto}
   .nav-link{font-size:0.8rem}
   .button-row{flex-direction:column}
   .button-row .secondary-button,.button-row .ghost-button{width:100%;justify-content:center}
+  /* Media variant cells: allow shrinking below 180px on small screens */
+  .media-variant-cell{min-width:0}
+  .media-variant-cell--editing{min-width:0}
+  /* Template gallery: single column, smaller padding */
+  .template-gallery-grid{grid-template-columns:1fr !important}
+}
+
+@media(max-width:390px){
+  .page-section{padding:16px 12px}
+  .variant-table td{padding:var(--space-2) 0}
+  .ai-prompt-field textarea{font-size:16px} /* prevent iOS zoom on focus */
+  .ai-generate-btn{min-height:44px;font-size:0.9rem}
+  .mobile-action-bar{padding:var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom))}
 }
 
 /* ── Media Components (Phase 3) ────────────────────────────── */
