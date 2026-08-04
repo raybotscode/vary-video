@@ -27,6 +27,8 @@ generateTemplateRouter.post('/', async (req, res) => {
       spec: result.spec,
       model: result.model,
       tokensUsed: result.tokensUsed,
+      selectionMode: result.selectionMode,
+      reusedTemplateId: result.reusedTemplateId,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Template generation failed';

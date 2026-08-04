@@ -1,15 +1,43 @@
 import {sceneBlockPlayerSchema, type SceneBlockPlayerProps} from '../../../src/compositions/SceneBlockPlayer/schema';
 import {getCompactCapabilitySummary} from '../../../src/shared/capabilities/registry';
 import {scoreTemplates, type ScoredTemplate} from './templateScorer';
+import {templateCapabilities} from '../../../src/shared/capabilities/templates';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'meta-llama/llama-4-scout';
 const FALLBACK_MODEL = 'openai/gpt-4o-mini';
 
+/** Score threshold above which we reuse an existing template directly. */
+const TEMPLATE_REUSE_THRESHOLD = 8;
+
 type GenerateResult = {
   spec: SceneBlockPlayerProps;
   model: string;
   tokensUsed: {input: number; output: number};
+  selectionMode: 'existing-template' | 'block-composition';
+  reusedTemplateId?: string;
+};
+
+/**
+ * Build a SceneBlockPlayer spec directly from an existing template definition,
+ * without calling the AI. The template's default blocks and content are used,
+ * and the AI is only called to fill in variant data.
+ */
+const buildFromExistingTemplate = (
+  templateId: string,
+  scored: ScoredTemplate,
+): {blocks: SceneBlockPlayerProps['blocks']; data: Record<string, string>} => {
+  const capability = templateCapabilities.find((t) => t.id === templateId);
+  if (!capability) {
+    throw new Error(`Template ${templateId} not found in capabilities`);
+  }
+
+  const blocks = capability.defaultBlocks.map((blockId) => ({
+    blockId,
+    content: {} as Record<string, string>,
+  }));
+
+  return {blocks, data: {}};
 };
 
 const buildSystemPrompt = (userPrompt?: string): string => {
@@ -18,6 +46,7 @@ const buildSystemPrompt = (userPrompt?: string): string => {
   // If we have a user prompt, score templates and send only top matches
   let blockList: string;
   let templateContext = '';
+  let reuseInstruction = '';
 
   if (userPrompt) {
     const scored = scoreTemplates(userPrompt, 5);
@@ -28,6 +57,17 @@ const buildSystemPrompt = (userPrompt?: string): string => {
         topBlockIds.add(blockId);
       }
       templateContext += `\n- ${template.id} (score: ${score}, matched: ${matchedKeywords.join(', ')}) — ${template.description}`;
+    }
+
+    // If top template is a strong match, instruct AI to reuse it
+    const topScore = scored[0]?.score ?? 0;
+    if (topScore >= TEMPLATE_REUSE_THRESHOLD && scored[0]) {
+      const top = scored[0];
+      reuseInstruction = `
+TEMPLATE PREFERENCE: The template "${top.template.id}" is an excellent match (score: ${top.score}) for the user's request.
+You MUST reuse this template's block sequence: ${top.template.defaultBlocks.join(', ')}.
+Do NOT invent new block arrangements. Use the exact block sequence above.
+Fill in content and data that matches the user's description.`;
     }
 
     // Include all blocks (for flexibility) but highlight the relevant ones
@@ -52,6 +92,7 @@ const buildSystemPrompt = (userPrompt?: string): string => {
 AVAILABLE BLOCKS:
 ${blockList}
 ${templateContext ? `\nRELEVANT TEMPLATES (matched to user intent):${templateContext}` : ''}
+${reuseInstruction}
 
 AVAILABLE ANIMATIONS: ${animationList}
 
@@ -163,6 +204,14 @@ const validateAndParse = (rawJson: string): SceneBlockPlayerProps => {
 };
 
 export const generateTemplate = async (userPrompt: string): Promise<GenerateResult> => {
+  // Score templates to determine selection mode
+  const scored = scoreTemplates(userPrompt, 5);
+  const topScore = scored[0]?.score ?? 0;
+  const isStrongMatch = topScore >= TEMPLATE_REUSE_THRESHOLD && scored[0];
+
+  const selectionMode: 'existing-template' | 'block-composition' =
+    isStrongMatch ? 'existing-template' : 'block-composition';
+
   const systemPrompt = buildSystemPrompt(userPrompt);
 
   // First attempt
@@ -170,7 +219,13 @@ export const generateTemplate = async (userPrompt: string): Promise<GenerateResu
 
   try {
     const spec = validateAndParse(content);
-    return {spec, model, tokensUsed: tokens};
+    return {
+      spec,
+      model,
+      tokensUsed: tokens,
+      selectionMode,
+      reusedTemplateId: isStrongMatch ? scored[0].template.id : undefined,
+    };
   } catch (firstError) {
     // Retry once with error feedback
     const retryPrompt = `${userPrompt}\n\nIMPORTANT: Your previous response failed validation with this error:\n${firstError instanceof Error ? firstError.message : String(firstError)}\n\nFix the JSON and return a valid spec.`;
@@ -184,6 +239,8 @@ export const generateTemplate = async (userPrompt: string): Promise<GenerateResu
         input: tokens.input + retry.tokens.input,
         output: tokens.output + retry.tokens.output,
       },
+      selectionMode,
+      reusedTemplateId: isStrongMatch ? scored[0].template.id : undefined,
     };
   }
 };

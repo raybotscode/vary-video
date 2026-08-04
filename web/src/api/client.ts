@@ -180,6 +180,8 @@ export type GenerateTemplateResponse = {
   spec: Record<string, unknown>;
   model: string;
   tokensUsed: {input: number; output: number};
+  selectionMode: 'existing-template' | 'block-composition';
+  reusedTemplateId?: string;
 };
 
 export const FORMAT_LABELS: Record<VideoFormat, string> = {
