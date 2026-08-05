@@ -108,6 +108,7 @@ describe('History Manager', () => {
     schemaVersion: 2 as const,
     id: 'test',
     name,
+    description: '',
     fps: 30,
     defaultAspectRatio: '16:9' as const,
     supportedAspectRatios: ['16:9' as const],
@@ -119,6 +120,7 @@ describe('History Manager', () => {
       elements: [],
     }],
     mergeTags: [],
+    metadata: {},
   });
 
   it('pushes and retrieves current document', () => {
