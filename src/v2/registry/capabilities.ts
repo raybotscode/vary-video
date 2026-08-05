@@ -8,6 +8,7 @@
 import {createHash} from 'node:crypto';
 import {getAllElements} from './elements';
 import {getAllAnimationPresets, EASINGS} from './animations';
+import {getEnabledFonts} from './fonts';
 import {ASPECT_RATIOS} from '../schema/document';
 
 // ─── Capability Output Types ──────────────────────────────────────
@@ -48,6 +49,14 @@ export type CapabilityEasing = {
   css: string;
 };
 
+export type CapabilityFont = {
+  id: string;
+  family: string;
+  category: string;
+  weights: number[];
+  tags: string[];
+};
+
 export type CapabilityOutput = {
   /** Deterministic version hash */
   version: string;
@@ -57,6 +66,8 @@ export type CapabilityOutput = {
   animations: CapabilityAnimation[];
   /** Available easing functions */
   easings: CapabilityEasing[];
+  /** Available fonts */
+  fonts: CapabilityFont[];
   /** Supported aspect ratios */
   aspectRatios: string[];
   /** Platform limits */
@@ -127,11 +138,20 @@ export function getCapabilities(): CapabilityOutput {
     css: e.css,
   }));
 
+  const fonts = getEnabledFonts().map<CapabilityFont>(f => ({
+    id: f.id,
+    family: f.family,
+    category: f.category,
+    weights: f.weights,
+    tags: f.tags,
+  }));
+
   const output: CapabilityOutput = {
-    version: computeVersion(elements, animations, easings),
+    version: computeVersion(elements, animations, easings, fonts),
     elements,
     animations,
     easings,
+    fonts,
     aspectRatios: [...ASPECT_RATIOS],
     limits: LIMITS,
     generatedAt: new Date().toISOString(),
@@ -165,11 +185,13 @@ function computeVersion(
   elements: CapabilityElement[],
   animations: CapabilityAnimation[],
   easings: CapabilityEasing[],
+  fonts: CapabilityFont[],
 ): string {
   const data = JSON.stringify({
     elements: elements.map(e => ({type: e.type, props: Object.keys(e.defaultProps)})),
     animations: animations.map(a => a.id),
     easings: easings.map(e => e.id),
+    fonts: fonts.map(f => f.id),
     limits: LIMITS,
   });
   return createHash('sha256').update(data).digest('hex').slice(0, 12);

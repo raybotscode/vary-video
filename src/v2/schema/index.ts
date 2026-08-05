@@ -19,7 +19,9 @@ export {
   animationPresetSchema,
   type AnimationPreset,
   elementAnimationSchema,
+  elementAnimationPairSchema,
   type ElementAnimation,
+  type ElementAnimationPair,
 
   // Transform
   transformSchema,
@@ -27,7 +29,9 @@ export {
 
   // Responsive
   responsiveOverrideSchema,
+  responsiveOverridesSchema,
   type ResponsiveOverride,
+  type ResponsiveOverrides,
 
   // Timing
   timingSchema,
@@ -43,10 +47,14 @@ export {
   shapeTypeSchema,
   type ShapeType,
 
-  // Element
-  elementTypeSchema,
-  type ElementType,
+  // Elements (discriminated union)
+  textElementSchema,
+  imageElementSchema,
+  shapeElementSchema,
   elementSchema,
+  type TextElement,
+  type ImageElement,
+  type ShapeElement,
   type V2Element,
 
   // Background

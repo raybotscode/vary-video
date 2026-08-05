@@ -2,13 +2,13 @@
  * V1 → V2 Document Migration
  *
  * Converts v1 SceneBlockPlayerProps into a v2 V2Document.
- * This allows existing templates to be used in the new system.
+ * Uses discriminated union element types with strongly-typed props.
  */
 
-import type {V2Document, V2Scene, V2Element, Background} from './document';
-import {V2_DOCUMENT_VERSION} from './document';
+import type {V2Document, V2Scene, V2Element, TextElement, ImageElement, Background, AnimationPreset} from './document';
+import {V2_DOCUMENT_VERSION, textPropsSchema, imagePropsSchema, shapePropsSchema} from './document';
 
-// ─── V1 Types (subset needed for migration) ──────────────────────
+// ─── V1 Types ─────────────────────────────────────────────────────
 
 type V1BlockContent = Record<string, string>;
 type V1Layout = Record<string, {
@@ -52,15 +52,7 @@ type V1SceneBlockPlayerProps = {
   data: Record<string, string>;
 };
 
-// ─── V1 Block ID → V2 Element Type ────────────────────────────────
-
-const BLOCK_TO_ELEMENT_TYPE: Record<string, 'text' | 'image' | 'shape'> = {
-  'text-overlay': 'text',
-  'data-callout': 'text',
-  'image-block': 'image',
-};
-
-// ─── V1 Animation Preset → V2 Preset ──────────────────────────────
+// ─── Mapping ──────────────────────────────────────────────────────
 
 const PRESET_MAP: Record<string, string> = {
   'fadeIn': 'fade-in',
@@ -77,57 +69,32 @@ const PRESET_MAP: Record<string, string> = {
   'rotateIn': 'rotate-in',
 };
 
-// ─── Coordinate Conversion ────────────────────────────────────────
-
-/** Convert v1 percentage (0-100) to v2 normalized (0-1) */
 export function convertV1Layout(
   v1Layout: V1Layout[string] | undefined,
   defaults: {x: number; y: number; fontSize: number; color: string},
-): {
-  x: number;
-  y: number;
-  fontSize: number;
-  color: string;
-  animation?: V1Layout[string]['animation'];
-} {
+) {
   if (!v1Layout) {
-    return {
-      x: defaults.x / 100,
-      y: defaults.y / 100,
-      fontSize: defaults.fontSize,
-      color: defaults.color,
-    };
+    return {x: defaults.x / 100, y: defaults.y / 100, fontSize: defaults.fontSize, color: defaults.color};
   }
-
   return {
     x: (v1Layout.x ?? defaults.x) / 100,
     y: (v1Layout.y ?? defaults.y) / 100,
     fontSize: v1Layout.fontSize ?? defaults.fontSize,
     color: v1Layout.color ?? defaults.color,
-    animation: v1Layout.animation,
   };
 }
 
-/** Map v1 animation preset ID to v2 preset */
 function mapPreset(v1PresetId: string): string {
   return PRESET_MAP[v1PresetId] ?? 'fade-in';
 }
 
-// ─── Main Migration ───────────────────────────────────────────────
+// ─── Migration ────────────────────────────────────────────────────
 
-/**
- * Convert a v1 SceneBlockPlayerProps into a v2 V2Document.
- *
- * This is a best-effort conversion. Some v1 features may not have
- * exact v2 equivalents. The resulting document is valid and can be
- * used in the v2 editor and renderer.
- */
 export function migrateV1ToV2(v1: V1SceneBlockPlayerProps): V2Document {
   const brandColor = v1.brandSettings.brandColor ?? '#1A365D';
   const secondaryColor = v1.brandSettings.secondaryColor ?? '#3182CE';
   const bgColor = v1.brandSettings.backgroundColor ?? '#F7FAFC';
 
-  // Convert background
   let background: Background;
   if (v1.brandSettings.backgroundType === 'solid') {
     background = {type: 'solid', color: bgColor};
@@ -137,30 +104,22 @@ export function migrateV1ToV2(v1: V1SceneBlockPlayerProps): V2Document {
     background = {type: 'gradient', color1: bgColor, color2: secondaryColor, angle: 135};
   }
 
-  // Convert each v1 block into a v2 scene
   const scenes: V2Scene[] = v1.blocks.map((block, blockIndex) => {
     const elements: V2Element[] = [];
-    const elementType = BLOCK_TO_ELEMENT_TYPE[block.blockId] ?? 'text';
 
-    // Extract content fields and create elements
     for (const [key, value] of Object.entries(block.content)) {
       const layout = convertV1Layout(block.layout?.[key], {
-        x: 50,
-        y: 50,
-        fontSize: 86,
-        color: brandColor,
+        x: 50, y: 50, fontSize: 86, color: brandColor,
       });
 
-      const v2Element: V2Element = {
+      // Create a typed text element
+      const textElement: TextElement = {
         id: `${block.blockId}-${key}`,
-        type: elementType,
+        type: 'text',
         name: key,
         visible: true,
         locked: false,
-        timing: {
-          startFrame: 0,
-          endFrame: null,
-        },
+        timing: {startFrame: 0, endFrame: null},
         transform: {
           x: layout.x,
           y: layout.y,
@@ -173,80 +132,40 @@ export function migrateV1ToV2(v1: V1SceneBlockPlayerProps): V2Document {
           opacity: 1,
         },
         responsiveOverrides: {},
-        props: elementType === 'text'
-          ? {
-              content: value,
-              fontFamily: 'Inter',
-              fontSize: layout.fontSize,
-              fontWeight: 700,
-              fontStyle: 'normal',
-              lineHeight: 1.2,
-              letterSpacing: 0,
-              color: layout.color,
-              textAlign: 'center',
-              verticalAlign: 'middle',
-              textTransform: 'none',
-              maxLines: null,
-              backgroundColor: null,
-              padding: 0,
-              borderRadius: 0,
-            }
-          : elementType === 'image'
-            ? {
-                src: value,
-                fit: 'cover',
-                objectPositionX: 0.5,
-                objectPositionY: 0.5,
-                borderRadius: 0,
-                overlayColor: null,
-                overlayOpacity: 0,
-                blur: 0,
-                shadow: false,
-              }
-            : {
-                shapeType: 'rectangle',
-                fill: layout.color,
-                stroke: null,
-                strokeWidth: 0,
-                borderRadius: 0,
-              },
+        props: textPropsSchema.parse({
+          content: value,
+          fontSize: layout.fontSize,
+          color: layout.color,
+        }),
         animation: {
-          in: block.animation?.entry || layout.animation?.entry
+          in: block.animation?.entry
             ? {
-                preset: mapPreset(
-                  block.animation?.entry?.presetId ?? layout.animation?.entry?.presetId ?? 'fadeIn',
-                ) as any,
-                durationFrames: block.animation?.entry?.durationFrames
-                  ?? layout.animation?.entry?.durationFrames
-                  ?? 15,
+                preset: mapPreset(block.animation.entry.presetId) as AnimationPreset,
+                durationFrames: block.animation.entry.durationFrames ?? 15,
                 delayFrames: 0,
-                easing: 'ease-out',
-                intensity: layout.animation?.entry?.intensity ?? 1,
+                easing: 'ease-out' as const,
+                intensity: 1,
               }
             : undefined,
-          out: block.animation?.exit || layout.animation?.exit
+          out: block.animation?.exit
             ? {
-                preset: mapPreset(
-                  block.animation?.exit?.presetId ?? layout.animation?.exit?.presetId ?? 'fadeOut',
-                ) as any,
-                durationFrames: block.animation?.exit?.durationFrames
-                  ?? layout.animation?.exit?.durationFrames
-                  ?? 15,
+                preset: mapPreset(block.animation.exit.presetId) as AnimationPreset,
+                durationFrames: block.animation.exit.durationFrames ?? 15,
                 delayFrames: 0,
-                easing: 'ease-in',
-                intensity: layout.animation?.exit?.intensity ?? 1,
+                easing: 'ease-in' as const,
+                intensity: 1,
               }
             : undefined,
         },
       };
 
-      elements.push(v2Element);
+      elements.push(textElement);
     }
 
-    // If no content fields, create a single text element with all content merged
+    // Fallback: create a single text element if no content fields
     if (elements.length === 0) {
       const mergedContent = Object.values(block.content).join(' ');
-      elements.push({
+      const fallbackElement: TextElement = {
         id: `${block.blockId}-text`,
         type: 'text',
         name: 'Text',
@@ -258,25 +177,13 @@ export function migrateV1ToV2(v1: V1SceneBlockPlayerProps): V2Document {
           rotation: 0, anchorX: 0.5, anchorY: 0.5, zIndex: 10, opacity: 1,
         },
         responsiveOverrides: {},
-        props: {
+        props: textPropsSchema.parse({
           content: mergedContent || '{{headline}}',
-          fontFamily: 'Inter',
-          fontSize: 86,
-          fontWeight: 700,
-          fontStyle: 'normal',
-          lineHeight: 1.2,
-          letterSpacing: 0,
           color: brandColor,
-          textAlign: 'center',
-          verticalAlign: 'middle',
-          textTransform: 'none',
-          maxLines: null,
-          backgroundColor: null,
-          padding: 0,
-          borderRadius: 0,
-        },
+        }),
         animation: {},
-      });
+      };
+      elements.push(fallbackElement);
     }
 
     return {

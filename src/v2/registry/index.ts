@@ -8,7 +8,7 @@ export {
   getElement,
   getAllElements,
   getElementsByCategory,
-  hasElementType,
+  hasElementTypeId,
   type ElementDefinition,
   type PropertyMetadata,
   type PropertyType,
@@ -35,4 +35,14 @@ export {
   type CapabilityElement,
   type CapabilityAnimation,
   type CapabilityEasing,
+  type CapabilityFont,
 } from './capabilities';
+
+// Font registry
+export {
+  getFont,
+  getEnabledFonts,
+  isValidFontId,
+  getFontFamilies,
+  type FontDefinition,
+} from './fonts';

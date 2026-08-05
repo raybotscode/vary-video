@@ -243,7 +243,7 @@ describe('V2 Document Schema', () => {
 });
 
 describe('V1 → V2 Migration', () => {
-  const v1Props = {
+  const v1Props: any = {
     blocks: [
       {
         blockId: 'text-overlay',

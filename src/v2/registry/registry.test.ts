@@ -1,9 +1,10 @@
 import {describe, it, expect} from 'vitest';
+import type {TextProps} from '../schema/document';
 import {
   getElement,
   getAllElements,
   getElementsByCategory,
-  hasElementType,
+  hasElementTypeId,
 } from './elements';
 import {
   getAnimationPreset,
@@ -56,9 +57,9 @@ describe('Element Registry', () => {
   });
 
   it('checks type existence', () => {
-    expect(hasElementType('text')).toBe(true);
-    expect(hasElementType('image')).toBe(true);
-    expect(hasElementType('video')).toBe(false);
+    expect(hasElementTypeId('text')).toBe(true);
+    expect(hasElementTypeId('image')).toBe(true);
+    expect(hasElementTypeId('video')).toBe(false);
   });
 
   it('throws for unknown type', () => {
@@ -75,10 +76,12 @@ describe('Element Registry', () => {
 
   it('has default props that match schema', () => {
     const text = getElement('text');
-    expect(text.defaultProps.content).toBe('{{headline}}');
-    expect(text.defaultProps.fontFamily).toBe('Inter');
-    expect(text.defaultProps.fontSize).toBe(72);
-    expect(text.defaultProps.color).toBe('#1A365D');
+    // Use type assertion since defaultProps is typed as a union
+    const props = text.defaultProps as TextProps;
+    expect(props.content).toBe('{{headline}}');
+    expect(props.fontFamily).toBe('Inter');
+    expect(props.fontSize).toBe(72);
+    expect(props.color).toBe('#1A365D');
   });
 });
 

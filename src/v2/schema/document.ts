@@ -1,14 +1,15 @@
 /**
  * V2 Document Schema — the canonical template document model.
  *
- * This is the single source of truth for the entire platform.
- * Editor, renderer, API, and AI all operate on this document.
+ * Uses discriminated unions for element types (text/image/shape).
+ * Each element type has its own strongly-typed props schema.
  *
  * Key design decisions:
  * - Normalized coordinates (0-1) for position and size
  * - Frame-based timing (not seconds)
  * - Responsive overrides per aspect ratio
  * - JSON-serializable, versioned, strictly validated
+ * - Discriminated unions for type-safe element props
  */
 
 import {z} from 'zod';
@@ -20,7 +21,6 @@ export type AspectRatio = z.infer<typeof aspectRatioSchema>;
 
 export const ASPECT_RATIOS: AspectRatio[] = ['16:9', '9:16', '1:1'];
 
-/** Canvas dimensions for each aspect ratio (at 1920 base width) */
 export const ASPECT_DIMENSIONS: Record<AspectRatio, {width: number; height: number}> = {
   '16:9': {width: 1920, height: 1080},
   '9:16': {width: 1080, height: 1920},
@@ -72,26 +72,23 @@ export const elementAnimationSchema = z.object({
 });
 export type ElementAnimation = z.infer<typeof elementAnimationSchema>;
 
+export const elementAnimationPairSchema = z.object({
+  in: elementAnimationSchema.optional(),
+  out: elementAnimationSchema.optional(),
+});
+export type ElementAnimationPair = z.infer<typeof elementAnimationPairSchema>;
+
 // ─── Transform (normalized 0-1 coordinates) ──────────────────────
 
 export const transformSchema = z.object({
-  /** Anchor X position (0-1, where 0=left, 0.5=center, 1=right) */
   x: z.number().min(0).max(1).default(0.5),
-  /** Anchor Y position (0-1, where 0=top, 0.5=center, 1=bottom) */
   y: z.number().min(0).max(1).default(0.5),
-  /** Width as proportion of canvas width (0-1). null = auto */
   width: z.number().min(0).max(1).nullable().default(0.8),
-  /** Height as proportion of canvas height (0-1). null = auto */
   height: z.number().min(0).max(1).nullable().default(null),
-  /** Rotation in degrees */
   rotation: z.number().min(-360).max(360).default(0),
-  /** Anchor point X (0-1 within element, 0=left edge, 0.5=center, 1=right) */
   anchorX: z.number().min(0).max(1).default(0.5),
-  /** Anchor point Y (0-1 within element, 0=top edge, 0.5=center, 1=bottom) */
   anchorY: z.number().min(0).max(1).default(0.5),
-  /** Z-index for layering */
   zIndex: z.number().int().min(0).max(1000).default(10),
-  /** Opacity (0-1) */
   opacity: z.number().min(0).max(1).default(1),
 });
 export type Transform = z.infer<typeof transformSchema>;
@@ -108,17 +105,21 @@ export const responsiveOverrideSchema = z.object({
   anchorY: z.number().min(0).max(1).optional(),
   zIndex: z.number().int().min(0).max(1000).optional(),
   opacity: z.number().min(0).max(1).optional(),
-  /** Font size override for text elements (in canvas px at 1920 base) */
   fontSize: z.number().min(8).max(400).optional(),
 });
 export type ResponsiveOverride = z.infer<typeof responsiveOverrideSchema>;
 
+export const responsiveOverridesSchema = z.object({
+  '16:9': responsiveOverrideSchema.optional(),
+  '9:16': responsiveOverrideSchema.optional(),
+  '1:1': responsiveOverrideSchema.optional(),
+}).default(() => ({}));
+export type ResponsiveOverrides = z.infer<typeof responsiveOverridesSchema>;
+
 // ─── Timing ───────────────────────────────────────────────────────
 
 export const timingSchema = z.object({
-  /** Start frame within the scene (0-indexed) */
   startFrame: z.number().int().min(0).default(0),
-  /** End frame within the scene (exclusive). null = scene end */
   endFrame: z.number().int().min(0).nullable().default(null),
 });
 export type Timing = z.infer<typeof timingSchema>;
@@ -145,7 +146,6 @@ export const textPropsSchema = z.object({
 export type TextProps = z.infer<typeof textPropsSchema>;
 
 export const imagePropsSchema = z.object({
-  /** Asset ID (from R2) or merge tag {{imageUrl}} */
   src: z.string().default('{{imageUrl}}'),
   fit: z.enum(['cover', 'contain', 'fill']).default('cover'),
   objectPositionX: z.number().min(0).max(1).default(0.5),
@@ -170,40 +170,50 @@ export const shapePropsSchema = z.object({
 });
 export type ShapeProps = z.infer<typeof shapePropsSchema>;
 
-// ─── Element ──────────────────────────────────────────────────────
+// ─── Base Element ─────────────────────────────────────────────────
 
-export const elementTypeSchema = z.enum(['text', 'image', 'shape']);
-export type ElementType = z.infer<typeof elementTypeSchema>;
-
-export const elementSchema = z.object({
-  /** Unique ID within the scene */
+const baseElementFields = {
   id: z.string().min(1).max(100),
-  /** Element type */
-  type: elementTypeSchema,
-  /** Human-readable name (shown in layers panel) */
   name: z.string().max(100).default('Element'),
-  /** Whether element is visible */
   visible: z.boolean().default(true),
-  /** Whether element is locked (no drag/resize) */
   locked: z.boolean().default(false),
-  /** Timing within the scene */
   timing: timingSchema.default((): z.infer<typeof timingSchema> => ({startFrame: 0, endFrame: null})),
-  /** Transform (position, size, rotation) */
-  transform: transformSchema.default((): z.infer<typeof transformSchema> => ({x: 0.5, y: 0.5, width: 0.8, height: null, rotation: 0, anchorX: 0.5, anchorY: 0.5, zIndex: 10, opacity: 1})),
-  /** Responsive overrides per aspect ratio */
-  responsiveOverrides: z.object({
-    '16:9': responsiveOverrideSchema.optional(),
-    '9:16': responsiveOverrideSchema.optional(),
-    '1:1': responsiveOverrideSchema.optional(),
-  }).default(() => ({})),
-  /** Type-specific props (text, image, or shape) */
-  props: z.record(z.string(), z.unknown()).default({}),
-  /** Entry and exit animations */
-  animation: z.object({
-    in: elementAnimationSchema.optional(),
-    out: elementAnimationSchema.optional(),
-  }).default({}),
+  transform: transformSchema.default((): z.infer<typeof transformSchema> => ({
+    x: 0.5, y: 0.5, width: 0.8, height: null,
+    rotation: 0, anchorX: 0.5, anchorY: 0.5, zIndex: 10, opacity: 1,
+  })),
+  responsiveOverrides: responsiveOverridesSchema,
+  animation: elementAnimationPairSchema.default(() => ({})),
+};
+
+// ─── Discriminated Union Elements ─────────────────────────────────
+
+export const textElementSchema = z.object({
+  ...baseElementFields,
+  type: z.literal('text'),
+  props: textPropsSchema.default(() => textPropsSchema.parse({})),
 });
+export type TextElement = z.infer<typeof textElementSchema>;
+
+export const imageElementSchema = z.object({
+  ...baseElementFields,
+  type: z.literal('image'),
+  props: imagePropsSchema.default(() => imagePropsSchema.parse({})),
+});
+export type ImageElement = z.infer<typeof imageElementSchema>;
+
+export const shapeElementSchema = z.object({
+  ...baseElementFields,
+  type: z.literal('shape'),
+  props: shapePropsSchema.default(() => shapePropsSchema.parse({})),
+});
+export type ShapeElement = z.infer<typeof shapeElementSchema>;
+
+export const elementSchema = z.discriminatedUnion('type', [
+  textElementSchema,
+  imageElementSchema,
+  shapeElementSchema,
+]);
 export type V2Element = z.infer<typeof elementSchema>;
 
 // ─── Background ───────────────────────────────────────────────────
@@ -230,15 +240,10 @@ export type Background = z.infer<typeof backgroundSchema>;
 // ─── Scene ────────────────────────────────────────────────────────
 
 export const sceneSchema = z.object({
-  /** Unique ID within the document */
   id: z.string().min(1).max(100),
-  /** Human-readable scene name */
   name: z.string().max(100).default('Scene'),
-  /** Duration in frames */
   durationFrames: z.number().int().min(1).max(9000).default(90),
-  /** Scene background */
   background: backgroundSchema.default({type: 'gradient', color1: '#FFFFFF', color2: '#F7FAFC', angle: 135}),
-  /** Elements in this scene */
   elements: z.array(elementSchema).default([]),
 });
 export type V2Scene = z.infer<typeof sceneSchema>;
@@ -246,27 +251,15 @@ export type V2Scene = z.infer<typeof sceneSchema>;
 // ─── Merge Tag ────────────────────────────────────────────────────
 
 export const mergeTagTypeSchema = z.enum([
-  'text',
-  'number',
-  'currency',
-  'color',
-  'image',
-  'boolean',
-  'url',
-  'date',
+  'text', 'number', 'currency', 'color', 'image', 'boolean', 'url', 'date',
 ]);
 export type MergeTagType = z.infer<typeof mergeTagTypeSchema>;
 
 export const mergeTagSchema = z.object({
-  /** Tag key (matches {{key}} in element content/props) */
   key: z.string().min(1).max(50).regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
-  /** Tag type for validation */
   type: mergeTagTypeSchema,
-  /** Human-readable label */
   label: z.string().max(100),
-  /** Default value */
   defaultValue: z.string().default(''),
-  /** Whether this tag is required */
   required: z.boolean().default(false),
 });
 export type MergeTag = z.infer<typeof mergeTagSchema>;
@@ -276,41 +269,27 @@ export type MergeTag = z.infer<typeof mergeTagSchema>;
 export const V2_DOCUMENT_VERSION = 2;
 
 export const v2DocumentSchema = z.object({
-  /** Schema version for migrations */
   schemaVersion: z.literal(V2_DOCUMENT_VERSION),
-  /** Unique template ID */
   id: z.string().min(1).max(100),
-  /** Template name */
   name: z.string().min(1).max(200),
-  /** Template description */
   description: z.string().max(1000).default(''),
-  /** Frames per second */
   fps: z.number().int().min(1).max(120).default(30),
-  /** Default aspect ratio */
   defaultAspectRatio: aspectRatioSchema.default('16:9'),
-  /** Supported aspect ratios */
   supportedAspectRatios: z.array(aspectRatioSchema).min(1).default(['16:9', '9:16', '1:1']),
-  /** Scenes in order */
   scenes: z.array(sceneSchema).min(1),
-  /** Merge tag definitions */
   mergeTags: z.array(mergeTagSchema).default([]),
-  /** Additional metadata */
   metadata: z.record(z.string(), z.unknown()).default({}),
-  /** Creation timestamp (ISO 8601) */
   createdAt: z.string().datetime().optional(),
-  /** Last update timestamp (ISO 8601) */
   updatedAt: z.string().datetime().optional(),
 });
 export type V2Document = z.infer<typeof v2DocumentSchema>;
 
 // ─── Validation Helpers ───────────────────────────────────────────
 
-/** Validate a V2 document. Returns typed result. */
 export function validateDocument(data: unknown): V2Document {
   return v2DocumentSchema.parse(data);
 }
 
-/** Safe validation that returns success/error without throwing. */
 export function safeValidateDocument(data: unknown):
   | {success: true; data: V2Document}
   | {success: false; error: z.ZodError} {
@@ -319,7 +298,6 @@ export function safeValidateDocument(data: unknown):
   return {success: false, error: result.error};
 }
 
-/** Check if a value is a valid V2 document (type guard). */
 export function isV2Document(data: unknown): data is V2Document {
   return v2DocumentSchema.safeParse(data).success;
 }

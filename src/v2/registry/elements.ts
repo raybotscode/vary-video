@@ -15,9 +15,7 @@
  * - The AI (for template generation)
  */
 
-import {z} from 'zod';
-import {textPropsSchema, imagePropsSchema, shapePropsSchema} from '../schema/document';
-import type {ElementType, TextProps, ImageProps, ShapeProps} from '../schema/document';
+import type {TextProps, ImageProps, ShapeProps} from '../schema/document';
 
 // ─── Property Metadata ────────────────────────────────────────────
 
@@ -62,7 +60,11 @@ export type PropertyMetadata = {
 
 // ─── Element Definition ───────────────────────────────────────────
 
-export type ElementDefinition<T extends ElementType = ElementType> = {
+// ─── Element Type ID ──────────────────────────────────────────────
+
+export type ElementTypeId = 'text' | 'image' | 'shape';
+
+export interface ElementDefinition<T extends ElementTypeId = ElementTypeId> {
   /** Unique type ID */
   type: T;
   /** Display name */
@@ -71,8 +73,6 @@ export type ElementDefinition<T extends ElementType = ElementType> = {
   icon: string;
   /** Description */
   description: string;
-  /** Zod schema for type-specific props */
-  propsSchema: z.ZodType;
   /** Default props when creating a new element */
   defaultProps: T extends 'text' ? TextProps : T extends 'image' ? ImageProps : ShapeProps;
   /** Property metadata for the properties panel */
@@ -83,11 +83,11 @@ export type ElementDefinition<T extends ElementType = ElementType> = {
   supportsMergeTags: boolean;
   /** Categories this element belongs to */
   categories: string[];
-};
+}
 
 // ─── Registry ─────────────────────────────────────────────────────
 
-const registry = new Map<ElementType, ElementDefinition>();
+const registry = new Map<ElementTypeId, ElementDefinition>();
 
 /** Register an element type definition. */
 export function registerElement(definition: ElementDefinition): void {
@@ -95,7 +95,7 @@ export function registerElement(definition: ElementDefinition): void {
 }
 
 /** Get an element definition by type ID. */
-export function getElement(type: ElementType): ElementDefinition {
+export function getElement(type: ElementTypeId): ElementDefinition {
   const def = registry.get(type);
   if (!def) {
     throw new Error(`Unknown element type: ${type}`);
@@ -114,8 +114,8 @@ export function getElementsByCategory(category: string): ElementDefinition[] {
 }
 
 /** Check if an element type is registered. */
-export function hasElementType(type: string): type is ElementType {
-  return registry.has(type as ElementType);
+export function hasElementTypeId(type: string): type is ElementTypeId {
+  return registry.has(type as ElementTypeId);
 }
 
 // ─── Built-in Element Definitions ─────────────────────────────────
@@ -125,7 +125,6 @@ registerElement({
   name: 'Text',
   icon: 'T',
   description: 'Text content with font styling',
-  propsSchema: textPropsSchema,
   defaultProps: {
     content: '{{headline}}',
     fontFamily: 'Inter',
@@ -190,7 +189,6 @@ registerElement({
   name: 'Image',
   icon: '🖼',
   description: 'Image with fit, crop, and overlay options',
-  propsSchema: imagePropsSchema,
   defaultProps: {
     src: '{{imageUrl}}',
     fit: 'cover',
@@ -224,7 +222,6 @@ registerElement({
   name: 'Shape',
   icon: '◻',
   description: 'Rectangle, circle, or line shape',
-  propsSchema: shapePropsSchema,
   defaultProps: {
     shapeType: 'rectangle',
     fill: '#3182CE',
