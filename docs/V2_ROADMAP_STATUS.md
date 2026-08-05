@@ -1,6 +1,6 @@
 # V2 ROADMAP STATUS — Phase 0: Current-State Audit
 
-**Status:** PHASES 1-2 COMPLETE  
+**Status:** PHASES 1-3 COMPLETE  
 **Branch:** main  
 **Date:** 2026-08-05  
 
@@ -12,8 +12,9 @@
 |-------|--------|--------|-------|
 | Phase 0: Audit | ✅ Complete | `04a4bee` | — |
 | Phase 1: Document Schema | ✅ Complete | `4d5f29b` | 24 |
-| Phase 2: Element + Capability Registries | ✅ Complete | `478d7b1` | 21 |
-| Phase 3: Minimal DOM Editor | ⬜ Not started | — | — |
+| Phase 2: Element + Capability Registries | ✅ Complete | `17c345c` | 21 |
+| Phase 3: Minimal DOM Editor | ✅ Complete | `592f585` | 20 |
+| Phase 4: Inline Text, Layers, Polish | ⬜ Next | — | — |
 
 ---
 
