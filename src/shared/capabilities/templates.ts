@@ -145,7 +145,7 @@ export const templateCapabilities: TemplateCapability[] = [
     defaultBlocks: ['text-overlay', 'data-callout', 'brand-frame'],
     previewImage: null,
     version: '1.0.0',
-    status: 'enabled',
+    status: 'disabled', // pending Remotion composition implementation
     tags: ['testimonial', 'review', 'social-proof', 'quote'],
     mediaFields: ['person1', 'logo', 'backgroundImage'],
   },
@@ -168,7 +168,7 @@ export const templateCapabilities: TemplateCapability[] = [
     defaultBlocks: ['social-hook', 'text-overlay', 'data-callout', 'brand-frame'],
     previewImage: null,
     version: '1.0.0',
-    status: 'enabled',
+    status: 'disabled', // pending Remotion composition implementation
     tags: ['event', 'conference', 'meetup', 'promo', 'tickets'],
     mediaFields: ['image1', 'logo', 'backgroundImage'],
   },
@@ -191,7 +191,7 @@ export const templateCapabilities: TemplateCapability[] = [
     defaultBlocks: ['social-hook', 'text-overlay', 'data-callout', 'brand-frame'],
     previewImage: null,
     version: '1.0.0',
-    status: 'enabled',
+    status: 'disabled', // pending Remotion composition implementation
     tags: ['youtube', 'intro', 'creator', 'series', 'content'],
     mediaFields: ['image1', 'logo', 'backgroundImage'],
   },

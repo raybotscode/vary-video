@@ -270,7 +270,9 @@ const runtimeAttachments: Record<
 
 export const templateRegistry: Record<string, TemplateDefinition> =
   Object.fromEntries(
-    templateCapabilities.map((capability) => {
+    templateCapabilities
+      .filter((capability) => capability.status !== 'disabled')
+      .map((capability) => {
       const runtime = runtimeAttachments[capability.id];
       if (!runtime) {
         throw new Error(`Missing runtime attachment for template ${capability.id}`);

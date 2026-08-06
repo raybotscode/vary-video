@@ -5,8 +5,9 @@ import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import RenderHistory from './pages/RenderHistory';
 import SceneComposer from './pages/SceneComposer';
+import V2Editor from './pages/V2Editor';
 
-export type Route = 'home' | 'dashboard' | 'composer' | 'history';
+export type Route = 'home' | 'dashboard' | 'composer' | 'history' | 'v2-editor';
 
 const routeFromPath = (pathname: string): Route => {
   if (pathname.startsWith('/dashboard')) {
@@ -19,6 +20,10 @@ const routeFromPath = (pathname: string): Route => {
 
   if (pathname.startsWith('/history')) {
     return 'history';
+  }
+
+  if (pathname.startsWith('/v2-editor')) {
+    return 'v2-editor';
   }
 
   return 'home';
@@ -37,6 +42,10 @@ const pathFromRoute = (route: Route): string => {
     return '/history';
   }
 
+  if (route === 'v2-editor') {
+    return '/v2-editor';
+  }
+
   return '/';
 };
 
@@ -53,6 +62,10 @@ export default function App() {
 
     if (route === 'composer') {
       return 'Scene Composer';
+    }
+
+    if (route === 'v2-editor') {
+      return 'v2 Editor';
     }
 
     return 'Home';
@@ -80,6 +93,7 @@ export default function App() {
         {route === 'history' && <RenderHistory />}
         <span className="sr-only">{title}</span>
       </Layout>
+      {route === 'v2-editor' && <V2Editor />}
     </ToastProvider>
   );
 }

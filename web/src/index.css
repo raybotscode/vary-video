@@ -680,3 +680,16 @@ img{max-width:100%;height:auto}
 .preview-error{color:var(--danger)}
 .preview-error button{margin-top:var(--space-2);padding:var(--space-1) var(--space-3);border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;min-height:36px}
 .preview-hint{margin-top:var(--space-2);font-size:var(--text-xs);color:var(--text-muted)}
+
+/* ===== V2 Editor — Mobile / Desktop Responsive Layout ===== */
+@media(max-width:768px){
+  .v2-editor-shell .desktop-toolbar{display:none !important}
+  .v2-editor-shell .mobile-topbar{display:flex !important}
+  .v2-editor-shell .mobile-bottom-panel{display:block !important}
+  .v2-editor-shell .editor-layers{display:none !important}
+  .v2-editor-shell .editor-properties{display:none !important}
+}
+@media(min-width:769px){
+  .v2-editor-shell .mobile-topbar{display:none !important}
+  .v2-editor-shell .mobile-bottom-panel{display:none !important}
+}

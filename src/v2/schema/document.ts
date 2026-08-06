@@ -13,6 +13,7 @@
  */
 
 import {z} from 'zod';
+import {bindableTextSchema, bindableValueSchema} from './bindable';
 
 // ─── Aspect Ratios ────────────────────────────────────────────────
 
@@ -127,7 +128,7 @@ export type Timing = z.infer<typeof timingSchema>;
 // ─── Element Props (per type) ─────────────────────────────────────
 
 export const textPropsSchema = z.object({
-  content: z.string().default('{{headline}}'),
+  content: z.union([z.string(), bindableTextSchema]).default('{{headline}}'),
   fontFamily: z.string().default('Inter'),
   fontSize: z.number().min(8).max(400).default(72),
   fontWeight: z.number().int().min(100).max(900).default(700),
@@ -146,7 +147,7 @@ export const textPropsSchema = z.object({
 export type TextProps = z.infer<typeof textPropsSchema>;
 
 export const imagePropsSchema = z.object({
-  src: z.string().default('{{imageUrl}}'),
+  src: z.union([z.string(), bindableValueSchema]).default('{{imageUrl}}'),
   fit: z.enum(['cover', 'contain', 'fill']).default('cover'),
   objectPositionX: z.number().min(0).max(1).default(0.5),
   objectPositionY: z.number().min(0).max(1).default(0.5),
@@ -158,13 +159,13 @@ export const imagePropsSchema = z.object({
 });
 export type ImageProps = z.infer<typeof imagePropsSchema>;
 
-export const shapeTypeSchema = z.enum(['rectangle', 'circle', 'line']);
+export const shapeTypeSchema = z.enum(['rectangle', 'rounded-rect', 'circle', 'line', 'star', 'triangle', 'diamond', 'hexagon']);
 export type ShapeType = z.infer<typeof shapeTypeSchema>;
 
 export const shapePropsSchema = z.object({
   shapeType: shapeTypeSchema.default('rectangle'),
-  fill: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#3182CE'),
-  stroke: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().default(null),
+  fill: z.union([z.string().regex(/^#[0-9a-fA-F]{6}$/), bindableValueSchema]).default('#3182CE'),
+  stroke: z.union([z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable(), bindableValueSchema]).nullable().default(null),
   strokeWidth: z.number().min(0).max(50).default(0),
   borderRadius: z.number().min(0).max(500).default(0),
 });
@@ -256,17 +257,20 @@ export const mergeTagTypeSchema = z.enum([
 export type MergeTagType = z.infer<typeof mergeTagTypeSchema>;
 
 export const mergeTagSchema = z.object({
+  id: z.string().min(1).max(50).default(() => `tag-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`),
   key: z.string().min(1).max(50).regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
   type: mergeTagTypeSchema,
   label: z.string().max(100),
   defaultValue: z.string().default(''),
   required: z.boolean().default(false),
+  description: z.string().max(500).default(''),
+  format: z.string().max(100).optional(),
 });
 export type MergeTag = z.infer<typeof mergeTagSchema>;
 
 // ─── V2 Document ──────────────────────────────────────────────────
 
-export const V2_DOCUMENT_VERSION = 2;
+export const V2_DOCUMENT_VERSION = 3;
 
 export const v2DocumentSchema = z.object({
   schemaVersion: z.literal(V2_DOCUMENT_VERSION),

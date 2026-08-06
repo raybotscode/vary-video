@@ -119,7 +119,7 @@ describe('V2 Document Schema', () => {
   describe('validateDocument', () => {
     it('accepts a valid document', () => {
       const result = validateDocument(validDocument);
-      expect(result.schemaVersion).toBe(2);
+      expect(result.schemaVersion).toBe(3);
       expect(result.scenes).toHaveLength(2);
       expect(result.scenes[0].elements).toHaveLength(3);
     });

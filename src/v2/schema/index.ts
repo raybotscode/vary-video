@@ -83,7 +83,29 @@ export {
 } from './document';
 
 export {
+  // Bindable values
+  type BindableValue,
+  type BindableText,
+  type TextToken,
+  literal,
+  tagBinding,
+  literalText,
+  tokenId,
+  generateTagId,
+  parseBindableText,
+  serializeBindableText,
+  resolveBindableText,
+  resolveBindableValue,
+  isTagBinding,
+  extractBindableTagIds,
+  getBindableDisplayValue,
+  PROPERTY_TYPE_TO_TAG_TYPES,
+  isTagTypeCompatible,
+} from './bindable';
+
+export {
   // Migration
   migrateV1ToV2,
+  migrateV2ToV3,
   convertV1Layout,
 } from './migration';

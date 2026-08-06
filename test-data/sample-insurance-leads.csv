@@ -1,0 +1,6 @@
+age,gender,location,company,insurance_type,coverage_type,price_per_month,brand_color,secondary_color
+34,male,Austin TX,ShieldPro,auto,Full Coverage,$89/mo,#0D47A1,#1565C0
+28,female,Denver CO,PeakGuard,home,Homeowners,$112/mo,#1B5E20,#2E7D32
+45,male,Portland OR,VitalLife,life,Term Life,$34/mo,#4A148C,#6A1B9A
+52,female,Miami FL,SunHealth,health,PPO Gold,$278/mo,#BF360C,#D84315
+31,male,Seattle WA,JourneySafe,travel,Trip Protection,$19/mo,#00695C,#00897B

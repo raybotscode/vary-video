@@ -18,7 +18,8 @@
     "jsx": "react-jsx",
     "paths": {
       "@vary/shared/*": ["../src/shared/*"],
-      "@vary/compositions/*": ["../src/compositions/*"]
+      "@vary/compositions/*": ["../src/compositions/*"],
+      "@vary/v2/*": ["../src/v2/*"]
     }
   },
   "include": ["src"],

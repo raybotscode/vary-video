@@ -10,7 +10,7 @@ import {
 describe('capability registry', () => {
   it('includes all current templates and blocks', () => {
     const registry = getCapabilityRegistry();
-    expect(registry.templates.length).toBe(8);
+    expect(registry.templates.length).toBe(5);
     expect(registry.blocks).toHaveLength(13)
     // All 14 animation presets are enabled (9 entry + 5 exit).
     expect(registry.animations.length).toBe(14);
@@ -29,7 +29,7 @@ describe('capability registry', () => {
     expect(summary.animations).toContain('fade-in');
     expect(summary.animations).toContain('none');
     expect(summary.animations.length).toBe(14);
-    expect(summary.templates.length).toBe(8);
+    expect(summary.templates.length).toBe(5);
     expect(summary.blocks.length).toBe(13);
   });
 

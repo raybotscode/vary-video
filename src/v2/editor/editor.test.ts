@@ -105,7 +105,7 @@ describe('Coordinate Conversion', () => {
 
 describe('History Manager', () => {
   const makeDoc = (name: string) => ({
-    schemaVersion: 2 as const,
+    schemaVersion: 3 as const,
     id: 'test',
     name,
     description: '',

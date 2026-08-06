@@ -231,7 +231,16 @@ registerElement({
   },
   properties: [
     {key: 'shapeType', label: 'Shape', type: 'select', group: 'Shape',
-      options: [{value: 'rectangle', label: 'Rectangle'}, {value: 'circle', label: 'Circle'}, {value: 'line', label: 'Line'}]},
+      options: [
+        {value: 'rectangle', label: 'Rectangle'},
+        {value: 'rounded-rect', label: 'Rounded Rect'},
+        {value: 'circle', label: 'Circle'},
+        {value: 'line', label: 'Line'},
+        {value: 'star', label: 'Star'},
+        {value: 'triangle', label: 'Triangle'},
+        {value: 'diamond', label: 'Diamond'},
+        {value: 'hexagon', label: 'Hexagon'},
+      ]},
     {key: 'fill', label: 'Fill', type: 'color', group: 'Appearance', supportsMergeTags: true},
     {key: 'stroke', label: 'Stroke', type: 'color', group: 'Appearance', advanced: true},
     {key: 'strokeWidth', label: 'Stroke Width', type: 'slider', min: 0, max: 50, step: 1, unit: 'px', group: 'Appearance', advanced: true},

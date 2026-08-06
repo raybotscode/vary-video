@@ -5,8 +5,9 @@
  * Uses discriminated union element types with strongly-typed props.
  */
 
-import type {V2Document, V2Scene, V2Element, TextElement, ImageElement, Background, AnimationPreset} from './document';
-import {V2_DOCUMENT_VERSION, textPropsSchema, imagePropsSchema, shapePropsSchema} from './document';
+import type {V2Document, V2Scene, V2Element, TextElement, ImageElement, Background, AnimationPreset, MergeTag} from './document';
+import {V2_DOCUMENT_VERSION, textPropsSchema, imagePropsSchema, shapePropsSchema, mergeTagSchema} from './document';
+import {parseBindableText, generateTagId, literalText} from './bindable';
 
 // ─── V1 Types ─────────────────────────────────────────────────────
 
@@ -210,4 +211,59 @@ export function migrateV1ToV2(v1: V1SceneBlockPlayerProps): V2Document {
       originalBlockIds: v1.blocks.map(b => b.blockId),
     },
   };
+}
+
+// ─── V2 → V3 Migration ────────────────────────────────────────────
+
+/**
+ * Migrate a v2 document to v3.
+ * Key changes:
+ * - Merge tags get stable `id` fields
+ * - Merge tags get `description` and `format` fields
+ * - Text content with {{key}} parsed into BindableText
+ * - schemaVersion bumped to 3
+ */
+export function migrateV2ToV3(doc: Record<string, any>): V2Document {
+  // Build key→id map AND assign stable IDs to tags missing them.
+  // Critical: each tag gets exactly ONE ID, used in both keyToId and mergeTags.
+  const keyToId = new Map<string, string>();
+  for (const tag of (doc.mergeTags ?? [])) {
+    if (!tag.id) tag.id = generateTagId();
+    if (tag.key) keyToId.set(tag.key, tag.id);
+  }
+
+  const mergeTags = (doc.mergeTags ?? []).map((tag: any) => ({
+    ...tag,
+    id: tag.id, // already assigned above (or was present)
+    description: tag.description ?? '',
+    format: tag.format ?? undefined,
+  }));
+
+  const scenes = (doc.scenes ?? []).map((scene: any) => ({
+    ...scene,
+    elements: (scene.elements ?? []).map((el: any) => {
+      const props = {...el.props};
+      if (typeof props.content === 'string' && (props.content as string).includes('{{')) {
+        props.content = parseBindableText(props.content as string, keyToId);
+      }
+      for (const key of ['color', 'fill', 'stroke']) {
+        if (typeof props[key] === 'string' && (props[key] as string).includes('{{')) {
+          const m = (props[key] as string).match(/\{\{([a-zA-Z_][a-zA-Z0-9_]*)}\}/);
+          if (m) props[key] = {_type: 'tag', tagId: keyToId.get(m[1]) ?? `unknown:${m[1]}`};
+        }
+      }
+      if (typeof props.src === 'string' && (props.src as string).includes('{{')) {
+        const m = (props.src as string).match(/\{\{([a-zA-Z_][a-zA-Z0-9_]*)}\}/);
+        if (m) props.src = {_type: 'tag', tagId: keyToId.get(m[1]) ?? `unknown:${m[1]}`};
+      }
+      return {...el, props};
+    }),
+  }));
+
+  return {
+    ...doc,
+    schemaVersion: 3 as any,
+    mergeTags,
+    scenes,
+  } as V2Document;
 }
