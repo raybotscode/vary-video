@@ -152,6 +152,13 @@ export interface RedoCommand {
   type: 'REDO';
 }
 
+// ─── Document Meta ──────────────────────────────────────────────────
+
+export interface SetDocumentNameCommand {
+  type: 'SET_DOCUMENT_NAME';
+  name: string;
+}
+
 // ─── Union ─────────────────────────────────────────────────────────
 
 type BaseEditorCommand =
@@ -174,7 +181,8 @@ type BaseEditorCommand =
   | RemoveMergeTagCommand
   | UpdateMergeTagCommand
   | UndoCommand
-  | RedoCommand;
+  | RedoCommand
+  | SetDocumentNameCommand;
 
 /** Commands can suppress history tracking during live drag/resize/rotate. */
 export type EditorCommand = BaseEditorCommand & {

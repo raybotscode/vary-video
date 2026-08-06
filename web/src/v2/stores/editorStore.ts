@@ -58,6 +58,9 @@ export interface EditorState {
   mobileLayersOpen: boolean;
   activeGallery: string | null;
 
+  // ─── Export ─────────────────────────────────────────────────
+  exportPanelOpen: boolean;
+
   // ─── Playback ──────────────────────────────────────────────
   playing: boolean;
   currentFrame: number;
@@ -104,6 +107,8 @@ export interface EditorState {
   closeMobileLayers: () => void;
   openGallery: (type: string) => void;
   closeGallery: () => void;
+  openExportPanel: () => void;
+  closeExportPanel: () => void;
   togglePlayback: () => void;
   setCurrentFrame: (frame: number) => void;
 
@@ -139,6 +144,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   mobileSheetOpen: false,
   mobileLayersOpen: false,
   activeGallery: null,
+  exportPanelOpen: false,
   playing: false,
   currentFrame: 0,
   playbackKey: 0,
@@ -233,6 +239,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   closeMobileLayers: () => set({mobileLayersOpen: false}),
   openGallery: (type) => set({activeGallery: type}),
   closeGallery: () => set({activeGallery: null}),
+  openExportPanel: () => set({exportPanelOpen: true}),
+  closeExportPanel: () => set({exportPanelOpen: false}),
   togglePlayback: () => set((s) => {
     const nextPlaying = !s.playing;
     return {

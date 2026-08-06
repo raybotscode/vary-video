@@ -395,6 +395,17 @@ export function applyCommand(
       };
     }
 
+    // ─── Document Meta ──────────────────────────────────────────
+
+    case 'SET_DOCUMENT_NAME': {
+      const trimmed = command.name.trim();
+      if (!trimmed) return {document, shouldRecord: false};
+      return {
+        document: {...document, name: trimmed, updatedAt: new Date().toISOString()},
+        shouldRecord: true,
+      };
+    }
+
     // ─── Undo/Redo are handled by the store, not here ──────────
     case 'UNDO':
     case 'REDO':

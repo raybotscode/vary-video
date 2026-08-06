@@ -8,6 +8,7 @@
 
 import {useDocumentStore} from '../../stores/documentStore';
 import {useEditorStore} from '../../stores/editorStore';
+import EditableTitle from '../panels/EditableTitle';
 import type {AspectRatio} from '@vary/v2/schema/document';
 import {ASPECT_RATIOS} from '@vary/v2/schema/document';
 
@@ -40,6 +41,9 @@ export default function MobileTopBar() {
       {/* Back */}
       <TopBtn onClick={handleBack} title="Back" style={{color: '#F87171'}}>✕</TopBtn>
 
+      {/* Project name */}
+      <EditableTitle />
+
       {/* Undo / Redo */}
       <TopBtn onClick={() => dispatch({type: 'UNDO'})} disabled={!canUndo} title="Undo">↩</TopBtn>
       <TopBtn onClick={() => dispatch({type: 'REDO'})} disabled={!canRedo} title="Redo">↪</TopBtn>
@@ -67,6 +71,9 @@ export default function MobileTopBar() {
 
       {/* Aspect ratio — single cycling button */}
       <CyclingAspectRatioBtn />
+
+      {/* Export */}
+      <ExportBtn />
 
       {/* Play */}
       <TopBtn onClick={togglePlayback} title={playing ? 'Pause' : 'Play'}
@@ -118,5 +125,15 @@ function CyclingAspectRatioBtn() {
       <span style={{fontSize: 10, color: '#9CA3AF'}}>⇄</span>
       {aspectRatio}
     </button>
+  );
+}
+
+function ExportBtn() {
+  const openExportPanel = useEditorStore((s) => s.openExportPanel);
+  return (
+    <TopBtn onClick={openExportPanel} title="Export"
+      style={{color: '#34D399', fontWeight: 700}}>
+      ⬇
+    </TopBtn>
   );
 }

@@ -36,6 +36,7 @@ import StageViewport from './Stage';
 import PropertiesPanel from './panels/PropertiesPanel';
 import MobileBottomPanel from './panels/MobileBottomPanel';
 import MobileLayersSheet from './panels/MobileLayersSheet';
+import MobileExportSheet from './panels/MobileExportSheet';
 import FullScreenGallery from './galleries/FullScreenGallery';
 import PhotoGallery from './galleries/PhotoGallery';
 import VideoGallery from './galleries/VideoGallery';
@@ -191,6 +192,7 @@ export default function Editor({
 
       {/* ── Mobile: Layers Sheet (portal overlay) ── */}
       <MobileLayersSheet />
+      <MobileExportSheet />
 
       {/* ── Full-screen gallery (portal overlay) ── */}
       {activeGallery === 'photos' && <PhotoGallery />}
