@@ -34,7 +34,7 @@ export default function MobileExportSheet() {
   const open = useEditorStore((s) => s.exportPanelOpen);
   const close = useEditorStore((s) => s.closeExportPanel);
 
-  const document = useDocumentStore((s) => s.document);
+  const v2doc = useDocumentStore((s) => s.document);
   const mergeRows = useMergeDataStore((s) => s.rows);
   const totalRows = mergeRows.length;
   const hasData = totalRows > 0;
@@ -108,7 +108,7 @@ export default function MobileExportSheet() {
     }));
 
     // Build template from document
-    const template = buildTemplateFromDocument(document);
+    const template = buildTemplateFromDocument(v2doc);
 
     // Build variants array for API (row data)
     const apiVariants = hasData
@@ -128,7 +128,7 @@ export default function MobileExportSheet() {
     } catch (err) {
       failAll(err instanceof Error ? err.message : 'Export failed');
     }
-  }, [settings, hasData, selectedRowIndices, mergeRows, document]);
+  }, [settings, hasData, selectedRowIndices, mergeRows, v2doc]);
 
   // ─── Polling ─────────────────────────────────────────────────────
 
@@ -211,7 +211,7 @@ export default function MobileExportSheet() {
           <div>
             <div style={{color: '#E2E8F0', fontSize: 16, fontWeight: 700}}>Export Video</div>
             <div style={{color: '#6B7280', fontSize: 11, marginTop: 2}}>
-              {document.name || 'Untitled'}
+              {v2doc.name || 'Untitled'}
               {totalVariants > 0 && ` · ${settings.selectedRatios.length} format${settings.selectedRatios.length !== 1 ? 's' : ''} × ${hasData ? selectedRowIndices.length : 1} row${(hasData ? selectedRowIndices.length : 1) !== 1 ? 's' : ''} = ${totalVariants} video${totalVariants !== 1 ? 's' : ''}`}
             </div>
           </div>
