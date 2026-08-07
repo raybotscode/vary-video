@@ -116,6 +116,9 @@ export default function MobileExportSheet() {
       : [{}];
 
     try {
+      // Show progress immediately so user gets feedback
+      startRender('pending…', initialVariants);
+
       const response = await apiClient.startBatchRender({
         compositionId: 'V2Native',
         template,
@@ -123,7 +126,13 @@ export default function MobileExportSheet() {
         formats: settings.selectedRatios as any[],
       });
 
-      startRender(response.jobId, initialVariants);
+      // Update with real job ID and mark queued variants as rendering
+      useExportStore.setState((s) => ({
+        jobId: response.jobId,
+        variants: s.variants.map((v) =>
+          v.status === 'queued' ? {...v, status: 'rendering' as const} : v,
+        ),
+      }));
       startPolling();
     } catch (err) {
       failAll(err instanceof Error ? err.message : 'Export failed');

@@ -102,7 +102,12 @@ export const useExportStore = create<ExportState>((set) => ({
   })),
 
   completeAll: () => set({isRendering: false}),
-  failAll: (_error) => set({isRendering: false}),
+  failAll: (error) => set((s) => ({
+    isRendering: false,
+    variants: s.variants.map((v) =>
+      v.status !== 'completed' ? {...v, status: 'failed' as const, error} : v,
+    ),
+  })),
 
   reset: () => set({
     settings: {...defaultSettings},
