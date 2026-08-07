@@ -166,11 +166,31 @@ export default function MobileExportSheet() {
           }
         }
 
-        // Mark remaining queued variants as rendering
+        // Distribute total progress across non-completed variants
+        // (API renders variants sequentially — divide total bar proportionally)
         const currentVariants = useExportStore.getState().variants;
-        for (const v of currentVariants) {
-          if (v.status === 'queued') {
-            updateVariantProgress(v.key, 0, 'rendering');
+        const notCompleted = currentVariants.filter(
+          (v) => v.status !== 'completed' && v.status !== 'failed',
+        );
+        if (notCompleted.length > 0 && status.progress !== undefined) {
+          const N = notCompleted.length;
+          for (let i = 0; i < N; i++) {
+            // Each variant is responsible for 100/N% of the total progress bar
+            const variantStart = (i / N) * 100;
+            const variantEnd = ((i + 1) / N) * 100;
+            const variantPct = Math.round(
+              Math.max(0, Math.min(100,
+                ((status.progress - variantStart) / (variantEnd - variantStart)) * 100,
+              )),
+            );
+            updateVariantProgress(notCompleted[i].key, variantPct, 'rendering');
+          }
+        } else {
+          // No progress yet — just mark queued ones as rendering
+          for (const v of currentVariants) {
+            if (v.status === 'queued') {
+              updateVariantProgress(v.key, 0, 'rendering');
+            }
           }
         }
 
