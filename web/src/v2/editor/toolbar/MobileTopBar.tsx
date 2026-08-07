@@ -12,7 +12,7 @@ import EditableTitle from '../panels/EditableTitle';
 import type {AspectRatio} from '@vary/v2/schema/document';
 import {ASPECT_RATIOS} from '@vary/v2/schema/document';
 
-export default function MobileTopBar() {
+export default function MobileTopBar({onBack}: {onBack?: () => void}) {
   const dispatch = useDocumentStore((s) => s.dispatch);
   const canUndo = useDocumentStore((s) => s.canUndo);
   const canRedo = useDocumentStore((s) => s.canRedo);
@@ -25,7 +25,11 @@ export default function MobileTopBar() {
 
   const handleBack = () => {
     selectElement(null);
-    window.history.back();
+    if (onBack) {
+      onBack();
+    } else {
+      window.history.back();
+    }
   };
 
   return (
@@ -39,7 +43,7 @@ export default function MobileTopBar() {
       gap: 2,
     }}>
       {/* Back */}
-      <TopBtn onClick={handleBack} title="Back" style={{color: '#F87171'}}>✕</TopBtn>
+      <TopBtn onClick={handleBack} title="Back to projects">←</TopBtn>
 
       {/* Project name */}
       <EditableTitle />

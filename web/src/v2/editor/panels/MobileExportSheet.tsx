@@ -13,18 +13,20 @@
  * 6. Downloads section (visible when render has completed outputs)
  */
 
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useMemo, useRef} from 'react';
 import {createPortal} from 'react-dom';
 import {useEditorStore} from '../../stores/editorStore';
 import {useDocumentStore} from '../../stores/documentStore';
 import {useMergeDataStore} from '../../stores/mergeDataStore';
 import {useExportStore, computeRowIndices} from '../../stores/exportStore';
+import {validateMergeTagCoverage} from '../../stores/mergeValidation';
 import {apiClient} from '../../../api/client';
 import {ASPECT_DIMENSIONS} from '@vary/v2/schema/document';
 import type {AspectRatio} from '@vary/v2/schema/document';
 import {
   AspectRatioSection,
   RowSelectionSection,
+  ValidationWarnings,
   ExportButtonSection,
   ProgressSection,
   DownloadsSection,
@@ -56,8 +58,23 @@ export default function MobileExportSheet() {
   const completeAll = useExportStore((s) => s.completeAll);
   const failAll = useExportStore((s) => s.failAll);
 
+  // Merge data for validation
+  const mergeHeaders = useMergeDataStore((s) => s.headers);
+  const mergeColumnMapping = useMergeDataStore((s) => s.columnMapping);
+
   const selectedRowIndices = computeRowIndices(settings, totalRows);
   const totalVariants = settings.selectedRatios.length * (hasData ? selectedRowIndices.length : 1);
+
+  // ─── Merge tag validation ────────────────────────────────────────
+
+  const validationWarnings = useMemo(() => {
+    if (!open || !hasData) return [];
+    return validateMergeTagCoverage(v2doc, {
+      rows: mergeRows,
+      headers: mergeHeaders,
+      columnMapping: mergeColumnMapping,
+    });
+  }, [open, v2doc, mergeRows, mergeHeaders, mergeColumnMapping, hasData]);
 
   // ─── Polling ref (for cleanup on close) ─────────────────────────
   const pollRef = useRef<number | null>(null);
@@ -111,9 +128,26 @@ export default function MobileExportSheet() {
     // Build template from document
     const template = buildTemplateFromDocument(v2doc);
 
-    // Build variants array for API (row data)
+    // Build variants array for API (pre-resolve merge tags to data keyed
+    // by tagId + tagKey so V2Native can resolve both BindableText tokens
+    // and plain {{key}} strings regardless of CSV column casing).
+    const tags = v2doc.mergeTags ?? [];
     const apiVariants = hasData
-      ? selectedRowIndices.map((rowIdx) => mergeRows[rowIdx])
+      ? selectedRowIndices.map((rowIdx) => {
+          const resolved = useMergeDataStore.getState().getResolvedValues(rowIdx, tags);
+          const flat: Record<string, string> = {};
+          // Copy all resolved tag values (keyed by tagId)
+          for (const [k, v] of Object.entries(resolved)) {
+            flat[k] = String(v ?? '');
+          }
+          // Also add tag key → value for plain-string {{tag}} regex resolution
+          for (const tag of tags) {
+            if (resolved[tag.id] !== undefined) {
+              flat[tag.key] = String(resolved[tag.id]);
+            }
+          }
+          return flat;
+        })
       : [{}];
 
     try {
@@ -269,6 +303,11 @@ export default function MobileExportSheet() {
             onRangeToChange={setRangeTo}
           />
 
+          {/* 2.5 Merge Tag Validation */}
+          {hasData && (
+            <ValidationWarnings warnings={validationWarnings} />
+          )}
+
           {/* 3. Export Button */}
           <ExportButtonSection
             onClick={handleExport}
@@ -306,6 +345,7 @@ function buildTemplateFromDocument(document: any): Record<string, unknown> {
   return {
     document,  // V2Native reads the raw V2Document
     data: {},
+    mergeTags: document.mergeTags ?? [],  // tag definitions for API-side resolution
     width: 1920,
     height: 1080,
     fps: document.fps ?? 30,

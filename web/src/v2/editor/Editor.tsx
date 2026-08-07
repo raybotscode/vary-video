@@ -48,11 +48,13 @@ import DataGallery from './galleries/DataGallery';
 interface EditorProps {
   document: V2Document;
   onDocumentChange?: (doc: V2Document) => void;
+  onBack?: () => void;
 }
 
 export default function Editor({
   document: initialDocument,
   onDocumentChange,
+  onBack,
 }: EditorProps) {
   const loadDocument = useDocumentStore((s) => s.loadDocument);
   const aspectRatio = useEditorStore((s) => s.aspectRatio);
@@ -161,10 +163,10 @@ export default function Editor({
       {/* ── Desktop: EditorToolbar ── */}
       {/* ── Mobile: MobileTopBar   ── */}
       <div className="desktop-toolbar">
-        <EditorToolbar />
+        <EditorToolbar onBack={onBack} />
       </div>
       <div className="mobile-topbar" style={{display: 'none'}}>
-        <MobileTopBar />
+        <MobileTopBar onBack={onBack} />
       </div>
 
       {/* ── Main content area ── */}

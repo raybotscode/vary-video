@@ -47,7 +47,7 @@ export default function TextRenderer({element, scale, isEditing, onCommitText, o
         textAlign: props.textAlign as React.CSSProperties['textAlign'],
         textTransform: props.textTransform === 'none' ? undefined : props.textTransform,
         whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
         textShadow: props.color === '#FFFFFF' ? '0 1px 3px rgba(0,0,0,0.3)' : undefined,
         backgroundColor: props.backgroundColor ?? undefined,
         padding: props.padding ? `${props.padding * scale}px` : undefined,

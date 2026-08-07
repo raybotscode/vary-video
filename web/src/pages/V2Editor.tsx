@@ -1,153 +1,130 @@
 /**
- * V2 Editor Page — standalone test route for the new Zustand-based editor.
+ * V2 Editor Page — two-view orchestrator.
  *
- * Creates a sample document with a few elements and renders the full
- * editor shell (layers, stage, properties, toolbar).
+ * View 1 (projects): V2ProjectsDashboard — list saved projects, create new.
+ * View 2 (editor):   Full V2 editor with auto-save back to localStorage.
+ *
+ * Auto-save: reads directly from the document store every 3 seconds.
+ * The Editor manages its own document state via Zustand — this page
+ * never stores the document in React state to avoid re-render loops.
  */
 
+import {useState, useCallback, useEffect, useRef} from 'react';
 import {Editor, createEmptyDocument} from '../v2';
 import type {V2Document} from '@vary/v2/schema/document';
-
-/** Create a sample document with demo elements. */
-function createSampleDocument(): V2Document {
-  const doc = createEmptyDocument();
-  const scene = doc.scenes[0];
-
-  scene.elements = [
-    {
-      id: 'text-title',
-      type: 'text',
-      name: 'Title',
-      visible: true,
-      locked: false,
-      timing: {startFrame: 0, endFrame: null},
-      transform: {
-        x: 0.5, y: 0.35, width: 0.7, height: null,
-        rotation: 0, anchorX: 0.5, anchorY: 0.5,
-        zIndex: 20, opacity: 1,
-      },
-      responsiveOverrides: {},
-      props: {
-        content: 'Welcome to Vary.video v2',
-        fontFamily: 'Inter',
-        fontSize: 64,
-        fontWeight: 700,
-        fontStyle: 'normal',
-        lineHeight: 1.2,
-        letterSpacing: 0,
-        color: '#1A365D',
-        textAlign: 'center',
-        verticalAlign: 'middle',
-        textTransform: 'none',
-        maxLines: null,
-        backgroundColor: null,
-        padding: 0,
-        borderRadius: 0,
-      },
-      animation: {},
-    },
-    {
-      id: 'text-subtitle',
-      type: 'text',
-      name: 'Subtitle',
-      visible: true,
-      locked: false,
-      timing: {startFrame: 0, endFrame: null},
-      transform: {
-        x: 0.5, y: 0.5, width: 0.5, height: null,
-        rotation: 0, anchorX: 0.5, anchorY: 0.5,
-        zIndex: 15, opacity: 1,
-      },
-      responsiveOverrides: {},
-      props: {
-        content: 'Drag, resize, and style elements with our new editor',
-        fontFamily: 'Inter',
-        fontSize: 28,
-        fontWeight: 400,
-        fontStyle: 'normal',
-        lineHeight: 1.5,
-        letterSpacing: 0,
-        color: '#4A5568',
-        textAlign: 'center',
-        verticalAlign: 'middle',
-        textTransform: 'none',
-        maxLines: null,
-        backgroundColor: null,
-        padding: 0,
-        borderRadius: 0,
-      },
-      animation: {},
-    },
-    {
-      id: 'shape-accent',
-      type: 'shape',
-      name: 'Accent Bar',
-      visible: true,
-      locked: false,
-      timing: {startFrame: 0, endFrame: null},
-      transform: {
-        x: 0.5, y: 0.65, width: 0.15, height: 0.008,
-        rotation: 0, anchorX: 0.5, anchorY: 0.5,
-        zIndex: 10, opacity: 1,
-      },
-      responsiveOverrides: {},
-      props: {
-        shapeType: 'rectangle',
-        fill: '#3182CE',
-        stroke: null,
-        strokeWidth: 0,
-        borderRadius: 4,
-      },
-      animation: {},
-    },
-    {
-      id: 'text-hint',
-      type: 'text',
-      name: 'Hint',
-      visible: true,
-      locked: false,
-      timing: {startFrame: 0, endFrame: null},
-      transform: {
-        x: 0.5, y: 0.75, width: 0.6, height: null,
-        rotation: 0, anchorX: 0.5, anchorY: 0.5,
-        zIndex: 5, opacity: 0.7,
-      },
-      responsiveOverrides: {},
-      props: {
-        content: 'Click an element to edit · Arrow keys to nudge · Del to delete · Ctrl+Z to undo',
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fontWeight: 400,
-        fontStyle: 'normal',
-        lineHeight: 1.5,
-        letterSpacing: 0,
-        color: '#718096',
-        textAlign: 'center',
-        verticalAlign: 'middle',
-        textTransform: 'none',
-        maxLines: null,
-        backgroundColor: null,
-        padding: 0,
-        borderRadius: 0,
-      },
-      animation: {},
-    },
-  ];
-
-  return doc;
-}
+import {useV2ProjectStore} from '../v2/stores/projectStore';
+import {useDocumentStore} from '../v2/stores/documentStore';
+import V2ProjectsDashboard from '../v2/editor/V2ProjectsDashboard';
 
 export default function V2EditorPage() {
-  const sampleDoc = createSampleDocument();
+  const [view, setView] = useState<'projects' | 'editor'>('projects');
+
+  const saveProject = useV2ProjectStore((s) => s.saveProject);
+  const loadProject = useV2ProjectStore((s) => s.loadProject);
+  const setCurrentProject = useV2ProjectStore((s) => s.setCurrentProject);
+
+  // Track the current project ID in a ref (not state, to avoid re-renders)
+  const projectIdRef = useRef<string | null>(null);
+  // Track whether the document has been explicitly loaded by user action.
+  // Only save when dirty — prevents saving the store's initial empty doc.
+  const dirtyRef = useRef(false);
+
+  // ─── Auto-save (reads from document store directly) ─────────────
+
+  const saveIntervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+
+  const startAutoSave = useCallback(() => {
+    if (saveIntervalRef.current) clearInterval(saveIntervalRef.current);
+    saveIntervalRef.current = setInterval(() => {
+      if (!dirtyRef.current) return;
+      const doc = useDocumentStore.getState().document;
+      if (doc) saveProject(doc);
+    }, 3000);
+  }, [saveProject]);
+
+  const flushSave = useCallback(() => {
+    if (!dirtyRef.current) return;
+    const doc = useDocumentStore.getState().document;
+    if (doc) saveProject(doc);
+  }, [saveProject]);
+
+  const stopAutoSave = useCallback(() => {
+    if (saveIntervalRef.current) {
+      clearInterval(saveIntervalRef.current);
+      saveIntervalRef.current = undefined;
+    }
+  }, []);
+
+  // Start auto-save when entering editor, stop when leaving
+  useEffect(() => {
+    if (view === 'editor') {
+      startAutoSave();
+    } else {
+      stopAutoSave();
+    }
+    return () => {
+      if (saveIntervalRef.current) clearInterval(saveIntervalRef.current);
+    };
+  }, [view, startAutoSave, stopAutoSave]);
+
+  // ─── Navigation ──────────────────────────────────────────────────
+
+  const handleNewProject = useCallback(() => {
+    const doc = createEmptyDocument();
+    doc.name = 'Untitled';
+    projectIdRef.current = null;
+    dirtyRef.current = true;
+    // Load the document into the editor store
+    const loadDoc = useDocumentStore.getState().loadDocument;
+    loadDoc(doc);
+    setCurrentProject(null);
+    setView('editor');
+  }, [setCurrentProject]);
+
+  const handleEditProject = useCallback(
+    (projectId: string) => {
+      const doc = loadProject(projectId);
+      if (doc) {
+        projectIdRef.current = projectId;
+        dirtyRef.current = true;
+        const loadDoc = useDocumentStore.getState().loadDocument;
+        loadDoc(doc);
+        setCurrentProject(projectId);
+        setView('editor');
+      }
+    },
+    [loadProject, setCurrentProject],
+  );
+
+  const handleBackToProjects = useCallback(() => {
+    flushSave();
+    stopAutoSave();
+    dirtyRef.current = false;
+    projectIdRef.current = null;
+    setView('projects');
+  }, [flushSave, stopAutoSave]);
+
+  // ─── Render ──────────────────────────────────────────────────────
+
+  // Read document for editor view (hook must be before any conditional return)
+  const editorDoc = useDocumentStore((s) => s.document);
+
+  if (view === 'projects') {
+    return (
+      <div style={{position: 'fixed', inset: 0, zIndex: 9999}}>
+        <V2ProjectsDashboard
+          onNewProject={handleNewProject}
+          onEditProject={handleEditProject}
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{position: 'fixed', inset: 0, zIndex: 9999}}>
       <Editor
-        document={sampleDoc}
-        aspectRatio="16:9"
-        onDocumentChange={(doc) => {
-          console.log('Document updated:', doc.scenes[0].elements.length, 'elements');
-        }}
+        document={editorDoc}
+        onBack={handleBackToProjects}
       />
     </div>
   );

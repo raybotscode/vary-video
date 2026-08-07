@@ -5,7 +5,7 @@
 import {useDocumentStore} from '../../stores/documentStore';
 import {useEditorStore} from '../../stores/editorStore';
 
-export default function EditorToolbar() {
+export default function EditorToolbar({onBack}: {onBack?: () => void}) {
   const dispatch = useDocumentStore((s) => s.dispatch);
   const canUndo = useDocumentStore((s) => s.canUndo);
   const canRedo = useDocumentStore((s) => s.canRedo);
@@ -26,6 +26,9 @@ export default function EditorToolbar() {
       flexShrink: 0,
     }}>
       <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+        {onBack && (
+          <button onClick={onBack} style={{...btnStyle, fontSize: 16, padding: '4px 8px'}} title="Back to projects">←</button>
+        )}
         <span style={{color: '#fff', fontSize: 14, fontWeight: 600}}>Vary.video</span>
         <span style={{color: '#6B7280', fontSize: 11}}>v2 Editor</span>
       </div>

@@ -64,13 +64,30 @@ function mapV2PresetToRemotion(preset: string, direction: 'in' | 'out'): string 
 // ─── Merge Tag Resolution ──────────────────────────────────────────
 
 /**
+ * Build a case-insensitive lookup map from the data.
+ * This ensures {{Age}} matches data["age"] regardless of CSV column casing.
+ */
+function buildLookup(data: Record<string, string>): Record<string, string> {
+  const lookup: Record<string, string> = {};
+  for (const [k, v] of Object.entries(data)) {
+    lookup[k.toLowerCase()] = v;
+  }
+  return lookup;
+}
+
+/**
  * Resolve element content to a display string.
  * Handles both plain strings and BindableText token arrays.
  * Merge tags {{key}} in plain strings are resolved against data.
  */
 function resolveContent(content: unknown, data: Record<string, string>): string {
+  const lookup = buildLookup(data);
+
   if (typeof content === 'string') {
-    return content.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] ?? `{{${key}}}`);
+    return content.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+      const lc = (key as string).toLowerCase();
+      return lookup[lc] ?? `{{${key}}}`;
+    });
   }
   // BindableText
   if (typeof content === 'object' && content !== null && '_type' in content) {
@@ -79,11 +96,14 @@ function resolveContent(content: unknown, data: Record<string, string>): string 
       return bt.tokens
         .map((t) => {
           if (t._type === 'literal') return t.text ?? '';
-          // tag token: resolve via tagId → key lookup (data keys are tag keys)
+          // tag token: resolve via tagId → key lookup, with case-insensitive fallback
           if (t._type === 'tag' && t.tagId) {
-            // Find the key from tagId → try matching in data
-            const tagKey = t.raw?.replace(/^\{\{|\}\}$/g, '') ?? t.tagId;
-            return data[tagKey] ?? data[t.tagId] ?? t.raw ?? '';
+            const tagKey = t.raw?.replace(/^\{\{|\\}\}$/g, '') ?? t.tagId;
+            return data[tagKey]
+              ?? data[t.tagId]
+              ?? lookup[tagKey.toLowerCase()]
+              ?? lookup[t.tagId.toLowerCase()]
+              ?? t.raw ?? '';
           }
           return '';
         })
@@ -97,12 +117,16 @@ function resolveContent(content: unknown, data: Record<string, string>): string 
 
 /** Resolve a BindableValue or plain string to a resolved string. */
 function resolveValue(value: unknown, data: Record<string, string>): string {
+  const lookup = buildLookup(data);
+
   if (typeof value === 'string') return value;
   if (typeof value === 'object' && value !== null && '_type' in value) {
     const bv = value as {_type: string; value?: unknown; tagId?: string; fallback?: unknown};
     if (bv._type === 'literal') return String(bv.value ?? '');
     if (bv._type === 'tag' && bv.tagId) {
-      return data[bv.tagId] ?? String(bv.fallback ?? '');
+      return data[bv.tagId]
+        ?? lookup[bv.tagId.toLowerCase()]
+        ?? String(bv.fallback ?? '');
     }
   }
   return String(value ?? '');
@@ -220,7 +244,7 @@ const TextElementView: React.FC<{element: V2Element; data: Record<string, string
         textAlign,
         textTransform: textTransform as React.CSSProperties['textTransform'],
         whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
         backgroundColor: bgColor ?? undefined,
         padding: padding > 0 ? padding : undefined,
         borderRadius: borderRadius > 0 ? borderRadius : undefined,

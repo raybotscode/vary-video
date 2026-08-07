@@ -8,6 +8,8 @@
 import type {AspectRatio} from '@vary/v2/schema/document';
 import {ASPECT_DIMENSIONS} from '@vary/v2/schema/document';
 import type {RowSelectionMode, VariantProgress} from '../../stores/exportStore';
+import type {MergeTagWarning} from '../../stores/mergeValidation';
+import {countWarnings} from '../../stores/mergeValidation';
 import {apiClient} from '../../../api/client';
 
 // ─── Aspect Ratio Section ────────────────────────────────────────
@@ -323,6 +325,77 @@ function Section({label, subtitle, children}: {
       </div>
       {children}
     </div>
+  );
+}
+
+// ─── Validation Warnings Section ──────────────────────────────────
+
+interface ValidationWarningsProps {
+  warnings: MergeTagWarning[];
+  onDismiss?: () => void;
+}
+
+export function ValidationWarnings({warnings, onDismiss}: ValidationWarningsProps) {
+  if (warnings.length === 0) return null;
+
+  const counts = countWarnings(warnings);
+  const hasErrors = counts.errors > 0;
+
+  return (
+    <Section
+      label={hasErrors ? 'Export Warnings' : 'Data Checks'}
+      subtitle={`${counts.errors + counts.warnings} issue${counts.errors + counts.warnings !== 1 ? 's' : ''}`}
+    >
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 4,
+        background: hasErrors ? '#3B1E1E' : '#2D2818',
+        borderRadius: 8, padding: 6, border: `1px solid ${hasErrors ? '#E53E3E' : '#B7791F'}`,
+      }}>
+        {warnings.slice(0, 5).map((w, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8,
+            padding: '6px 8px', borderRadius: 4,
+            background: w.severity === 'error' ? 'rgba(229,62,62,0.1)' : 'rgba(183,121,31,0.08)',
+          }}>
+            <span style={{
+              fontSize: 12, flexShrink: 0, marginTop: 1,
+              color: w.severity === 'error' ? '#FC8181' : '#FBD38D',
+            }}>
+              {w.severity === 'error' ? '✕' : '⚠'}
+            </span>
+            <div style={{flex: 1}}>
+              <div style={{
+                color: w.severity === 'error' ? '#FCA5A5' : '#FBD38D',
+                fontSize: 11, fontWeight: 600, lineHeight: 1.4,
+              }}>
+                {w.message}
+              </div>
+              {w.suggestion && (
+                <div style={{color: '#9CA3AF', fontSize: 10, marginTop: 2, lineHeight: 1.3}}>
+                  {w.suggestion}
+                </div>
+              )}
+              {w.affectedElements && w.affectedElements.length > 0 && (
+                <div style={{color: '#6B7280', fontSize: 9, marginTop: 2}}>
+                  In: {w.affectedElements.join(', ')}
+                </div>
+              )}
+            </div>
+            <span style={{
+              fontSize: 10, color: '#6B7280', flexShrink: 0,
+              background: '#1A202C', padding: '2px 6px', borderRadius: 3,
+            }}>
+              {`{{${w.tagKey}}}`}
+            </span>
+          </div>
+        ))}
+        {warnings.length > 3 && (
+          <div style={{color: '#6B7280', fontSize: 10, textAlign: 'center', padding: '4px 0'}}>
+            +{warnings.length - 5} more issue{warnings.length - 5 !== 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+    </Section>
   );
 }
 
