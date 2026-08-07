@@ -40,3 +40,10 @@ export {
   webinarPromoSchema,
 } from './WebinarPromo/schema';
 export type {WebinarPromoProps} from './WebinarPromo/schema';
+export {V2Native} from './V2Native';
+export {
+  v2NativeSchema,
+  getDefaultV2NativeProps,
+  getV2DocumentDuration,
+} from './V2Native';
+export type {V2NativeProps} from './V2Native';

@@ -1,6 +1,8 @@
 import {z, type ZodType} from 'zod';
 import {templateCapabilities} from '../shared/capabilities/templates';
 import {sceneBlockPlayerSchema as sceneBlockPlayerTemplateSchema} from '../compositions/SceneBlockPlayer/schema';
+import {v2NativeSchema} from '../compositions/V2Native/schema';
+import {getDefaultV2NativeProps} from '../compositions/V2Native/schema';
 import {
   defaultInsuranceAdProps,
   insuranceAdSchema,
@@ -321,6 +323,9 @@ export const getBlockSequence = (templateId: string): string[] =>
 export const getSchemaForTemplate = (id: string): ZodType<any> => {
   if (id === 'SceneBlockPlayer') {
     return sceneBlockPlayerTemplateSchema;
+  }
+  if (id === 'V2Native') {
+    return v2NativeSchema;
   }
 
   return getTemplate(id).schema;

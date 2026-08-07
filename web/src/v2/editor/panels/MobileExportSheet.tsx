@@ -117,7 +117,7 @@ export default function MobileExportSheet() {
 
     try {
       const response = await apiClient.startBatchRender({
-        compositionId: 'SceneBlockPlayer',
+        compositionId: 'V2Native',
         template,
         variants: apiVariants,
         formats: settings.selectedRatios as any[],
@@ -275,47 +275,14 @@ export default function MobileExportSheet() {
   return createPortal(content, document.body);
 }
 
-// ─── Template Builder (stub — will be replaced by V2NativeComposition) ──
+// ─── Template Builder (V2Native — passes V2Document directly) ──
 
 function buildTemplateFromDocument(document: any): Record<string, unknown> {
-  const scene = document.scenes?.[0];
-  if (!scene) return {blocks: []};
-
   return {
-    blocks: scene.elements.map((el: any) => ({
-      blockId: blockMap[el.type] ?? 'text-block',
-      content: el.type === 'text'
-        ? {text: typeof el.props.content === 'string' ? el.props.content : ''}
-        : el.type === 'image'
-          ? {imageUrl: el.props.src ?? ''}
-          : {},
-      layout: {
-        x: el.transform.x, y: el.transform.y,
-        width: el.transform.width ?? 0.3,
-        height: el.transform.height ?? 0.1,
-        zIndex: el.transform.zIndex,
-        rotation: el.transform.rotation,
-        opacity: el.transform.opacity,
-      },
-    })),
-    brandSettings: {
-      brandColor: '#1A365D',
-      secondaryColor: '#3182CE',
-      accentColor: '#FF6B5B',
-      backgroundType: scene.background?.type ?? 'solid',
-      backgroundColor: scene.background?.color ?? scene.background?.color1 ?? '#F7FAFC',
-    },
+    document,  // V2Native reads the raw V2Document
+    data: {},
+    width: 1920,
+    height: 1080,
     fps: document.fps ?? 30,
-    backgroundType: scene.background?.type ?? 'solid',
-    backgroundColor: scene.background?.color ?? scene.background?.color1 ?? '#0F172A',
-    logoUrl: '',
-    width: ASPECT_DIMENSIONS['16:9'].width,
-    height: ASPECT_DIMENSIONS['16:9'].height,
   };
 }
-
-const blockMap: Record<string, string> = {
-  text: 'text-block',
-  image: 'image-block',
-  shape: 'shape-block',
-};

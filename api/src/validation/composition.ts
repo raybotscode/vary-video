@@ -9,6 +9,7 @@ import {getAllTemplates, getSchemaForTemplate} from '../../../src/templates/regi
 export const knownCompositionIds = [
   ...getAllTemplates().map((template) => template.id),
   'SceneBlockPlayer',
+  'V2Native',
 ];
 
 export const isKnownCompositionId = (id: string): boolean =>
