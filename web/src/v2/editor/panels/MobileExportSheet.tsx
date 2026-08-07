@@ -47,6 +47,7 @@ export default function MobileExportSheet() {
   const setRangeTo = useExportStore((s) => s.setRangeTo);
   const isRendering = useExportStore((s) => s.isRendering);
   const variants = useExportStore((s) => s.variants);
+  const jobProgress = useExportStore((s) => s.jobProgress);
   const jobId = useExportStore((s) => s.jobId);
   const startRender = useExportStore((s) => s.startRender);
   const updateVariantProgress = useExportStore((s) => s.updateVariantProgress);
@@ -149,32 +150,27 @@ export default function MobileExportSheet() {
       try {
         const status = await apiClient.getRenderStatus(currentJobId);
 
-        // Map downloads back to variant keys
-        if (status.downloads && status.downloadLabels) {
+        // Store overall job progress from API
+        if (status.progress !== undefined) {
+          useExportStore.setState({jobProgress: status.progress});
+        }
+
+        // Map downloads back to variants by index (order is stable)
+        if (status.downloads && status.downloads.length > 0) {
           const currentVariants = useExportStore.getState().variants;
           for (let i = 0; i < status.downloads.length; i++) {
             const downloadUrl = status.downloads[i];
-            const label = status.downloadLabels[i] ?? `Variant ${i}`;
-            // Find matching variant
-            const matching = currentVariants.find((v) =>
-              v.label === label || v.key === label,
-            );
-            if (matching && matching.status !== 'completed') {
-              completeVariant(matching.key, downloadUrl);
+            if (currentVariants[i] && currentVariants[i].status !== 'completed') {
+              completeVariant(currentVariants[i].key, downloadUrl);
             }
           }
         }
 
-        // Update progress for in-progress variants
-        if (status.progress !== undefined) {
-          const currentVariants = useExportStore.getState().variants;
-          const notCompleted = currentVariants.filter((v) => v.status !== 'completed' && v.status !== 'failed');
-          // Distribute progress across remaining variants
-          if (notCompleted.length > 0) {
-            const perVariant = Math.round(status.progress / notCompleted.length);
-            for (const v of notCompleted) {
-              updateVariantProgress(v.key, Math.min(perVariant, 99), 'rendering');
-            }
+        // Mark remaining queued variants as rendering
+        const currentVariants = useExportStore.getState().variants;
+        for (const v of currentVariants) {
+          if (v.status === 'queued') {
+            updateVariantProgress(v.key, 0, 'rendering');
           }
         }
 
@@ -262,7 +258,7 @@ export default function MobileExportSheet() {
 
           {/* 4. Progress Section */}
           {variants.length > 0 && (
-            <ProgressSection variants={variants} jobId={jobId} isRendering={isRendering} />
+            <ProgressSection variants={variants} jobId={jobId} jobProgress={jobProgress} isRendering={isRendering} />
           )}
 
           {/* 5. Downloads Section */}

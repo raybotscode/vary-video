@@ -38,6 +38,9 @@ export interface ExportState {
   // Progress per variant
   variants: VariantProgress[];
 
+  // Overall job progress from API (0-100)
+  jobProgress: number;
+
   // Actions
   setSettings: (settings: Partial<ExportSettings>) => void;
   setSelectedRatios: (ratios: AspectRatio[]) => void;
@@ -69,6 +72,7 @@ export const useExportStore = create<ExportState>((set) => ({
   jobId: null,
   isRendering: false,
   variants: [],
+  jobProgress: 0,
 
   setSettings: (partial) => set((s) => ({settings: {...s.settings, ...partial}})),
 
@@ -81,7 +85,7 @@ export const useExportStore = create<ExportState>((set) => ({
   setRangeFrom: (rangeFrom) => set((s) => ({settings: {...s.settings, rangeFrom}})),
   setRangeTo: (rangeTo) => set((s) => ({settings: {...s.settings, rangeTo}})),
 
-  startRender: (jobId, variants) => set({jobId, isRendering: true, variants}),
+  startRender: (jobId, variants) => set({jobId, isRendering: true, variants, jobProgress: 0}),
 
   updateVariantProgress: (key, progress, status) => set((s) => ({
     variants: s.variants.map((v) =>
@@ -101,9 +105,10 @@ export const useExportStore = create<ExportState>((set) => ({
     ),
   })),
 
-  completeAll: () => set({isRendering: false}),
+  completeAll: () => set({isRendering: false, jobProgress: 100}),
   failAll: (error) => set((s) => ({
     isRendering: false,
+    jobProgress: s.jobProgress,
     variants: s.variants.map((v) =>
       v.status !== 'completed' ? {...v, status: 'failed' as const, error} : v,
     ),
@@ -114,6 +119,7 @@ export const useExportStore = create<ExportState>((set) => ({
     jobId: null,
     isRendering: false,
     variants: [],
+    jobProgress: 0,
   }),
 }));
 

@@ -191,14 +191,15 @@ export function ExportButtonSection({onClick, disabled, totalVariants}: ExportBu
 interface ProgressSectionProps {
   variants: VariantProgress[];
   jobId: string | null;
+  jobProgress: number;
   isRendering: boolean;
 }
 
-export function ProgressSection({variants, jobId, isRendering}: ProgressSectionProps) {
+export function ProgressSection({variants, jobId, jobProgress, isRendering}: ProgressSectionProps) {
   const completed = variants.filter((v) => v.status === 'completed').length;
   const failed = variants.filter((v) => v.status === 'failed').length;
   const total = variants.length;
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const pct = jobProgress > 0 ? jobProgress : (total > 0 ? Math.round((completed / total) * 100) : 0);
 
   return (
     <Section label="Rendering Progress" subtitle={jobId ? `Job: ${jobId.slice(0, 8)}…` : undefined}>
@@ -206,7 +207,7 @@ export function ProgressSection({variants, jobId, isRendering}: ProgressSectionP
       <div style={{marginBottom: 12}}>
         <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 4}}>
           <span style={{color: '#E2E8F0', fontSize: 12, fontWeight: 600}}>
-            {isRendering ? 'Rendering…' : completed === total ? 'Complete' : `${completed}/${total} done`}
+            {isRendering || jobProgress < 100 ? 'Rendering…' : completed === total ? 'Complete' : `${completed}/${total} done`}
           </span>
           <span style={{color: '#9CA3AF', fontSize: 11}}>{pct}%</span>
         </div>
