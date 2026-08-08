@@ -1,9 +1,11 @@
 /**
  * V2 Mobile Top Bar — compact toolbar for mobile (replaces desktop EditorToolbar).
  *
- * Layout: [✕ back] [↩ undo] [↪ redo] [🗑 del] [▶ play] [☰ layers]
+ * Layout: [✕ back] Untitled [↩] [↪] [⚙ tools]  …spacer…  [16:9] [⬇ export] [▶ play] [☰ layers]
  *
- * Always visible at the top of the mobile editor.
+ * The ⚙ button toggles the MobileToolsStrip (zoom/grid/snap/delete/duplicate)
+ * which replaces the SceneNavigator in the strip below. Tapping ⚙ again brings
+ * the SceneNavigator back.
  */
 
 import {useDocumentStore} from '../../stores/documentStore';
@@ -20,8 +22,10 @@ export default function MobileTopBar({onBack}: {onBack?: () => void}) {
   const selectElement = useEditorStore((s) => s.selectElement);
   const playing = useEditorStore((s) => s.playing);
   const togglePlayback = useEditorStore((s) => s.togglePlayback);
-  const openMobileSheet = useEditorStore((s) => s.openMobileSheet);
   const openMobileLayers = useEditorStore((s) => s.openMobileLayers);
+  const openExportPanel = useEditorStore((s) => s.openExportPanel);
+  const toolsPanelOpen = useEditorStore((s) => s.toolsPanelOpen);
+  const toggleToolsPanel = useEditorStore((s) => s.toggleToolsPanel);
 
   const handleBack = () => {
     selectElement(null);
@@ -38,9 +42,9 @@ export default function MobileTopBar({onBack}: {onBack?: () => void}) {
       background: '#1A202C',
       display: 'flex',
       alignItems: 'center',
-      padding: '0 4px',
+      padding: '0 2px',
       flexShrink: 0,
-      gap: 2,
+      gap: 0,
     }}>
       {/* Back */}
       <TopBtn onClick={handleBack} title="Back to projects">←</TopBtn>
@@ -52,32 +56,18 @@ export default function MobileTopBar({onBack}: {onBack?: () => void}) {
       <TopBtn onClick={() => dispatch({type: 'UNDO'})} disabled={!canUndo} title="Undo">↩</TopBtn>
       <TopBtn onClick={() => dispatch({type: 'REDO'})} disabled={!canRedo} title="Redo">↪</TopBtn>
 
-      {/* Delete */}
-      <TopBtn
-        onClick={() => {
-          if (selectedElementId) {
-            dispatch({type: 'DELETE_ELEMENT', elementId: selectedElementId});
-            selectElement(null);
-          }
-        }}
-        disabled={!selectedElementId}
-        title="Delete"
-      >🗑</TopBtn>
-
-      {/* Duplicate */}
-      <TopBtn
-        onClick={() => selectedElementId && dispatch({type: 'DUPLICATE_ELEMENT', elementId: selectedElementId})}
-        disabled={!selectedElementId}
-        title="Duplicate"
-      >⊕</TopBtn>
+      {/* ⚙ Tools toggle — blue when tools panel is open */}
+      <TopBtn onClick={toggleToolsPanel} title={toolsPanelOpen ? 'Show scenes' : 'Show tools'}
+        style={{color: toolsPanelOpen ? '#60A5FA' : '#9CA3AF', fontSize: 18}}>⚙</TopBtn>
 
       <div style={{flex: 1}} />
 
-      {/* Aspect ratio — single cycling button */}
+      {/* Aspect ratio */}
       <CyclingAspectRatioBtn />
 
       {/* Export */}
-      <ExportBtn />
+      <TopBtn onClick={openExportPanel} title="Export"
+        style={{color: '#34D399', fontWeight: 700}}>⬇</TopBtn>
 
       {/* Play */}
       <TopBtn onClick={togglePlayback} title={playing ? 'Pause' : 'Play'}
@@ -102,10 +92,10 @@ function TopBtn({onClick, disabled, children, title, style}: {
     <button onClick={onClick} disabled={disabled} title={title} style={{
       background: 'transparent', border: 'none',
       color: disabled ? '#4B5563' : '#D1D5DB',
-      fontSize: 18, cursor: disabled ? 'default' : 'pointer',
+      fontSize: 16, cursor: disabled ? 'default' : 'pointer',
       opacity: disabled ? 0.3 : 1,
-      padding: '6px 10px', borderRadius: 6,
-      minWidth: 40, minHeight: 40,
+      padding: '6px 6px', borderRadius: 6,
+      minWidth: 34, minHeight: 34,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       ...style,
     }}>{children}</button>
@@ -120,24 +110,14 @@ function CyclingAspectRatioBtn() {
   return (
     <button onClick={() => setAspectRatio(next)} title={`${aspectRatio} — tap for ${next}`} style={{
       background: '#1E3A5F', border: '1px solid #374151',
-      color: '#93C5FD', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-      padding: '4px 10px', borderRadius: 6,
-      minWidth: 44, minHeight: 32,
+      color: '#93C5FD', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+      padding: '3px 6px', borderRadius: 6,
+      minWidth: 38, minHeight: 28,
       whiteSpace: 'nowrap',
-      display: 'flex', alignItems: 'center', gap: 4,
+      display: 'flex', alignItems: 'center', gap: 2,
     }}>
-      <span style={{fontSize: 10, color: '#9CA3AF'}}>⇄</span>
+      <span style={{fontSize: 8, color: '#9CA3AF'}}>⇄</span>
       {aspectRatio}
     </button>
-  );
-}
-
-function ExportBtn() {
-  const openExportPanel = useEditorStore((s) => s.openExportPanel);
-  return (
-    <TopBtn onClick={openExportPanel} title="Export"
-      style={{color: '#34D399', fontWeight: 700}}>
-      ⬇
-    </TopBtn>
   );
 }

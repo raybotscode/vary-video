@@ -3,7 +3,7 @@ import type React from 'react';
 import type {Transform, V2Element} from '@vary/v2/schema/document';
 import type {EditorCommand} from '../../commands/types';
 import type {InteractionState} from '../../stores/editorStore';
-import {screenDeltaToNormalized, type StageRect} from '../../utils/coordinates';
+import {screenDeltaToNormalized, snapValueToGrid, type StageRect} from '../../utils/coordinates';
 
 interface UseDragOptions {
   elementId: string | null;
@@ -14,6 +14,8 @@ interface UseDragOptions {
   endDrag: () => void;
   dispatch: (command: EditorCommand) => void;
   getElement: (id: string) => V2Element | undefined;
+  snapToGrid?: boolean;
+  gridSize?: number;
 }
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
@@ -31,6 +33,8 @@ export function useDrag(opts: UseDragOptions): {
     endDrag,
     dispatch,
     getElement,
+    snapToGrid = false,
+    gridSize = 0.05,
   } = opts;
 
   const getDragPosition = useCallback((pointerX: number, pointerY: number) => {
@@ -42,12 +46,20 @@ export function useDrag(opts: UseDragOptions): {
       stageRect,
     );
 
+    let x = interaction.startTransform.x + dx;
+    let y = interaction.startTransform.y + dy;
+
+    if (snapToGrid) {
+      x = snapValueToGrid(x, gridSize);
+      y = snapValueToGrid(y, gridSize);
+    }
+
     return {
       elementId: interaction.elementId,
-      x: clamp01(interaction.startTransform.x + dx),
-      y: clamp01(interaction.startTransform.y + dy),
+      x: clamp01(x),
+      y: clamp01(y),
     };
-  }, [interaction, stageRect]);
+  }, [interaction, stageRect, snapToGrid, gridSize]);
 
   const handleDragStart = useCallback((e: React.PointerEvent, elementId: string) => {
     const element = getElement(elementId);

@@ -31,6 +31,8 @@ import {useDocumentStore} from '../stores/documentStore';
 import {useEditorStore} from '../stores/editorStore';
 import EditorToolbar from './toolbar/EditorToolbar';
 import MobileTopBar from './toolbar/MobileTopBar';
+import SceneNavigator from './scenes/SceneNavigator';
+import MobileToolsStrip from './scenes/MobileToolsStrip';
 import LayersPanel from './panels/LayersPanel';
 import StageViewport from './Stage';
 import PropertiesPanel from './panels/PropertiesPanel';
@@ -60,6 +62,8 @@ export default function Editor({
   const aspectRatio = useEditorStore((s) => s.aspectRatio);
   const document = useDocumentStore((s) => s.document);
   const dispatch = useDocumentStore((s) => s.dispatch);
+  const activeSceneIndex = useDocumentStore((s) => s.activeSceneIndex);
+  const setActiveSceneIndex = useDocumentStore((s) => s.setActiveSceneIndex);
   const selectedElementId = useEditorStore((s) => s.selectedElementId);
   const selectElement = useEditorStore((s) => s.selectElement);
   const playing = useEditorStore((s) => s.playing);
@@ -67,8 +71,9 @@ export default function Editor({
   const setCurrentFrame = useEditorStore((s) => s.setCurrentFrame);
   const activeGallery = useEditorStore((s) => s.activeGallery);
   const closeGallery = useEditorStore((s) => s.closeGallery);
+  const toolsPanelOpen = useEditorStore((s) => s.toolsPanelOpen);
 
-  // ─── Playback ticker ─────────────────────────────────────────
+  // ─── Playback ticker (multi-scene sequential) ──────────────
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
@@ -77,20 +82,39 @@ export default function Editor({
       return;
     }
     let lastTime = performance.now();
-    const fps = 30;
+    const fps = document.fps;
     const tick = (now: number) => {
       const dt = now - lastTime;
       const frameAdvance = Math.floor((dt / 1000) * fps);
       if (frameAdvance > 0) {
         lastTime = now;
-        const store = useEditorStore.getState();
-        setCurrentFrame(store.currentFrame + frameAdvance);
+        const editorState = useEditorStore.getState();
+        const docState = useDocumentStore.getState();
+        const scenes = docState.document.scenes;
+
+        let newFrame = editorState.currentFrame + frameAdvance;
+        const currentScene = scenes[docState.activeSceneIndex];
+
+        if (currentScene && newFrame >= currentScene.durationFrames) {
+          // Advance to next scene (or loop back to 0)
+          const nextIndex = (docState.activeSceneIndex + 1) % scenes.length;
+          newFrame = 0;
+          docState.setActiveSceneIndex(nextIndex);
+        }
+        setCurrentFrame(newFrame);
       }
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [playing, setCurrentFrame]);
+  }, [playing, setCurrentFrame, document.fps]);
+
+  // Reset currentFrame when user manually switches scenes (outside playback)
+  useEffect(() => {
+    if (!playing) {
+      setCurrentFrame(0);
+    }
+  }, [activeSceneIndex, playing, setCurrentFrame]);
 
   // Load initial document
   useEffect(() => {
@@ -132,6 +156,15 @@ export default function Editor({
         dispatch({type: 'UNDO'});
       } else if (e.key === 'Escape') {
         selectElement(null);
+      } else if (e.key === '[' && mod && e.shiftKey) {
+        // Ctrl+Shift+[ — previous scene
+        e.preventDefault();
+        if (activeSceneIndex > 0) setActiveSceneIndex(activeSceneIndex - 1);
+      } else if (e.key === ']' && mod && e.shiftKey) {
+        // Ctrl+Shift+] — next scene
+        e.preventDefault();
+        const scenesLen = document.scenes.length;
+        if (activeSceneIndex < scenesLen - 1) setActiveSceneIndex(activeSceneIndex + 1);
       } else if (selectedElementId) {
         const delta = e.shiftKey ? 0.05 : 0.01;
         if (e.key === 'ArrowUp') {
@@ -152,7 +185,7 @@ export default function Editor({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dispatch, selectedElementId, selectElement]);
+  }, [dispatch, selectedElementId, selectElement, activeSceneIndex, setActiveSceneIndex, document.scenes.length]);
 
   return (
     <div className="v2-editor-shell" style={{
@@ -167,6 +200,11 @@ export default function Editor({
       </div>
       <div className="mobile-topbar" style={{display: 'none'}}>
         <MobileTopBar onBack={onBack} />
+      </div>
+
+      {/* ── Scene Navigator / Mobile Tools Strip (toggle with ⚙) ── */}
+      <div className="scene-navigator">
+        {toolsPanelOpen ? <MobileToolsStrip /> : <SceneNavigator />}
       </div>
 
       {/* ── Main content area ── */}

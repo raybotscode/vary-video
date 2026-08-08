@@ -44,6 +44,9 @@ export default function StageViewport({aspectRatio, playbackKey, playing}: Stage
   const selectedElementId = useEditorStore((s) => s.selectedElementId);
   const selectElement = useEditorStore((s) => s.selectElement);
   const stageScale = useEditorStore((s) => s.stageScale);
+  const showGrid = useEditorStore((s) => s.showGrid);
+  const gridSize = useEditorStore((s) => s.gridSize);
+  const snapToGrid = useEditorStore((s) => s.snapToGrid);
   const startDrag = useEditorStore((s) => s.startDrag);
   const updateDrag = useEditorStore((s) => s.updateDrag);
   const endDrag = useEditorStore((s) => s.endDrag);
@@ -93,6 +96,8 @@ export default function StageViewport({aspectRatio, playbackKey, playing}: Stage
     endDrag,
     dispatch,
     getElement,
+    snapToGrid,
+    gridSize,
   });
 
   const resizeHandlers = useResize({
@@ -104,6 +109,8 @@ export default function StageViewport({aspectRatio, playbackKey, playing}: Stage
     endResize,
     dispatch,
     getElement,
+    snapToGrid,
+    gridSize,
   });
 
   const rotateHandlers = useRotate({
@@ -229,6 +236,18 @@ export default function StageViewport({aspectRatio, playbackKey, playing}: Stage
               position: 'absolute', inset: 0,
               background: `linear-gradient(${scene.background.angle}deg, ${scene.background.color1}, ${scene.background.color2})`,
             }} />
+          )}
+
+          {/* Grid overlay */}
+          {showGrid && (
+            <svg width="100%" height="100%" style={{position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0}}>
+              <defs>
+                <pattern id="v2-grid" width={`${gridSize * 100}%`} height={`${gridSize * 100}%`} patternUnits="userSpaceOnUse">
+                  <path d={`M ${gridSize * 100} 0 L 0 0 0 ${gridSize * 100}`} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#v2-grid)" />
+            </svg>
           )}
 
           {sortedElements.map((element) => (

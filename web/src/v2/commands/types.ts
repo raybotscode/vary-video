@@ -111,6 +111,48 @@ export interface SetSceneDurationCommand {
   durationFrames: number;
 }
 
+// ─── Scene CRUD ────────────────────────────────────────────────────────
+
+export interface AddSceneCommand {
+  type: 'ADD_SCENE';
+  /** Optional insertion index; defaults to after active scene */
+  afterIndex?: number;
+  /** Optional name for the new scene */
+  name?: string;
+}
+
+export interface DeleteSceneCommand {
+  type: 'DELETE_SCENE';
+  /** Index of scene to delete */
+  sceneIndex: number;
+}
+
+export interface DuplicateSceneCommand {
+  type: 'DUPLICATE_SCENE';
+  /** Index of scene to duplicate */
+  sceneIndex: number;
+}
+
+export interface MoveSceneCommand {
+  type: 'MOVE_SCENE';
+  /** Current index of scene */
+  sceneIndex: number;
+  /** Target index after reorder */
+  newIndex: number;
+}
+
+export interface SetSceneNameCommand {
+  type: 'SET_SCENE_NAME';
+  /** Index of scene to rename */
+  sceneIndex: number;
+  name: string;
+}
+
+export interface SetActiveSceneCommand {
+  type: 'SET_ACTIVE_SCENE';
+  sceneIndex: number;
+}
+
 // ─── Merge Tags ────────────────────────────────────────────────────
 
 export interface AddMergeTagCommand {
@@ -177,6 +219,14 @@ type BaseEditorCommand =
   | SetLockedCommand
   | SetSceneBackgroundCommand
   | SetSceneDurationCommand
+  // ─── Scene CRUD ───
+  | AddSceneCommand
+  | DeleteSceneCommand
+  | DuplicateSceneCommand
+  | MoveSceneCommand
+  | SetSceneNameCommand
+  | SetActiveSceneCommand
+  // ─── Merge Tags ───
   | AddMergeTagCommand
   | RemoveMergeTagCommand
   | UpdateMergeTagCommand

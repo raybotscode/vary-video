@@ -56,6 +56,8 @@ export interface EditorState {
   // ─── Mobile ─────────────────────────────────────────────────
   mobileSheetOpen: boolean;
   mobileLayersOpen: boolean;
+  /** Toggles the mobile tools strip (zoom/grid/snap/delete/duplicate) over the scene navigator */
+  toolsPanelOpen: boolean;
   activeGallery: string | null;
 
   // ─── Export ─────────────────────────────────────────────────
@@ -73,6 +75,11 @@ export interface EditorState {
   // ─── Merge Preview Toggles ───────────────────────────────────
   showMergeTags: boolean;
   showMergeData: boolean;
+
+  // ─── Grid & Snap ────────────────────────────────────────────
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
 
   // ─── Selection Actions ──────────────────────────────────────
   selectElement: (id: string | null) => void;
@@ -105,6 +112,8 @@ export interface EditorState {
   closeMobileSheet: () => void;
   openMobileLayers: () => void;
   closeMobileLayers: () => void;
+  /** Toggle the mobile tools strip (zoom/grid/snap/delete/duplicate) */
+  toggleToolsPanel: () => void;
   openGallery: (type: string) => void;
   closeGallery: () => void;
   openExportPanel: () => void;
@@ -119,6 +128,10 @@ export interface EditorState {
   // ─── Merge Preview Toggle Actions ─────────────────────────────
   toggleShowMergeTags: () => void;
   toggleShowMergeData: () => void;
+
+  // ─── Grid & Snap Actions ─────────────────────────────────────
+  toggleShowGrid: () => void;
+  toggleSnapToGrid: () => void;
 }
 
 const defaultInteraction: InteractionState = {
@@ -143,6 +156,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activePropertyGroup: null,
   mobileSheetOpen: false,
   mobileLayersOpen: false,
+  toolsPanelOpen: false,
   activeGallery: null,
   exportPanelOpen: false,
   playing: false,
@@ -151,6 +165,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   inlineEditElementId: null,
   showMergeTags: false,
   showMergeData: false,
+  showGrid: false,
+  snapToGrid: true,
+  gridSize: 0.05,
 
   // ─── Selection ──────────────────────────────────────────────
   selectElement: (id) => {
@@ -237,6 +254,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   closeMobileSheet: () => set({mobileSheetOpen: false}),
   openMobileLayers: () => set({mobileLayersOpen: true}),
   closeMobileLayers: () => set({mobileLayersOpen: false}),
+  toggleToolsPanel: () => set((s) => ({toolsPanelOpen: !s.toolsPanelOpen})),
   openGallery: (type) => set({activeGallery: type}),
   closeGallery: () => set({activeGallery: null}),
   openExportPanel: () => set({exportPanelOpen: true}),
@@ -257,4 +275,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // ─── Merge Preview Toggles ───────────────────────────────────
   toggleShowMergeTags: () => set((s) => ({showMergeTags: !s.showMergeTags})),
   toggleShowMergeData: () => set((s) => ({showMergeData: !s.showMergeData})),
+
+  // ─── Grid & Snap Toggles ─────────────────────────────────────
+  toggleShowGrid: () => set((s) => ({showGrid: !s.showGrid})),
+  toggleSnapToGrid: () => set((s) => ({snapToGrid: !s.snapToGrid})),
 }));

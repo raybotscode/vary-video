@@ -5,7 +5,7 @@
  * No side effects, no store access — just document transformations.
  */
 
-import type {V2Document, V2Element, MergeTag} from '@vary/v2/schema/document';
+import type {V2Document, V2Element, V2Scene, MergeTag} from '@vary/v2/schema/document';
 import {validateDocument, mergeTagSchema} from '@vary/v2/schema/document';
 import type {EditorCommand} from './types';
 import {getElement as getElementDef} from '@vary/v2/registry/elements';
@@ -293,6 +293,83 @@ export function applyCommand(
         },
         shouldRecord,
       };
+    }
+
+    // ─── Scene CRUD ─────────────────────────────────────────────
+
+    case 'ADD_SCENE': {
+      const insertAfter = command.afterIndex ?? activeSceneIndex;
+      const sceneNumber = document.scenes.length + 1;
+      const newScene: V2Scene = {
+        id: `scene-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: command.name ?? `Scene ${sceneNumber}`,
+        durationFrames: 90,
+        background: {type: 'gradient', color1: '#FFFFFF', color2: '#F7FAFC', angle: 135},
+        elements: [],
+      };
+      const scenes = [...document.scenes];
+      scenes.splice(insertAfter + 1, 0, newScene);
+      return {
+        document: {...document, scenes},
+        shouldRecord,
+      };
+    }
+
+    case 'DELETE_SCENE': {
+      if (document.scenes.length <= 1) return {document, shouldRecord: false};
+      const scenes = document.scenes.filter((_, i) => i !== command.sceneIndex);
+      return {
+        document: {...document, scenes},
+        shouldRecord,
+      };
+    }
+
+    case 'DUPLICATE_SCENE': {
+      const source = document.scenes[command.sceneIndex];
+      if (!source) return {document, shouldRecord: false};
+      const dupScene: V2Scene = {
+        ...structuredClone(source),
+        id: `scene-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: `${source.name} (copy)`,
+      };
+      const scenes = [...document.scenes];
+      scenes.splice(command.sceneIndex + 1, 0, dupScene);
+      return {
+        document: {...document, scenes},
+        shouldRecord,
+      };
+    }
+
+    case 'MOVE_SCENE': {
+      const scenes = [...document.scenes];
+      const [moved] = scenes.splice(command.sceneIndex, 1);
+      if (!moved) return {document, shouldRecord: false};
+      scenes.splice(command.newIndex, 0, moved);
+      return {
+        document: {...document, scenes},
+        shouldRecord,
+      };
+    }
+
+    case 'SET_SCENE_NAME': {
+      const trimmed = command.name.trim();
+      if (!trimmed) return {document, shouldRecord: false};
+      return {
+        document: {
+          ...document,
+          scenes: document.scenes.map((s, i) =>
+            i === command.sceneIndex ? {...s, name: trimmed} : s,
+          ),
+        },
+        shouldRecord,
+      };
+    }
+
+    case 'SET_ACTIVE_SCENE': {
+      if (command.sceneIndex < 0 || command.sceneIndex >= document.scenes.length) {
+        return {document, shouldRecord: false};
+      }
+      return {document, shouldRecord: false};
     }
 
     // ─── Merge Tags ────────────────────────────────────────────

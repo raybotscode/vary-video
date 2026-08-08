@@ -3,7 +3,7 @@ import type React from 'react';
 import type {Transform, V2Element} from '@vary/v2/schema/document';
 import type {EditorCommand} from '../../commands/types';
 import type {InteractionState, ResizeHandle} from '../../stores/editorStore';
-import {screenDeltaToNormalized, type StageRect} from '../../utils/coordinates';
+import {screenDeltaToNormalized, snapValueToGrid, type StageRect} from '../../utils/coordinates';
 
 interface UseResizeOptions {
   elementId: string | null;
@@ -20,6 +20,8 @@ interface UseResizeOptions {
   endResize: () => void;
   dispatch: (command: EditorCommand) => void;
   getElement: (id: string) => V2Element | undefined;
+  snapToGrid?: boolean;
+  gridSize?: number;
 }
 
 const MIN_SIZE = 0.02;
@@ -95,7 +97,20 @@ export function useResize(opts: UseResizeOptions): {
     endResize,
     dispatch,
     getElement,
+    snapToGrid = false,
+    gridSize = 0.05,
   } = opts;
+
+  const applySnap = useCallback((next: {elementId: string; x: number; y: number; width: number; height: number}) => {
+    if (!snapToGrid) return next;
+    return {
+      ...next,
+      x: snapValueToGrid(next.x, gridSize),
+      y: snapValueToGrid(next.y, gridSize),
+      width: snapValueToGrid(next.width, gridSize),
+      height: snapValueToGrid(next.height, gridSize),
+    };
+  }, [snapToGrid, gridSize]);
 
   const handleResizeStart = useCallback((
     e: React.PointerEvent,
@@ -115,26 +130,29 @@ export function useResize(opts: UseResizeOptions): {
     const next = calculateResize(interaction, stageRect, e.clientX, e.clientY);
     if (!next) return;
 
+    const snapped = applySnap(next);
     updateResize(e.clientX, e.clientY);
     dispatch({
       type: 'SET_POSITION',
-      elementId: next.elementId,
-      x: next.x,
-      y: next.y,
+      elementId: snapped.elementId,
+      x: snapped.x,
+      y: snapped.y,
       _ephemeral: true,
     });
     dispatch({
       type: 'SET_SIZE',
-      elementId: next.elementId,
-      width: next.width,
-      height: next.height,
+      elementId: snapped.elementId,
+      width: snapped.width,
+      height: snapped.height,
       _ephemeral: true,
     });
-  }, [dispatch, interaction, stageRect, updateResize]);
+  }, [dispatch, interaction, stageRect, updateResize, applySnap]);
 
   const handleResizeEnd = useCallback((e: React.PointerEvent) => {
     const next = calculateResize(interaction, stageRect, e.clientX, e.clientY);
     if (!next) return;
+
+    const snapped = applySnap(next);
 
     const target = e.currentTarget;
     if (target.hasPointerCapture(e.pointerId)) {
@@ -143,18 +161,18 @@ export function useResize(opts: UseResizeOptions): {
 
     dispatch({
       type: 'SET_POSITION',
-      elementId: next.elementId,
-      x: next.x,
-      y: next.y,
+      elementId: snapped.elementId,
+      x: snapped.x,
+      y: snapped.y,
     });
     dispatch({
       type: 'SET_SIZE',
-      elementId: next.elementId,
-      width: next.width,
-      height: next.height,
+      elementId: snapped.elementId,
+      width: snapped.width,
+      height: snapped.height,
     });
     endResize();
-  }, [dispatch, endResize, interaction, stageRect]);
+  }, [dispatch, endResize, interaction, stageRect, applySnap]);
 
   return {handleResizeStart, handleResizeMove, handleResizeEnd};
 }

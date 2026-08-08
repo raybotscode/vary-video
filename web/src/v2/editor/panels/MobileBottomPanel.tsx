@@ -239,6 +239,9 @@ function AddPanel() {
       dispatch({type: 'ADD_ELEMENT', elementType: 'image'});
     } else if (tool.action === 'shape') {
       dispatch({type: 'ADD_ELEMENT', elementType: 'shape'});
+    } else if (tool.label === 'Scenes') {
+      // Add a new scene directly (matches SceneNavigator's + button)
+      dispatch({type: 'ADD_SCENE'});
     } else {
       openGallery(tool.action ?? tool.label.toLowerCase());
     }

@@ -108,3 +108,8 @@ export function clampNormalized(value: number, allowOvershoot = false): number {
   const max = allowOvershoot ? 1.1 : 1;
   return Math.max(min, Math.min(max, value));
 }
+
+/** Snap a normalized value (0-1) to the nearest grid increment. */
+export function snapValueToGrid(value: number, gridSize: number): number {
+  return Math.round(value / gridSize) * gridSize;
+}

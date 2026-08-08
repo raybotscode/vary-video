@@ -5,8 +5,10 @@
  * through dispatch() which wraps history tracking. The editor store reads
  * from here but never mutates directly.
  *
- * History is scene-scoped (only the active scene is snapshotted) to keep
- * memory manageable.
+ * History is per-scene: each scene gets its own HistoryManager, keyed by
+ * scene ID. Switching scenes updates canUndo/canRedo to reflect that scene's
+ * history. Scene CRUD commands (ADD/DELETE/DUPLICATE/MOVE) affect the
+ * global scene list; undo/redo within a scene only snapshots that scene.
  */
 
 import {create} from 'zustand';
@@ -27,6 +29,10 @@ export interface DocumentState {
   // ─── Core Dispatch ──────────────────────────────────────────
   /** Dispatch a command. Automatically tracks history. */
   dispatch: (command: EditorCommand) => void;
+
+  // ─── Navigation ─────────────────────────────────────────────
+  /** Switch the active scene and update undo/redo state. */
+  setActiveSceneIndex: (index: number) => void;
 
   // ─── Convenience Getters ────────────────────────────────────
   getActiveScene: () => V2Scene;
@@ -64,14 +70,48 @@ export function createEmptyDocument(): V2Document {
 }
 
 export const useDocumentStore = create<DocumentState>((set, get) => {
-  const history = new HistoryManager();
+  // Per-scene history: Map<sceneId, HistoryManager>
+  const sceneHistories = new Map<string, HistoryManager>();
+
+  function getHistory(sceneId: string): HistoryManager {
+    let h = sceneHistories.get(sceneId);
+    if (!h) {
+      h = new HistoryManager();
+      sceneHistories.set(sceneId, h);
+    }
+    return h;
+  }
+
+  function updateUndoRedoState() {
+    const {document, activeSceneIndex} = get();
+    const sceneId = document.scenes[activeSceneIndex]?.id;
+    const h = sceneId ? sceneHistories.get(sceneId) : null;
+    set({
+      canUndo: h?.canUndo() ?? false,
+      canRedo: h?.canRedo() ?? false,
+    });
+  }
 
   const pushHistory = (doc: V2Document, description: string) => {
-    history.push(doc, get().activeSceneIndex, description);
-    set({document: doc, canUndo: history.canUndo(), canRedo: history.canRedo()});
+    const sceneId = doc.scenes[get().activeSceneIndex]?.id;
+    if (sceneId) {
+      const h = getHistory(sceneId);
+      h.push(doc, get().activeSceneIndex, description);
+    }
+    set({document: doc});
+    updateUndoRedoState();
   };
 
   const initialDoc = createEmptyDocument();
+
+  // Initialize history for the first scene
+  {
+    const firstSceneId = initialDoc.scenes[0]?.id;
+    if (firstSceneId) {
+      const h = getHistory(firstSceneId);
+      h.push(initialDoc, 0, 'Create document');
+    }
+  }
 
   return {
     document: initialDoc,
@@ -84,7 +124,10 @@ export const useDocumentStore = create<DocumentState>((set, get) => {
 
       // Handle undo/redo at store level
       if (command.type === 'UNDO') {
-        const prevScene = history.undo();
+        const sceneId = document.scenes[activeSceneIndex]?.id;
+        const h = sceneId ? sceneHistories.get(sceneId) : null;
+        if (!h) return;
+        const prevScene = h.undo();
         if (prevScene) {
           const newDoc = {
             ...document,
@@ -92,13 +135,17 @@ export const useDocumentStore = create<DocumentState>((set, get) => {
               i === activeSceneIndex ? prevScene : s,
             ),
           };
-          set({document: newDoc, canUndo: history.canUndo(), canRedo: history.canRedo()});
+          set({document: newDoc});
+          updateUndoRedoState();
         }
         return;
       }
 
       if (command.type === 'REDO') {
-        const nextScene = history.redo();
+        const sceneId = document.scenes[activeSceneIndex]?.id;
+        const h = sceneId ? sceneHistories.get(sceneId) : null;
+        if (!h) return;
+        const nextScene = h.redo();
         if (nextScene) {
           const newDoc = {
             ...document,
@@ -106,19 +153,51 @@ export const useDocumentStore = create<DocumentState>((set, get) => {
               i === activeSceneIndex ? nextScene : s,
             ),
           };
-          set({document: newDoc, canUndo: history.canUndo(), canRedo: history.canRedo()});
+          set({document: newDoc});
+          updateUndoRedoState();
         }
+        return;
+      }
+
+      // Handle SET_ACTIVE_SCENE at store level (navigation, not mutation)
+      if (command.type === 'SET_ACTIVE_SCENE') {
+        if (command.sceneIndex < 0 || command.sceneIndex >= document.scenes.length) return;
+        set({activeSceneIndex: command.sceneIndex});
+        updateUndoRedoState();
         return;
       }
 
       // Apply the command
       const result = applyCommand(document, activeSceneIndex, command);
 
+      // Adjust activeSceneIndex if scene array changed (DELETE, MOVE, etc.)
+      const newActiveSceneIndex =
+        result.document.scenes.length !== document.scenes.length
+          ? Math.min(activeSceneIndex, result.document.scenes.length - 1)
+          : activeSceneIndex;
+
       if (result.shouldRecord) {
         pushHistory(result.document, `${command.type} ${((command as any).elementId ?? '')}`);
+        // pushHistory already calls set({document}) + updateUndoRedoState,
+        // but it doesn't set activeSceneIndex — patch it up
+        if (newActiveSceneIndex !== activeSceneIndex) {
+          set({activeSceneIndex: newActiveSceneIndex});
+          updateUndoRedoState();
+        }
       } else {
-        set({document: result.document, canUndo: history.canUndo(), canRedo: history.canRedo()});
+        set({
+          document: result.document,
+          activeSceneIndex: newActiveSceneIndex,
+        });
+        updateUndoRedoState();
       }
+    },
+
+    setActiveSceneIndex: (index: number) => {
+      const {document} = get();
+      if (index < 0 || index >= document.scenes.length) return;
+      set({activeSceneIndex: index});
+      updateUndoRedoState();
     },
 
     getActiveScene: () => {
@@ -144,8 +223,14 @@ export const useDocumentStore = create<DocumentState>((set, get) => {
       } else {
         validated = validateDocument(doc);
       }
-      history.clear();
-      history.push(validated, 0, 'Load document');
+      // Clear all scene histories
+      sceneHistories.clear();
+      // Initialize history for the first scene
+      const firstSceneId = validated.scenes[0]?.id;
+      if (firstSceneId) {
+        const h = getHistory(firstSceneId);
+        h.push(validated, 0, 'Load document');
+      }
       set({
         document: validated,
         activeSceneIndex: 0,
@@ -156,8 +241,12 @@ export const useDocumentStore = create<DocumentState>((set, get) => {
 
     reset: () => {
       const fresh = createEmptyDocument();
-      history.clear();
-      history.push(fresh, 0, 'Reset');
+      sceneHistories.clear();
+      const firstSceneId = fresh.scenes[0]?.id;
+      if (firstSceneId) {
+        const h = getHistory(firstSceneId);
+        h.push(fresh, 0, 'Reset');
+      }
       set({
         document: fresh,
         activeSceneIndex: 0,
