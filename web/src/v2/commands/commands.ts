@@ -179,8 +179,8 @@ export function applyCommand(
           ...el,
           transform: {
             ...el.transform,
-            ...(command.width !== undefined ? {width: command.width} : {}),
-            ...(command.height !== undefined ? {height: command.height} : {}),
+            ...(command.width !== undefined ? {width: clamp(command.width, 0, 1)} : {}),
+            ...(command.height !== undefined ? {height: clamp(command.height, 0, 1)} : {}),
           },
         })),
         shouldRecord,

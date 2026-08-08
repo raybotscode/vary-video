@@ -1,0 +1,9 @@
+scene_id,scene_name,duration_frames,background_type,bg_color1,bg_color2,bg_angle,element_id,element_type,element_name,x,y,width,height,rotation,anchor_x,anchor_y,z_index,opacity,text,font_size,font_weight,color,text_align,shape,fill,border_radius,start_frame,end_frame,locked,visible
+scene-001,Opening Title,90,gradient,#0F172A,#1E3A5F,135,el-001,text,Main Title,0.5,0.35,0.6,,0,0.5,0.5,10,1,Welcome to Vary,72,700,#FFFFFF,center,,,,0,60,false,true
+scene-001,Opening Title,90,gradient,#0F172A,#1E3A5F,135,el-002,text,Subtitle,0.5,0.55,0.5,,0,0.5,0.5,9,1,Video automation platform,28,400,#94A3B8,center,,,,15,75,false,true
+scene-001,Opening Title,90,gradient,#0F172A,#1E3A5F,135,el-003,shape,Accent Line,0.5,0.72,0.2,0.004,0,0.5,0.5,8,0.6,,,,,,rectangle,#3B82F6,2,30,90,false,true
+scene-002,Product Showcase,120,solid,#0F172A,,,el-004,image,Hero Image,0.5,0.45,0.7,0.5,0,0.5,0.5,10,1,,,,,,,,0,120,false,true
+scene-002,Product Showcase,120,solid,#0F172A,,,el-005,text,Feature Headline,0.5,0.78,0.65,,0,0.5,0.5,11,1,AI-Powered Rendering,42,600,#FFFFFF,center,,,,10,120,false,true
+scene-003,Call to Action,60,gradient,#1E3A5F,#3B82F6,225,el-006,text,CTA Headline,0.5,0.38,0.7,,0,0.5,0.5,10,1,Start Creating Today,56,700,#FFFFFF,center,,,,0,60,false,true
+scene-003,Call to Action,60,gradient,#1E3A5F,#3B82F6,225,el-007,shape,CTA Button,0.5,0.58,0.22,0.08,0,0.5,0.5,10,1,,,,,,rectangle,#FFFFFF,8,0,60,false,true
+scene-003,Call to Action,60,gradient,#1E3A5F,#3B82F6,225,el-008,text,CTA Text,0.5,0.58,0.2,,0,0.5,0.5,11,1,Get Started →,24,600,#1E3A5F,center,,,,0,60,false,true

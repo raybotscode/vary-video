@@ -79,8 +79,8 @@ function calculateResize(
     elementId: interaction.elementId,
     x: clamp01(x),
     y: clamp01(y),
-    width,
-    height,
+    width: clamp01(width),
+    height: clamp01(height),
   };
 }
 

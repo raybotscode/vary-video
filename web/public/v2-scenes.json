@@ -1,0 +1,82 @@
+[
+  {
+    "id": "scene-001",
+    "name": "Opening Title",
+    "duration": 90,
+    "background": {"type": "gradient", "color1": "#0F172A", "color2": "#1E3A5F", "angle": 135},
+    "elements": [
+      {
+        "id": "el-001", "type": "text", "name": "Main Title",
+        "transform": {"x": 0.5, "y": 0.35, "width": 0.6, "height": null, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 10, "opacity": 1},
+        "props": {"text": "Welcome to Vary", "fontSize": 72, "fontWeight": 700, "color": "#FFFFFF", "textAlign": "center"},
+        "timing": {"startFrame": 0, "endFrame": 60},
+        "locked": false, "visible": true
+      },
+      {
+        "id": "el-002", "type": "text", "name": "Subtitle",
+        "transform": {"x": 0.5, "y": 0.55, "width": 0.5, "height": null, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 9, "opacity": 1},
+        "props": {"text": "Video automation platform", "fontSize": 28, "fontWeight": 400, "color": "#94A3B8", "textAlign": "center"},
+        "timing": {"startFrame": 15, "endFrame": 75},
+        "locked": false, "visible": true
+      },
+      {
+        "id": "el-003", "type": "shape", "name": "Accent Line",
+        "transform": {"x": 0.5, "y": 0.72, "width": 0.2, "height": 0.004, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 8, "opacity": 0.6},
+        "props": {"shape": "rectangle", "fill": "#3B82F6", "borderRadius": 2},
+        "timing": {"startFrame": 30, "endFrame": 90},
+        "locked": false, "visible": true
+      }
+    ]
+  },
+  {
+    "id": "scene-002",
+    "name": "Product Showcase",
+    "duration": 120,
+    "background": {"type": "solid", "color": "#0F172A"},
+    "elements": [
+      {
+        "id": "el-004", "type": "image", "name": "Hero Image",
+        "transform": {"x": 0.5, "y": 0.45, "width": 0.7, "height": 0.5, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 10, "opacity": 1},
+        "props": {"src": "https://pixabay.com/get/example.jpg", "fit": "cover", "borderRadius": 12},
+        "timing": {"startFrame": 0, "endFrame": 120},
+        "locked": false, "visible": true
+      },
+      {
+        "id": "el-005", "type": "text", "name": "Feature Headline",
+        "transform": {"x": 0.5, "y": 0.78, "width": 0.65, "height": null, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 11, "opacity": 1},
+        "props": {"text": "AI-Powered Rendering", "fontSize": 42, "fontWeight": 600, "color": "#FFFFFF", "textAlign": "center"},
+        "timing": {"startFrame": 10, "endFrame": 120},
+        "locked": false, "visible": true
+      }
+    ]
+  },
+  {
+    "id": "scene-003",
+    "name": "Call to Action",
+    "duration": 60,
+    "background": {"type": "gradient", "color1": "#1E3A5F", "color2": "#3B82F6", "angle": 225},
+    "elements": [
+      {
+        "id": "el-006", "type": "text", "name": "CTA Headline",
+        "transform": {"x": 0.5, "y": 0.38, "width": 0.7, "height": null, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 10, "opacity": 1},
+        "props": {"text": "Start Creating Today", "fontSize": 56, "fontWeight": 700, "color": "#FFFFFF", "textAlign": "center"},
+        "timing": {"startFrame": 0, "endFrame": 60},
+        "locked": false, "visible": true
+      },
+      {
+        "id": "el-007", "type": "shape", "name": "CTA Button",
+        "transform": {"x": 0.5, "y": 0.58, "width": 0.22, "height": 0.08, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 10, "opacity": 1},
+        "props": {"shape": "rectangle", "fill": "#FFFFFF", "borderRadius": 8},
+        "timing": {"startFrame": 0, "endFrame": 60},
+        "locked": false, "visible": true
+      },
+      {
+        "id": "el-008", "type": "text", "name": "CTA Text",
+        "transform": {"x": 0.5, "y": 0.58, "width": 0.2, "height": null, "rotation": 0, "anchorX": 0.5, "anchorY": 0.5, "zIndex": 11, "opacity": 1},
+        "props": {"text": "Get Started →", "fontSize": 24, "fontWeight": 600, "color": "#1E3A5F", "textAlign": "center"},
+        "timing": {"startFrame": 0, "endFrame": 60},
+        "locked": false, "visible": true
+      }
+    ]
+  }
+]
